@@ -1316,11 +1316,45 @@ $('forgotForm')?.addEventListener('submit',function(e){
 });
 
 /* ════════════════════════════════════════════════════════════
-   12. GOOGLE BUTTONS (stub)
+   12. GOOGLE BUTTONS (Live Google Identity Integration)
    ════════════════════════════════════════════════════════════ */
-$$('#btn-google-login,#btn-google-register,#btn-google-otp').forEach(btn=>{
-  btn.addEventListener('click',()=>console.log('Google OAuth flow'));
-});
+(function() {
+  const openGooglePopup = () => {
+    const w = 500, h = 600;
+    const left = (screen.width/2)-(w/2);
+    const top = (screen.height/2)-(h/2);
+    const popup = window.open('google-sign-in.html', 'GoogleSignIn', `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`);
+    if (window.focus && popup) popup.focus();
+  };
+
+  // Wire buttons to open Google Popup
+  $$('#btn-google-login,#btn-google-register,#btn-google-otp').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openGooglePopup();
+    });
+  });
+
+  // Listen for the account selection callback message
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'google-login') {
+      const { name, email, avatar } = event.data.user;
+      
+      // Simulate quick loading before redirecting
+      const activeBtn = document.querySelector('.form-panel.active .btn-primary') || document.getElementById('btn-login');
+      const restore = activeBtn ? btnLoading(activeBtn, 'Connecting Google…') : () => {};
+      
+      setTimeout(() => {
+        restore();
+        const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+        if (window.Auth) {
+          window.Auth.loginUser({ name, email, role, avatar });
+        }
+        handleAuthRedirect(role);
+      }, 1000);
+    }
+  });
+})();
 
 /* ════════════════════════════════════════════════════════════
    13. CURSOR GLOW
