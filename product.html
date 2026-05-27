@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Homemade Murukku — Indianmade | Premium Traditional Snacks</title>
+<meta name="description" content="Shop Homemade Murukku — crispy traditional Indian spiral snack made with sesame & cumin. 4.9★ rated, 100% natural, no preservatives. Free delivery on ₹499+."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0804;--bg2:#0f0b06;--card:rgba(19,16,9,0.9);
+  --gold:#f5a623;--gl:#ffe29a;--gd:#c8690a;
+  --text:#f5f0e8;--muted:#7a6a54;--dim:#3a3028;
+  --border:rgba(245,166,35,0.12);--bh:rgba(245,166,35,0.38);
+  --glass:rgba(19,16,9,0.85);
+  --fd:'Playfair Display',Georgia,serif;--fb:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1);
+  --nav:68px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gd);border-radius:3px;}
+::selection{background:rgba(245,166,35,0.25);color:var(--gl);}
+a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:none;font-family:var(--fb);}
+
+/* ─── Scroll progress ─────────────────────────────── */
+#scrollBar{position:fixed;top:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,var(--gd),var(--gold),var(--gl));z-index:9999;box-shadow:0 0 8px rgba(245,166,35,0.5);}
+
+/* ─── Canvas ──────────────────────────────────────── */
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 55% 50% at 30% 40%,rgba(180,80,0,0.12),transparent 60%),
+             radial-gradient(ellipse 40% 40% at 75% 60%,rgba(245,166,35,0.05),transparent 55%),var(--bg);}
+
+/* ─── NAVBAR ──────────────────────────────────────── */
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:1000;
+  background:rgba(10,8,4,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.navbar.scrolled{background:rgba(10,8,4,0.97);box-shadow:0 4px 30px rgba(0,0,0,0.5);}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;height:100%;display:flex;align-items:center;gap:1.5rem;}
+.nav-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.nav-logo svg{width:32px;height:32px;}
+.logo-txt{font-family:var(--fd);font-size:1.2rem;font-weight:700;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;}
+.nav-links a{padding:7px 14px;font-size:.875rem;font-weight:500;color:var(--muted);border-radius:8px;transition:all .2s;}
+.nav-links a:hover{color:var(--text);background:rgba(245,166,35,0.07);}
+.nav-actions{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.nav-icon-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:transparent;color:var(--muted);border-radius:8px;position:relative;transition:all .2s;}
+.nav-icon-btn:hover{color:var(--gold);background:rgba(245,166,35,0.07);}
+.cart-badge{position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:var(--gold);color:#0a0804;font-size:.65rem;font-weight:800;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all .3s var(--spring);}
+.cart-badge.show{opacity:1;transform:scale(1);}
+.cart-badge.bump{animation:bump .35s var(--spring);}
+@keyframes bump{0%,100%{transform:scale(1);}50%{transform:scale(1.45);}}
+.btn-nav-login{padding:8px 20px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:700;font-size:.82rem;border-radius:999px;transition:all .3s;}
+.btn-nav-login:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,166,35,0.35);}
+
+/* ─── BREADCRUMB ──────────────────────────────────── */
+.breadcrumb-bar{margin-top:var(--nav);padding:14px 0;border-bottom:1px solid var(--border);background:rgba(10,8,4,0.5);position:relative;z-index:2;}
+.breadcrumb{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);}
+.breadcrumb a{color:var(--muted);transition:color .2s;}
+.breadcrumb a:hover{color:var(--gold);}
+.breadcrumb .cur{color:var(--gold);}
+.breadcrumb svg{opacity:.5;}
+
+/* ─── PRODUCT HERO ────────────────────────────────── */
+.product-hero{max-width:1280px;margin:0 auto;padding:36px 1.5rem 60px;display:grid;grid-template-columns:55% 45%;gap:40px;position:relative;z-index:2;}
+
+/* ── Left Gallery ── */
+.gallery{display:flex;flex-direction:column;gap:16px;}
+
+/* Main image */
+.main-img{
+  background:var(--glass);border:1px solid var(--border);border-radius:24px;
+  height:440px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;cursor:zoom-in;
+  transition:border-color .3s,box-shadow .3s;
+}
+.main-img:hover{border-color:var(--bh);box-shadow:0 0 40px rgba(245,166,35,0.12);}
+.main-img .img-glow{position:absolute;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,105,10,0.3),transparent 70%);
+  animation:gPulse 3s ease-in-out infinite;}
+@keyframes gPulse{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.15);opacity:1;}}
+.main-emoji{font-size:9rem;filter:drop-shadow(0 12px 30px rgba(0,0,0,0.7)) drop-shadow(0 0 20px rgba(245,166,35,0.3));
+  transition:transform .5s var(--spring);position:relative;z-index:2;}
+.main-img:hover .main-emoji{transform:scale(1.08);}
+.main-img.rotating .main-emoji{animation:spin360 1.2s ease-in-out;}
+@keyframes spin360{0%{transform:scale(1) rotate(0deg);}50%{transform:scale(1.15) rotate(180deg);}100%{transform:scale(1) rotate(360deg);}}
+.sweep-ring{position:absolute;width:300px;height:300px;border-radius:50%;border:2px solid rgba(245,166,35,0.3);opacity:0;pointer-events:none;}
+.main-img.rotating .sweep-ring{animation:sweepRing 1.2s ease-in-out;}
+@keyframes sweepRing{0%{opacity:0;transform:scale(.5);}50%{opacity:.6;transform:scale(1.1);}100%{opacity:0;transform:scale(1.5);}}
+
+/* Steam */
+.steam-wrap{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:none;z-index:3;}
+.stm{border-radius:50%;opacity:0;animation:stmUp 4s ease-in-out infinite;filter:blur(4px);}
+.stm:nth-child(1){width:8px;height:60px;background:linear-gradient(to top,rgba(245,166,35,0.15),transparent);animation-delay:0s;}
+.stm:nth-child(2){width:12px;height:80px;background:linear-gradient(to top,rgba(245,166,35,0.1),transparent);animation-delay:-1.2s;}
+.stm:nth-child(3){width:6px;height:50px;background:linear-gradient(to top,rgba(255,200,100,0.12),transparent);animation-delay:-2.4s;}
+.stm:nth-child(4){width:10px;height:70px;background:linear-gradient(to top,rgba(245,166,35,0.08),transparent);animation-delay:-.6s;}
+@keyframes stmUp{0%{opacity:0;transform:translateY(0) scaleX(1);}25%{opacity:.7;}75%{opacity:.3;}100%{opacity:0;transform:translateY(-90px) scaleX(3);}}
+
+/* 360 btn */
+.btn-360{position:absolute;top:14px;right:14px;padding:7px 14px;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px);
+  border:1px solid rgba(245,166,35,0.25);border-radius:999px;color:var(--gold);font-size:.78rem;font-weight:600;
+  display:flex;align-items:center;gap:6px;z-index:4;transition:all .25s;}
+.btn-360:hover{background:rgba(245,166,35,0.1);border-color:var(--gold);}
+
+/* Thumbnails */
+.thumbs{display:flex;gap:10px;}
+.thumb{flex:1;background:var(--glass);border:1px solid var(--border);border-radius:14px;
+  height:80px;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;
+  transition:all .25s;position:relative;}
+.thumb:hover{border-color:rgba(245,166,35,0.3);transform:translateY(-2px);}
+.thumb.active{border-color:var(--gold);background:rgba(245,166,35,0.08);box-shadow:0 0 16px rgba(245,166,35,0.2);}
+.thumb-label{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:.6rem;color:var(--muted);}
+
+/* ── Right Info Panel ── */
+.info-panel{background:var(--glass);border:1px solid var(--border);border-radius:24px;padding:32px;backdrop-filter:blur(20px);
+  position:sticky;top:calc(var(--nav) + 20px);align-self:start;max-height:calc(100vh - var(--nav) - 40px);overflow-y:auto;}
+
+/* Auth badges */
+.auth-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.auth-badge{padding:5px 12px;background:rgba(245,166,35,0.07);border:1px solid var(--border);border-radius:999px;font-size:.7rem;color:var(--muted);}
+
+.prod-cat{font-size:.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.prod-title{font-family:var(--fd);font-size:2.1rem;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:14px;letter-spacing:-.02em;}
+
+/* Rating row */
+.rating-row{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.stars-big{color:#ffd700;font-size:1.1rem;letter-spacing:2px;}
+.rating-score{font-size:1rem;font-weight:700;color:var(--gold);}
+.rating-link{font-size:.82rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.sold-badge{padding:4px 10px;background:rgba(60,200,100,0.08);border:1px solid rgba(60,200,100,0.2);border-radius:999px;font-size:.72rem;color:#5de88d;}
+
+/* Price block */
+.price-block{background:rgba(245,166,35,0.04);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
+.price-main{font-family:var(--fd);font-size:2.2rem;font-weight:800;color:var(--gold);line-height:1;}
+.price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.price-orig{font-size:.95rem;color:var(--muted);text-decoration:line-through;}
+.price-off{padding:3px 9px;background:rgba(60,200,100,0.1);border:1px solid rgba(60,200,100,0.2);border-radius:6px;font-size:.75rem;font-weight:700;color:#5de88d;}
+.price-tax{font-size:.72rem;color:var(--muted);margin-top:4px;}
+
+/* Weight selector */
+.weight-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.weight-opts{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.weight-opt{padding:9px 18px;background:rgba(255,255,255,0.03);border:1.5px solid var(--border);border-radius:12px;
+  font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .25s;}
+.weight-opt:hover{border-color:rgba(245,166,35,0.3);color:var(--text);}
+.weight-opt.active{border-color:var(--gold);background:rgba(245,166,35,0.1);color:var(--gold);}
+.weight-price{display:block;font-size:.7rem;color:var(--muted);margin-top:2px;}
+
+/* Quantity */
+.qty-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.qty-row{display:flex;align-items:center;gap:0;margin-bottom:20px;width:fit-content;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.qty-btn{width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:transparent;
+  color:var(--gold);font-size:1.2rem;font-weight:700;transition:background .2s;}
+.qty-btn:hover{background:rgba(245,166,35,0.1);}
+.qty-val{width:52px;text-align:center;font-size:1.1rem;font-weight:700;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);height:42px;line-height:42px;user-select:none;}
+
+/* Action buttons */
+.action-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.btn-cart-main{padding:15px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:800;font-size:.95rem;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden;transition:transform .3s var(--spring),box-shadow .3s;box-shadow:0 4px 20px rgba(245,166,35,0.3);}
+.btn-cart-main:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(245,166,35,0.45);}
+.btn-buy-now{padding:15px;background:rgba(245,166,35,0.08);border:1.5px solid var(--gold);color:var(--gold);font-weight:700;font-size:.95rem;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;}
+.btn-buy-now:hover{background:rgba(245,166,35,0.14);transform:translateY(-2px);}
+.icon-btns{display:flex;gap:10px;margin-bottom:20px;}
+.icon-btn{flex:1;padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-size:.82rem;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .25s;}
+.icon-btn:hover{border-color:rgba(245,166,35,0.3);color:var(--gold);}
+
+/* Delivery info */
+.delivery-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:18px;}
+.delivery-item{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.82rem;color:var(--muted);}
+.delivery-item:not(:last-child){border-bottom:1px solid rgba(245,166,35,0.07);}
+
+/* Freshness */
+.freshness{margin-bottom:8px;}
+.fresh-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:6px;}
+.fresh-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.fresh-fill{height:100%;width:80%;background:linear-gradient(90deg,var(--gd),var(--gold));border-radius:2px;animation:freshIn 1.5s ease-out;}
+@keyframes freshIn{from{width:0}to{width:80%}}
+
+/* ─── TABS ────────────────────────────────────────── */
+.tabs-section{max-width:1280px;margin:0 auto;padding:0 1.5rem 60px;position:relative;z-index:2;}
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:32px;overflow-x:auto;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{padding:14px 24px;background:transparent;color:var(--muted);font-size:.9rem;font-weight:500;white-space:nowrap;position:relative;transition:color .25s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--gold);}
+.tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,var(--gd),var(--gold));border-radius:2px;box-shadow:0 0 8px rgba(245,166,35,0.5);}
+.tab-pane{display:none;animation:tabFade .3s var(--ease);}
+.tab-pane.active{display:block;}
+@keyframes tabFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* Description tab */
+.desc-body p{font-size:.95rem;color:var(--muted);line-height:1.9;margin-bottom:16px;}
+.love-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:24px 0;}
+.love-list li{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(245,166,35,0.03);border:1px solid var(--border);border-radius:12px;font-size:.875rem;color:var(--muted);}
+.love-list li span:first-child{font-size:1.2rem;flex-shrink:0;}
+.how-made{display:flex;align-items:center;gap:0;margin-top:28px;}
+.made-step{text-align:center;flex:1;}
+.made-icon{width:52px;height:52px;background:rgba(245,166,35,0.07);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 8px;}
+.made-step h4{font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.made-step p{font-size:.72rem;color:var(--muted);}
+.made-arrow{color:rgba(245,166,35,0.3);font-size:1.4rem;flex-shrink:0;padding:0 8px;}
+
+/* Ingredients tab */
+.ingr-pills{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;}
+.ingr-pill{padding:8px 16px;background:rgba(245,166,35,0.05);border:1px solid var(--border);border-radius:999px;font-size:.85rem;color:var(--text);display:flex;align-items:center;gap:6px;}
+.allergen-box{background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.25);border-radius:14px;padding:16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px;}
+.allergen-box svg{color:var(--gold);flex-shrink:0;margin-top:1px;}
+.allergen-box p{font-size:.85rem;color:var(--muted);line-height:1.6;}
+.no-badges{display:flex;gap:10px;flex-wrap:wrap;}
+.no-badge{padding:7px 16px;background:rgba(60,200,100,0.06);border:1px solid rgba(60,200,100,0.18);border-radius:999px;font-size:.8rem;color:#5de88d;font-weight:500;}
+
+/* Nutrition tab */
+.nutrition-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.nutrition-table{width:100%;border-collapse:collapse;}
+.nutrition-table th{background:rgba(245,166,35,0.07);color:var(--gold);padding:10px 14px;text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);}
+.nutrition-table td{padding:10px 14px;font-size:.875rem;color:var(--muted);border-bottom:1px solid rgba(245,166,35,0.05);}
+.nutrition-table td:last-child{font-weight:600;color:var(--text);text-align:right;}
+.macro-circles{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.macro-circle{background:rgba(245,166,35,0.03);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;}
+.circle-ring{width:72px;height:72px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;position:relative;}
+.circle-ring svg{transform:rotate(-90deg);}
+.circle-ring .track{stroke:rgba(255,255,255,0.07);fill:none;}
+.circle-ring .fill{fill:none;stroke-linecap:round;transition:stroke-dashoffset 1.5s var(--ease);}
+.circle-pct{position:absolute;font-size:.9rem;font-weight:800;color:var(--text);}
+.macro-name{font-size:.75rem;color:var(--muted);margin-bottom:2px;}
+.macro-val{font-size:.85rem;font-weight:700;color:var(--gold);}
+
+/* Reviews tab */
+.review-overview{display:flex;align-items:center;gap:28px;padding:24px;background:rgba(245,166,35,0.04);border:1px solid var(--border);border-radius:18px;margin-bottom:28px;}
+.review-big-score{text-align:center;}
+.review-big-score .score{font-family:var(--fd);font-size:3.5rem;font-weight:800;color:var(--gold);line-height:1;}
+.review-big-score .total{font-size:.8rem;color:var(--muted);margin-top:2px;}
+.review-bars{flex:1;}
+.review-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.rbar-label{font-size:.78rem;color:var(--muted);width:24px;text-align:right;flex-shrink:0;}
+.rbar-track{flex:1;height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
+.rbar-fill{height:100%;background:linear-gradient(90deg,var(--gd),var(--gold));border-radius:3px;transition:width 1.2s var(--ease);}
+.rbar-pct{font-size:.72rem;color:var(--muted);width:32px;flex-shrink:0;}
+.reviews-list{display:flex;flex-direction:column;gap:16px;margin-bottom:24px;}
+.review-card{background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:22px;transition:border-color .25s;}
+.review-card:hover{border-color:rgba(245,166,35,0.22);}
+.reviewer-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.reviewer-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:white;flex-shrink:0;}
+.reviewer-name{font-weight:600;font-size:.9rem;color:var(--text);}
+.reviewer-loc{font-size:.75rem;color:var(--muted);}
+.review-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.rev-stars{color:#ffd700;font-size:.85rem;letter-spacing:1px;}
+.rev-date{font-size:.72rem;color:var(--dim);}
+.review-text{font-size:.875rem;color:var(--muted);line-height:1.7;}
+.btn-helpful{margin-top:10px;padding:5px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:999px;font-size:.72rem;color:var(--muted);transition:all .2s;}
+.btn-helpful:hover{border-color:rgba(245,166,35,0.3);color:var(--gold);}
+.btn-write-review{padding:12px 28px;background:transparent;border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:.875rem;font-weight:600;transition:all .3s;}
+.btn-write-review:hover{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,0.05);}
+
+/* ─── RELATED PRODUCTS ────────────────────────────── */
+.related-section{max-width:1280px;margin:0 auto;padding:0 1.5rem 60px;position:relative;z-index:2;}
+.section-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;}
+.section-hdr h2{font-family:var(--fd);font-size:1.6rem;font-weight:700;color:var(--text);}
+.section-hdr a{font-size:.85rem;color:var(--gold);transition:opacity .2s;}
+.section-hdr a:hover{opacity:.7;}
+.related-scroll{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px;}
+.related-scroll::-webkit-scrollbar{display:none;}
+.rel-card{background:var(--glass);border:1px solid var(--border);border-radius:18px;overflow:hidden;flex-shrink:0;width:220px;cursor:pointer;transition:all .3s;}
+.rel-card:hover{border-color:var(--bh);transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+.rel-img{height:130px;display:flex;align-items:center;justify-content:center;font-size:4rem;}
+.rel-body{padding:12px 14px 16px;}
+.rel-name{font-family:var(--fd);font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.rel-price{font-size:.95rem;font-weight:700;color:var(--gold);}
+.rel-orig{font-size:.75rem;color:var(--muted);text-decoration:line-through;margin-left:6px;}
+.btn-rel-cart{width:100%;margin-top:10px;padding:8px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:999px;color:var(--gold);font-size:.78rem;font-weight:600;transition:all .25s;}
+.btn-rel-cart:hover{background:rgba(245,166,35,0.15);}
+
+/* ─── RECIPES ─────────────────────────────────────── */
+.recipes-section{max-width:1280px;margin:0 auto;padding:0 1.5rem 80px;position:relative;z-index:2;}
+.recipes-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.recipe-card{background:linear-gradient(135deg,rgba(200,105,10,0.1),rgba(245,166,35,0.04));border:1px solid rgba(245,166,35,0.2);border-radius:20px;padding:28px;transition:all .3s;}
+.recipe-card:hover{border-color:rgba(245,166,35,0.4);transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.3);}
+.recipe-emoji{font-size:3rem;margin-bottom:14px;display:block;}
+.recipe-badges{display:flex;gap:8px;margin-bottom:12px;}
+.recipe-badge{padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:600;}
+.rb-time{background:rgba(60,150,255,0.1);border:1px solid rgba(60,150,255,0.2);color:#6ab0ff;}
+.rb-diff{background:rgba(60,200,100,0.08);border:1px solid rgba(60,200,100,0.18);color:#5de88d;}
+.recipe-card h3{font-family:var(--fd);font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:8px;}
+.recipe-card p{font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+.btn-recipe{padding:8px 20px;background:transparent;border:1px solid rgba(245,166,35,0.3);border-radius:999px;color:var(--gold);font-size:.82rem;font-weight:600;transition:all .25s;}
+.btn-recipe:hover{background:rgba(245,166,35,0.08);}
+
+/* ─── FOOTER ──────────────────────────────────────── */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:24px 0;position:relative;z-index:2;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.footer-inner p{font-size:.8rem;color:var(--muted);}
+.footer-links{display:flex;gap:16px;}
+.footer-links a{font-size:.8rem;color:var(--muted);transition:color .2s;}
+.footer-links a:hover{color:var(--gold);}
+
+/* WhatsApp FAB */
+.wa-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 20px rgba(37,211,102,0.4);animation:fabF 3s ease-in-out infinite;transition:transform .3s;}
+.wa-fab:hover{transform:scale(1.1);}
+@keyframes fabF{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.scroll-top{position:fixed;bottom:90px;right:26px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--gold);display:flex;align-items:center;justify-content:center;z-index:900;opacity:0;pointer-events:none;transition:all .3s;cursor:pointer;}
+.scroll-top.show{opacity:1;pointer-events:all;}
+
+/* Animate reveal */
+[data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease),transform .6s var(--ease);}
+[data-reveal].revealed{opacity:1;transform:none;}
+
+/* ─── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:900px){
+  .product-hero{grid-template-columns:1fr;}
+  .info-panel{position:static;max-height:none;}
+  .nutrition-grid{grid-template-columns:1fr;}
+  .recipes-grid{grid-template-columns:1fr;}
+}
+@media(max-width:640px){
+  .nav-links{display:none;}
+  .product-hero{padding:24px 1rem 40px;}
+  .tabs-section,.related-section,.recipes-section{padding-left:1rem;padding-right:1rem;}
+  .action-btns{grid-template-columns:1fr;}
+  .love-list{grid-template-columns:1fr;}
+  .macro-circles{grid-template-columns:repeat(4,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div id="scrollBar"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="bg-glow"></div>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <svg viewBox="0 0 40 40" fill="none">
+        <polygon points="20,3 37,32 3,32" stroke="url(#ng)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <polygon points="20,10 30,28 10,28" fill="url(#nf)" opacity=".4"/>
+        <defs>
+          <linearGradient id="ng" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#ffe29a"/><stop offset="100%" stop-color="#c8690a"/></linearGradient>
+          <linearGradient id="nf" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#c8690a"/></linearGradient>
+        </defs>
+      </svg>
+      <span class="logo-txt">Indianmade</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="index.html#how-it-works">How It Works</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="cart.html" class="nav-icon-btn" id="cartBtn" aria-label="Cart" style="display:inline-flex;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <a href="auth.html" class="btn-nav-login">Log in</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── BREADCRUMB ── -->
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="index.html">Home</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="shop.html">Shop</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="shop.html?cat=snacks">Authentic Snacks</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <span class="cur">Homemade Murukku</span>
+  </nav>
+</div>
+
+<!-- ── PRODUCT HERO ── -->
+<section class="product-hero">
+
+  <!-- Left: Gallery -->
+  <div class="gallery">
+    <div class="main-img" id="mainImg">
+      <div class="img-glow"></div>
+      <div class="sweep-ring" id="sweepRing"></div>
+      <span class="main-emoji" id="mainEmoji">🌀</span>
+      <div class="steam-wrap">
+        <div class="stm"></div><div class="stm"></div><div class="stm"></div><div class="stm"></div>
+      </div>
+      <button class="btn-360" id="btn360">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="m15 9-3-3-3 3"/><path d="M12 6v6"/></svg>
+        360° View
+      </button>
+    </div>
+
+    <!-- Thumbnails -->
+    <div class="thumbs">
+      <button class="thumb active" data-emoji="🌀" data-label="Main View" id="th-1">🌀<span class="thumb-label">Main</span></button>
+      <button class="thumb" data-emoji="🌀" data-label="Close-up" data-size="11rem" id="th-2" style="font-size:2.6rem;">🌀<span class="thumb-label">Close-up</span></button>
+      <button class="thumb" data-emoji="🫙🌿🌾" data-label="Ingredients" id="th-3" style="font-size:1.5rem;">🫙🌿<span class="thumb-label">Ingredients</span></button>
+      <button class="thumb" data-emoji="📦" data-label="Package" id="th-4">📦<span class="thumb-label">Packaged</span></button>
+    </div>
+  </div>
+
+  <!-- Right: Info Panel -->
+  <div class="info-panel">
+
+    <div class="auth-badges">
+      <span class="auth-badge">🏠 100% Homemade</span>
+      <span class="auth-badge">🌿 No Preservatives</span>
+      <span class="auth-badge">🛡️ Hygienically Packed</span>
+    </div>
+
+    <div class="prod-cat">Authentic Snacks</div>
+    <h1 class="prod-title">Homemade Murukku</h1>
+
+    <div class="rating-row">
+      <span class="stars-big">★★★★★</span>
+      <span class="rating-score">4.9</span>
+      <a class="rating-link" href="#" onclick="switchTab('reviews');return false;">(128 reviews)</a>
+      <span class="sold-badge">✓ 500+ sold</span>
+    </div>
+
+    <div class="price-block">
+      <div class="price-row">
+        <span class="price-main" id="priceMain">₹149</span>
+        <span class="price-orig" id="priceOrig">₹199</span>
+        <span class="price-off" id="priceOff">25% OFF</span>
+      </div>
+      <div class="price-tax">Inclusive of all taxes</div>
+    </div>
+
+    <div class="weight-label">Select Weight</div>
+    <div class="weight-opts" id="weightOpts">
+      <button class="weight-opt active" data-price="149" data-orig="199">250g<span class="weight-price">₹149</span></button>
+      <button class="weight-opt" data-price="279" data-orig="369">500g<span class="weight-price">₹279</span></button>
+      <button class="weight-opt" data-price="529" data-orig="699">1 kg<span class="weight-price">₹529</span></button>
+    </div>
+
+    <div class="qty-label">Quantity</div>
+    <div class="qty-row">
+      <button class="qty-btn" id="qtyMinus">−</button>
+      <span class="qty-val" id="qtyVal">1</span>
+      <button class="qty-btn" id="qtyPlus">+</button>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn-cart-main" id="addCartBtn">🛒 Add to Cart</button>
+      <button class="btn-buy-now" id="buyNowBtn">⚡ Buy Now</button>
+    </div>
+    <div class="icon-btns">
+      <button class="icon-btn" id="wishBtn">♡ Wishlist</button>
+      <button class="icon-btn" id="shareBtn">📤 Share</button>
+    </div>
+
+    <div class="delivery-card">
+      <div class="delivery-item">📦 <span>Free delivery on orders <strong>₹499+</strong></span></div>
+      <div class="delivery-item">🚚 <span>Ships via India Post in <strong>2–3 business days</strong></span></div>
+      <div class="delivery-item">↩️ <span><strong>7-day</strong> easy return policy</span></div>
+    </div>
+
+    <div class="freshness">
+      <div class="fresh-label"><span>Shelf Life: 30 days from packing</span><span style="color:var(--gold)">🟢 Fresh</span></div>
+      <div class="fresh-bar"><div class="fresh-fill"></div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── TABS ── -->
+<section class="tabs-section">
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" data-tab="description" role="tab">Description</button>
+    <button class="tab-btn" data-tab="ingredients" role="tab">Ingredients</button>
+    <button class="tab-btn" data-tab="nutrition" role="tab">Nutrition</button>
+    <button class="tab-btn" data-tab="reviews" role="tab" id="reviewsTab">Reviews (128)</button>
+  </div>
+
+  <!-- Description -->
+  <div class="tab-pane active" id="tab-description" data-reveal>
+    <div class="desc-body">
+      <p>Our Homemade Murukku is a traditional South Indian delicacy crafted in small batches using time-honoured family recipes. Made from the finest rice flour and urad dal, each spiral is pressed by hand — giving it that authentic, irregular texture that sets handmade murukku apart from factory-made versions.</p>
+      <p>We season every batch with roasted whole sesame seeds, freshly ground cumin, and just the right pinch of asafoetida — ingredients chosen not just for flavour, but for their digestive benefits rooted in Ayurvedic tradition. The result is a snack that is crispy without being oily, flavourful without being overpowering.</p>
+      <p>Fried to perfection in refined oil at precisely controlled temperatures, our murukku achieves that satisfying crunch in every bite. It stays fresh for 30 days when stored in an airtight container — though we've yet to meet a family that hasn't finished it long before that!</p>
+
+      <h3 style="font-family:var(--fd);font-size:1.1rem;color:var(--text);margin:24px 0 14px;">Why You'll Love It 💛</h3>
+      <ul class="love-list">
+        <li><span>🌾</span><span>Made from premium stone-ground rice flour and urad dal sourced locally</span></li>
+        <li><span>🚫</span><span>Zero preservatives, zero artificial colours, zero compromise on quality</span></li>
+        <li><span>👩‍🍳</span><span>Hand-shaped in small batches — every piece is unique, just like home</span></li>
+        <li><span>🌿</span><span>Seasoned with roasted sesame & cumin for authentic traditional taste</span></li>
+      </ul>
+
+      <h3 style="font-family:var(--fd);font-size:1.1rem;color:var(--text);margin:24px 0 20px;">How It's Made</h3>
+      <div class="how-made">
+        <div class="made-step">
+          <div class="made-icon">🏠</div>
+          <h4>Home Kitchen</h4>
+          <p>Freshly prepared in our spotless home kitchen daily</p>
+        </div>
+        <div class="made-arrow">→</div>
+        <div class="made-step">
+          <div class="made-icon">✅</div>
+          <h4>Quality Check</h4>
+          <p>Tasted & inspected before every batch is packed</p>
+        </div>
+        <div class="made-arrow">→</div>
+        <div class="made-step">
+          <div class="made-icon">📦</div>
+          <h4>Fresh Packed</h4>
+          <p>Sealed in food-grade packaging within hours of making</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ingredients -->
+  <div class="tab-pane" id="tab-ingredients" data-reveal>
+    <div class="allergen-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p><strong style="color:var(--gold)">Allergen Notice:</strong> Contains <strong>sesame seeds</strong>. This product is <strong>Gluten-Free</strong>. Made in a home kitchen that may also handle tree nuts and chilli.</p>
+    </div>
+    <div class="ingr-pills">
+      <div class="ingr-pill">🌾 Rice Flour</div>
+      <div class="ingr-pill">🫘 Urad Dal</div>
+      <div class="ingr-pill">⚪ Sesame Seeds</div>
+      <div class="ingr-pill">🌿 Cumin Seeds</div>
+      <div class="ingr-pill">✨ Asafoetida (Hing)</div>
+      <div class="ingr-pill">🧂 Rock Salt</div>
+      <div class="ingr-pill">🫗 Refined Sunflower Oil</div>
+      <div class="ingr-pill">💧 Water</div>
+    </div>
+    <div class="no-badges">
+      <span class="no-badge">✓ No Preservatives</span>
+      <span class="no-badge">✓ No Artificial Colors</span>
+      <span class="no-badge">✓ No MSG</span>
+      <span class="no-badge">✓ No Trans Fats</span>
+    </div>
+  </div>
+
+  <!-- Nutrition -->
+  <div class="tab-pane" id="tab-nutrition" data-reveal>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px;">Nutritional information per 100g serving. Values are approximate.</p>
+    <div class="nutrition-grid">
+      <table class="nutrition-table">
+        <thead><tr><th>Nutrient</th><th>Per 100g</th></tr></thead>
+        <tbody>
+          <tr><td>Energy</td><td>520 kcal</td></tr>
+          <tr><td>Protein</td><td>8 g</td></tr>
+          <tr><td>Carbohydrates</td><td>65 g</td></tr>
+          <tr><td>  — of which sugars</td><td>1.2 g</td></tr>
+          <tr><td>Total Fat</td><td>24 g</td></tr>
+          <tr><td>  — Saturated Fat</td><td>4 g</td></tr>
+          <tr><td>Dietary Fiber</td><td>2 g</td></tr>
+          <tr><td>Sodium</td><td>480 mg</td></tr>
+        </tbody>
+      </table>
+      <div class="macro-circles">
+        <div class="macro-circle">
+          <div class="circle-ring">
+            <svg width="72" height="72"><circle class="track" cx="36" cy="36" r="30" stroke-width="5"/><circle class="fill" cx="36" cy="36" r="30" stroke-width="5" stroke="url(#cg1)" stroke-dasharray="188.4" stroke-dashoffset="47"/></svg>
+            <span class="circle-pct">75%</span>
+            <defs><linearGradient id="cg1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#c8690a"/><stop offset="100%" stop-color="#f5a623"/></linearGradient></defs>
+          </div>
+          <div class="macro-name">Carbs</div><div class="macro-val">65g</div>
+        </div>
+        <div class="macro-circle">
+          <div class="circle-ring">
+            <svg width="72" height="72"><circle class="track" cx="36" cy="36" r="30" stroke-width="5"/><circle class="fill" cx="36" cy="36" r="30" stroke-width="5" stroke="#f5a623" stroke-dasharray="188.4" stroke-dashoffset="140"/></svg>
+            <span class="circle-pct">25%</span>
+          </div>
+          <div class="macro-name">Fat</div><div class="macro-val">24g</div>
+        </div>
+        <div class="macro-circle">
+          <div class="circle-ring">
+            <svg width="72" height="72"><circle class="track" cx="36" cy="36" r="30" stroke-width="5"/><circle class="fill" cx="36" cy="36" r="30" stroke-width="5" stroke="#5de88d" stroke-dasharray="188.4" stroke-dashoffset="172"/></svg>
+            <span class="circle-pct">9%</span>
+          </div>
+          <div class="macro-name">Protein</div><div class="macro-val">8g</div>
+        </div>
+        <div class="macro-circle">
+          <div class="circle-ring">
+            <svg width="72" height="72"><circle class="track" cx="36" cy="36" r="30" stroke-width="5"/><circle class="fill" cx="36" cy="36" r="30" stroke-width="5" stroke="#4de0ff" stroke-dasharray="188.4" stroke-dashoffset="183"/></svg>
+            <span class="circle-pct">2%</span>
+          </div>
+          <div class="macro-name">Fiber</div><div class="macro-val">2g</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reviews -->
+  <div class="tab-pane" id="tab-reviews" data-reveal>
+    <div class="review-overview">
+      <div class="review-big-score">
+        <div class="score">4.9</div>
+        <div style="color:#ffd700;letter-spacing:2px;margin:4px 0;">★★★★★</div>
+        <div class="total">128 reviews</div>
+      </div>
+      <div class="review-bars">
+        <div class="review-bar-row"><span class="rbar-label">5★</span><div class="rbar-track"><div class="rbar-fill" style="width:80%"></div></div><span class="rbar-pct">80%</span></div>
+        <div class="review-bar-row"><span class="rbar-label">4★</span><div class="rbar-track"><div class="rbar-fill" style="width:15%;background:linear-gradient(90deg,#8a6a00,#c8a800)"></div></div><span class="rbar-pct">15%</span></div>
+        <div class="review-bar-row"><span class="rbar-label">3★</span><div class="rbar-track"><div class="rbar-fill" style="width:4%;background:rgba(245,166,35,0.4)"></div></div><span class="rbar-pct">4%</span></div>
+        <div class="review-bar-row"><span class="rbar-label">2★</span><div class="rbar-track"><div class="rbar-fill" style="width:1%;background:rgba(245,166,35,0.25)"></div></div><span class="rbar-pct">1%</span></div>
+        <div class="review-bar-row"><span class="rbar-label">1★</span><div class="rbar-track"><div class="rbar-fill" style="width:0%"></div></div><span class="rbar-pct">0%</span></div>
+      </div>
+    </div>
+
+    <div class="reviews-list">
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-av" style="background:linear-gradient(135deg,#f5a623,#c8690a)">P</div>
+          <div><div class="reviewer-name">Priya Sharma</div><div class="reviewer-loc">Mumbai, Maharashtra</div></div>
+          <div style="margin-left:auto;text-align:right">
+            <div class="review-meta"><span class="rev-stars">★★★★★</span><span class="rev-date">Dec 2024</span></div>
+          </div>
+        </div>
+        <p class="review-text">The murukku is absolutely divine! Just like what my grandmother used to make. Crispy, perfectly salted and so fresh. The sesame flavour really comes through. Ordered 3 times already and it's now a household staple!</p>
+        <button class="btn-helpful">👍 Helpful (12)</button>
+      </div>
+
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-av" style="background:linear-gradient(135deg,#4CAF50,#2e7d32)">R</div>
+          <div><div class="reviewer-name">Rajesh Kumar</div><div class="reviewer-loc">Chennai, Tamil Nadu</div></div>
+          <div style="margin-left:auto">
+            <div class="review-meta"><span class="rev-stars">★★★★★</span><span class="rev-date">Nov 2024</span></div>
+          </div>
+        </div>
+        <p class="review-text">Being from Tamil Nadu, I'm very particular about murukku. This one nails it — the texture, the crunch, the flavour. You can taste the love that's gone into making it. Fast delivery too, arrived in perfect condition.</p>
+        <button class="btn-helpful">👍 Helpful (9)</button>
+      </div>
+
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-av" style="background:linear-gradient(135deg,#9c27b0,#6a1b9a)">A</div>
+          <div><div class="reviewer-name">Ananya Nair</div><div class="reviewer-loc">Bangalore, Karnataka</div></div>
+          <div style="margin-left:auto">
+            <div class="review-meta"><span class="rev-stars">★★★★★</span><span class="rev-date">Nov 2024</span></div>
+          </div>
+        </div>
+        <p class="review-text">Ordered the 500g pack and it was over in two days! The cumin flavour is spot on and it's not greasy at all. WhatsApp ordering was super convenient and I got updates throughout. Highly recommend!</p>
+        <button class="btn-helpful">👍 Helpful (7)</button>
+      </div>
+
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-av" style="background:linear-gradient(135deg,#e91e63,#880e4f)">S</div>
+          <div><div class="reviewer-name">Sunita Patel</div><div class="reviewer-loc">Ahmedabad, Gujarat</div></div>
+          <div style="margin-left:auto">
+            <div class="review-meta"><span class="rev-stars">★★★★★</span><span class="rev-date">Oct 2024</span></div>
+          </div>
+        </div>
+        <p class="review-text">Gifted this to relatives visiting from abroad — they were blown away. The quality is restaurant-level but completely homemade. The packaging is premium and the freshness was perfect even after 2 weeks of opening.</p>
+        <button class="btn-helpful">👍 Helpful (11)</button>
+      </div>
+
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-av" style="background:linear-gradient(135deg,#2196F3,#0d47a1)">V</div>
+          <div><div class="reviewer-name">Vikram Reddy</div><div class="reviewer-loc">Hyderabad, Telangana</div></div>
+          <div style="margin-left:auto">
+            <div class="review-meta"><span class="rev-stars">★★★★☆</span><span class="rev-date">Oct 2024</span></div>
+          </div>
+        </div>
+        <p class="review-text">Excellent product overall. Very authentic taste and great crunch. Slight delay in delivery but the team communicated well on WhatsApp. Would definitely buy again — especially the 1kg pack for the family.</p>
+        <button class="btn-helpful">👍 Helpful (5)</button>
+      </div>
+    </div>
+
+    <button class="btn-write-review">✍️ Write a Review</button>
+  </div>
+</section>
+
+<!-- ── RELATED PRODUCTS ── -->
+<section class="related-section" data-reveal>
+  <div class="section-hdr">
+    <h2>You May Also Like</h2>
+    <a href="shop.html">View All →</a>
+  </div>
+  <div class="related-scroll">
+    <div class="rel-card" onclick="location.href='product.html?id=2'">
+      <div class="rel-img" style="background:rgba(255,200,0,0.08)">🍌</div>
+      <div class="rel-body">
+        <div class="rel-name">Kerala Banana Chips</div>
+        <div><span class="rel-price">₹129</span><span class="rel-orig">₹169</span></div>
+        <div style="color:#ffd700;font-size:.8rem;margin-top:4px;">★★★★★ 4.8</div>
+        <button class="btn-rel-cart" onclick="event.stopPropagation();">🛒 Add to Cart</button>
+      </div>
+    </div>
+    <div class="rel-card" onclick="location.href='product.html?id=3'">
+      <div class="rel-img" style="background:rgba(180,30,0,0.1)">🌶️</div>
+      <div class="rel-body">
+        <div class="rel-name">Sambar Powder</div>
+        <div><span class="rel-price">₹99</span><span class="rel-orig">₹139</span></div>
+        <div style="color:#ffd700;font-size:.8rem;margin-top:4px;">★★★★★ 4.9</div>
+        <button class="btn-rel-cart" onclick="event.stopPropagation();">🛒 Add to Cart</button>
+      </div>
+    </div>
+    <div class="rel-card" onclick="location.href='product.html?id=9'">
+      <div class="rel-img" style="background:rgba(200,100,20,0.08)">🌸</div>
+      <div class="rel-body">
+        <div class="rel-name">Chakli</div>
+        <div><span class="rel-price">₹159</span><span class="rel-orig">₹199</span></div>
+        <div style="color:#ffd700;font-size:.8rem;margin-top:4px;">★★★★☆ 4.7</div>
+        <button class="btn-rel-cart" onclick="event.stopPropagation();">🛒 Add to Cart</button>
+      </div>
+    </div>
+    <div class="rel-card" onclick="location.href='product.html?id=7'">
+      <div class="rel-img" style="background:rgba(180,80,0,0.08)">🥣</div>
+      <div class="rel-body">
+        <div class="rel-name">Spicy Mixture</div>
+        <div><span class="rel-price">₹139</span><span class="rel-orig">₹189</span></div>
+        <div style="color:#ffd700;font-size:.8rem;margin-top:4px;">★★★★☆ 4.6</div>
+        <button class="btn-rel-cart" onclick="event.stopPropagation();">🛒 Add to Cart</button>
+      </div>
+    </div>
+    <div class="rel-card" onclick="location.href='product.html?id=11'">
+      <div class="rel-img" style="background:rgba(245,166,35,0.06)">🎁</div>
+      <div class="rel-body">
+        <div class="rel-name">Festival Bundle</div>
+        <div><span class="rel-price">₹499</span><span class="rel-orig">₹699</span></div>
+        <div style="color:#ffd700;font-size:.8rem;margin-top:4px;">★★★★★ 5.0</div>
+        <button class="btn-rel-cart" onclick="event.stopPropagation();">🛒 Add to Cart</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RECIPES ── -->
+<section class="recipes-section" data-reveal>
+  <div class="section-hdr" style="margin-bottom:20px;">
+    <h2>Recipes with Murukku 👩‍🍳</h2>
+  </div>
+  <div class="recipes-grid">
+    <div class="recipe-card">
+      <span class="recipe-emoji">🌀🥗</span>
+      <div class="recipe-badges">
+        <span class="recipe-badge rb-time">⏱ 15 mins</span>
+        <span class="recipe-badge rb-diff">Easy</span>
+        <span class="recipe-badge" style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--gold);">4 ingredients</span>
+      </div>
+      <h3>Murukku Chaat</h3>
+      <p>Crush our murukku and toss with tamarind chutney, sev, pomegranate seeds and chat masala for a quick, irresistible street-style snack that comes together in minutes.</p>
+      <button class="btn-recipe">View Recipe →</button>
+    </div>
+    <div class="recipe-card">
+      <span class="recipe-emoji">🌀🥜</span>
+      <div class="recipe-badges">
+        <span class="recipe-badge rb-time">⏱ 10 mins</span>
+        <span class="recipe-badge rb-diff">Super Easy</span>
+        <span class="recipe-badge" style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--gold);">6 ingredients</span>
+      </div>
+      <h3>Murukku Trail Mix</h3>
+      <p>Break murukku into bite-sized pieces and mix with roasted peanuts, cashews, curry leaves, dried coconut flakes and a pinch of chaat masala — the perfect on-the-go snack.</p>
+      <button class="btn-recipe">View Recipe →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>© 2024 Indianmade. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="auth.html">Login</a><a href="#">Privacy</a>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/919876543210" class="wa-fab" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 58 58" width="28" height="28"><path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/></svg>
+</a>
+<button class="scroll-top" id="scrollTopBtn" aria-label="Scroll to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
+<script src="store.js"></script>
+<script>
+"use strict";
+const rnd=(a,b)=>Math.random()*(b-a)+a;
+
+/* ── Canvas Particles ─────────────────────────────── */
+(function(){
+  const cv=document.getElementById('bgCanvas'),ctx=cv.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  class Pt{
+    constructor(i){this.reset(i);}
+    reset(i){this.x=rnd(0,W);this.y=i?rnd(0,H):H+5;this.r=rnd(.4,1.8);this.vy=-rnd(.1,.45);this.vx=rnd(-.12,.12);this.a=rnd(.05,.3);this.hue=rnd(18,44);this.t=0;this.ml=rnd(200,500);}
+    step(){this.x+=this.vx+Math.sin(this.t*.01)*.1;this.y+=this.vy;this.t++;if(this.y<-5||this.t>this.ml)this.reset();}
+    draw(){const f=this.t<60?this.t/60:this.t>this.ml-60?(this.ml-this.t)/60:1;ctx.save();ctx.globalAlpha=this.a*f;ctx.fillStyle=`hsl(${this.hue},88%,62%)`;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();ctx.restore();}
+  }
+  function init(){pts=[];for(let i=0;i<70;i++)pts.push(new Pt(true));}
+  function loop(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.step();p.draw();});requestAnimationFrame(loop);}
+  window.addEventListener('resize',()=>{resize();init();},{passive:true});
+  resize();init();loop();
+})();
+
+/* ── Scroll ───────────────────────────────────────── */
+window.addEventListener('scroll',()=>{
+  const s=window.scrollY,doc=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('scrollBar').style.width=(doc>0?s/doc*100:0)+'%';
+  document.getElementById('navbar').classList.toggle('scrolled',s>30);
+  document.getElementById('scrollTopBtn').classList.toggle('show',s>300);
+},{passive:true});
+document.getElementById('scrollTopBtn')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+/* ── Tabs ─────────────────────────────────────────── */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+name));
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>switchTab(btn.dataset.tab));});
+window.switchTab=switchTab;
+
+/* ── Thumbnails ───────────────────────────────────── */
+document.querySelectorAll('.thumb').forEach(th=>{
+  th.addEventListener('click',function(){
+    document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
+    this.classList.add('active');
+    const emoji=this.dataset.emoji;
+    const mainEmoji=document.getElementById('mainEmoji');
+    mainEmoji.style.opacity='0';mainEmoji.style.transform='scale(0.8)';
+    setTimeout(()=>{
+      mainEmoji.textContent=emoji;
+      mainEmoji.style.opacity='1';mainEmoji.style.transform='scale(1)';
+      mainEmoji.style.transition='opacity .3s,transform .4s cubic-bezier(0.34,1.56,0.64,1)';
+    },250);
+  });
+});
+
+/* ── 360° Button ──────────────────────────────────── */
+document.getElementById('btn360')?.addEventListener('click',function(){
+  const img=document.getElementById('mainImg');
+  img.classList.add('rotating');
+  this.disabled=true;
+  setTimeout(()=>{img.classList.remove('rotating');this.disabled=false;},1300);
+});
+
+/* ── Weight Selector ──────────────────────────────── */
+let currentProduct = null;
+let currentWeight = '250g';
+
+function updatePriceDisplay(price, orig) {
+  const priceMain = document.getElementById('priceMain');
+  const priceOrig = document.getElementById('priceOrig');
+  const priceOff = document.getElementById('priceOff');
+  if (priceMain) priceMain.textContent = '₹' + price;
+  if (priceOrig) priceOrig.textContent = '₹' + orig;
+  if (priceOff) {
+    const off = Math.round((1 - price / orig) * 100);
+    priceOff.textContent = off + '% OFF';
+  }
+}
+
+document.getElementById('weightOpts')?.addEventListener('click',e=>{
+  if(!e.target.closest('.weight-opt'))return;
+  document.querySelectorAll('.weight-opt').forEach(o=>o.classList.remove('active'));
+  const opt=e.target.closest('.weight-opt');
+  opt.classList.add('active');
+  currentWeight = opt.dataset.weight || '250g';
+  const price=opt.dataset.price,orig=opt.dataset.orig;
+  updatePriceDisplay(price, orig);
+});
+
+/* ── Quantity ─────────────────────────────────────── */
+let qty=1;
+document.getElementById('qtyMinus')?.addEventListener('click',()=>{if(qty>1)qty--;document.getElementById('qtyVal').textContent=qty;});
+document.getElementById('qtyPlus')?.addEventListener('click',()=>{if(qty<10)qty++;document.getElementById('qtyVal').textContent=qty;});
+
+/* ── Cart ─────────────────────────────────────────── */
+function addToCart(){
+  if (currentProduct && window.Cart) {
+    window.Cart.addItem(currentProduct, qty, currentWeight);
+  }
+}
+document.getElementById('addCartBtn')?.addEventListener('click',function(){
+  addToCart();
+  const o=this.innerHTML;
+  this.innerHTML='✓ Added to Cart!';this.style.background='linear-gradient(135deg,#2e7d32,#43a047)';this.style.color='#fff';
+  setTimeout(()=>{this.innerHTML=o;this.style.background='';this.style.color='';},2200);
+});
+document.getElementById('buyNowBtn')?.addEventListener('click',()=>{
+  addToCart();
+  window.location.href='cart.html';
+});
+document.querySelectorAll('.btn-rel-cart').forEach(b=>{
+  b.addEventListener('click',function(e){
+    e.stopPropagation();
+    const card = this.closest('.rel-card');
+    const name = card.querySelector('.rel-name')?.textContent.trim();
+    const product = window.PRODUCTS.find(p => p.name === name);
+    if (product && window.Cart) {
+      window.Cart.addItem(product, 1, '250g');
+    }
+    b.textContent='✓ Added!';
+    setTimeout(()=>b.textContent='🛒 Add to Cart',1800);
+  });
+});
+
+/* ── Wishlist ─────────────────────────────────────── */
+let wished=false;
+document.getElementById('wishBtn')?.addEventListener('click',function(){
+  wished=!wished;this.textContent=wished?'♥ Wishlisted':'♡ Wishlist';
+  this.style.color=wished?'#ff6b6b':''
+  this.style.borderColor=wished?'rgba(255,100,100,0.3)':'';
+});
+
+/* ── Share ────────────────────────────────────────── */
+document.getElementById('shareBtn')?.addEventListener('click',()=>{
+  if(navigator.share)navigator.share({title:'Homemade Murukku — Indianmade',url:location.href});
+  else{navigator.clipboard.writeText(location.href);const b=document.getElementById('shareBtn');b.textContent='✓ Link Copied!';setTimeout(()=>b.textContent='📤 Share',2000);}
+});
+
+/* ── Scroll Reveal ────────────────────────────────── */
+const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');io.unobserve(e.target);}});},{threshold:.1});
+document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+
+console.log('%c🍛 Indianmade Product Page','font-size:13px;font-weight:bold;color:#f5a623;');
+
+// Dynamic product lookup and rendering on load
+function initDynamicProduct() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const prodId = parseInt(urlParams.get('id'), 10) || 1; // Default to Murukku if no ID
+  currentProduct = window.PRODUCTS.find(p => p.id === prodId) || window.PRODUCTS[0];
+
+  // Update categories and titles
+  document.querySelectorAll('.prod-cat').forEach(el => el.textContent = currentProduct.cat === 'snacks' ? 'Authentic Snacks' : currentProduct.cat === 'spices' ? 'Spice Blends' : currentProduct.cat === 'powders' ? 'Cooking Powders' : 'Combo Pack');
+  document.querySelectorAll('.prod-title').forEach(el => el.textContent = currentProduct.name);
+  
+  // Breadcrumb
+  const breadcrumbCur = document.querySelector('.breadcrumb .cur');
+  if (breadcrumbCur) breadcrumbCur.textContent = currentProduct.name;
+  const breadcrumbCat = document.querySelector('.breadcrumb a[href="shop.html?cat=snacks"]');
+  if (breadcrumbCat) {
+    breadcrumbCat.href = `shop.html?cat=${currentProduct.cat}`;
+    breadcrumbCat.textContent = currentProduct.cat === 'snacks' ? 'Authentic Snacks' : currentProduct.cat === 'spices' ? 'Spice Blends' : currentProduct.cat === 'powders' ? 'Cooking Powders' : 'Combo Pack';
+  }
+
+  // Rating
+  const starsString = '★'.repeat(Math.floor(currentProduct.rating)) + '☆'.repeat(5 - Math.floor(currentProduct.rating));
+  document.querySelectorAll('.rating-score').forEach(el => el.textContent = currentProduct.rating);
+  document.querySelectorAll('.stars-big').forEach(el => el.textContent = starsString);
+  const reviewsLink = document.querySelector('.rating-link');
+  if (reviewsLink) reviewsLink.textContent = `(${currentProduct.count} reviews)`;
+  const reviewsTab = document.getElementById('reviewsTab');
+  if (reviewsTab) reviewsTab.textContent = `Reviews (${currentProduct.count})`;
+
+  // Emojis and Gallery
+  const mainEmojiEl = document.getElementById('mainEmoji');
+  if (mainEmojiEl) mainEmojiEl.textContent = currentProduct.emoji;
+  document.querySelectorAll('.thumb').forEach((thumb, idx) => {
+    if (idx === 0 || idx === 1) {
+      thumb.dataset.emoji = currentProduct.emoji;
+      // Replace the emoji character in the text node
+      thumb.innerHTML = `${currentProduct.emoji}<span class="thumb-label">${idx === 0 ? 'Main' : 'Close-up'}</span>`;
+    }
+  });
+
+  // Description tab contents
+  const descParagraphs = document.querySelectorAll('.desc-body p');
+  if (descParagraphs.length > 0) {
+    descParagraphs[0].textContent = currentProduct.desc + ". Handcrafted in small batches using traditional recipes and pure, premium ingredients. Perfect crispiness and flavor in every bite.";
+  }
+
+  // Populate Weight Options dynamically based on base price
+  const weightOpts = document.getElementById('weightOpts');
+  if (weightOpts) {
+    const p1 = currentProduct.price;
+    const o1 = currentProduct.orig;
+    const p2 = Math.round(p1 * 1.85);
+    const o2 = Math.round(o1 * 1.85);
+    const p3 = Math.round(p1 * 3.5);
+    const o3 = Math.round(o1 * 3.5);
+
+    weightOpts.innerHTML = `
+      <button class="weight-opt active" data-price="${p1}" data-orig="${o1}" data-weight="250g">250g<span class="weight-price">₹${p1}</span></button>
+      <button class="weight-opt" data-price="${p2}" data-orig="${o2}" data-weight="500g">500g<span class="weight-price">₹${p2}</span></button>
+      <button class="weight-opt" data-price="${p3}" data-orig="${o3}" data-weight="1 kg">1 kg<span class="weight-price">₹${p3}</span></button>
+    `;
+  }
+
+  // Update initial price view
+  updatePriceDisplay(currentProduct.price, currentProduct.orig);
+}
+
+// Run init
+initDynamicProduct();
+</script>
+</body>
+</html>

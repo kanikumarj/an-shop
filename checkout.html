@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Checkout — Indianmade | Secure UPI Payment</title>
+<meta name="description" content="Complete your Indianmade order securely with UPI payment via GPay, PhonePe, or Paytm."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0804;--bg2:#0f0b06;--gold:#f5a623;--gl:#ffe29a;--gd:#c8690a;
+  --text:#f5f0e8;--muted:#7a6a54;--dim:#3a3028;
+  --border:rgba(245,166,35,.12);--bh:rgba(245,166,35,.32);
+  --glass:rgba(19,16,9,.88);--green:#5de88d;--blue:#4de0ff;
+  --fd:'Playfair Display',Georgia,serif;--fb:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.4,0,.2,1);--nav:68px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gd);border-radius:3px;}
+a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:none;font-family:var(--fb);}input,textarea,select{font-family:var(--fb);}
+
+#scrollBar{position:fixed;top:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,var(--gd),var(--gold),var(--gl));z-index:9999;}
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(180,80,0,.09),transparent 60%),var(--bg);}
+
+/* NAVBAR */
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:1000;background:rgba(10,8,4,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 1.5rem;height:100%;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.nav-logo{display:flex;align-items:center;gap:9px;}
+.nav-logo svg{width:30px;height:30px;}
+.logo-txt{font-family:var(--fd);font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-secure{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--green);padding:5px 14px;background:rgba(93,232,141,.07);border:1px solid rgba(93,232,141,.18);border-radius:999px;}
+
+/* STEPPER */
+.stepper{max-width:680px;margin:calc(var(--nav) + 32px) auto 0;padding:0 1.5rem;position:relative;z-index:2;}
+.step-track{display:flex;align-items:center;margin-bottom:40px;}
+.step-node{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:2;}
+.step-bubble{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;transition:all .4s var(--spring);border:2px solid var(--dim);}
+.step-bubble.done{background:linear-gradient(135deg,var(--gd),var(--gold));border-color:transparent;box-shadow:0 0 16px rgba(245,166,35,.4);}
+.step-bubble.active{background:rgba(245,166,35,.1);border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 6px rgba(245,166,35,.1);animation:stepPop 2s ease-in-out infinite;}
+@keyframes stepPop{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.3);}50%{box-shadow:0 0 0 10px rgba(245,166,35,0);}}
+.step-bubble.pending{color:var(--dim);}
+.step-name{font-size:.68rem;font-weight:600;color:var(--muted);text-align:center;white-space:nowrap;}
+.step-bubble.active~.step-name,.step-name.glow{color:var(--text);}
+.step-bubble.done~.step-name{color:var(--gold);}
+.step-connector{flex:1;height:2px;background:var(--dim);margin:0 6px;margin-bottom:22px;position:relative;}
+.step-connector.done{background:linear-gradient(90deg,var(--gd),var(--gold));box-shadow:0 0 8px rgba(245,166,35,.3);}
+
+/* PANELS */
+.checkout-wrap{max-width:680px;margin:0 auto;padding:0 1.5rem 80px;position:relative;z-index:2;}
+.step-panel{display:none;animation:panelIn .35s var(--ease);}
+.step-panel.active{display:block;}
+@keyframes panelIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+
+/* Common card */
+.co-card{background:var(--glass);border:1px solid var(--border);border-radius:22px;padding:28px;backdrop-filter:blur(20px);margin-bottom:18px;}
+.co-card-title{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:22px;display:flex;align-items:center;gap:8px;}
+.co-card-title svg{color:var(--gold);}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-field{display:flex;flex-direction:column;gap:5px;}
+.form-field.full{grid-column:1/-1;}
+.f-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.f-input{padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid var(--dim);border-radius:12px;color:var(--text);font-size:.9rem;outline:none;transition:all .25s;}
+.f-input:focus{border-color:rgba(245,166,35,.4);box-shadow:0 0 0 3px rgba(245,166,35,.07);}
+.f-input::placeholder{color:var(--muted);}
+
+/* Order summary in checkout */
+.sum-row{display:flex;justify-content:space-between;padding:9px 0;font-size:.875rem;border-bottom:1px solid rgba(245,166,35,.05);}
+.sum-row:last-child{border-bottom:none;}
+.sum-total{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.sum-total span:first-child{font-weight:700;font-size:1rem;color:var(--text);}
+.sum-total span:last-child{font-family:var(--fd);font-size:1.8rem;font-weight:800;color:var(--gold);}
+.item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(245,166,35,.05);}
+.item-row:last-child{border-bottom:none;}
+.ir-emoji{font-size:1.8rem;width:40px;text-align:center;}
+.ir-info{flex:1;}
+.ir-name{font-size:.875rem;font-weight:600;color:var(--text);}
+.ir-meta{font-size:.72rem;color:var(--muted);}
+.ir-price{font-weight:700;color:var(--gold);}
+
+/* UPI PAYMENT */
+.order-id-block{background:rgba(245,166,35,.05);border:1px solid rgba(245,166,35,.2);border-radius:16px;padding:20px;margin-bottom:20px;text-align:center;}
+.order-id-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.order-id-val{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--gold);letter-spacing:.08em;}
+.ref-val{font-size:.82rem;color:var(--muted);margin-top:4px;font-family:var(--mono);}
+
+.amount-block{background:linear-gradient(135deg,rgba(200,105,10,.15),rgba(245,166,35,.06));border:1px solid rgba(245,166,35,.25);border-radius:16px;padding:20px;text-align:center;margin-bottom:20px;}
+.pay-amount{font-family:var(--fd);font-size:3rem;font-weight:800;color:var(--gold);line-height:1;}
+.pay-incl{font-size:.75rem;color:var(--muted);margin-top:6px;}
+
+/* QR block */
+.upi-row{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:start;margin-bottom:20px;}
+.qr-box{background:rgba(255,255,255,.96);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.qr-inner{width:100%;aspect-ratio:1;background:repeating-conic-gradient(#1a1410 0% 25%,#fff 0% 50%) 0 0/8px 8px;border-radius:4px;position:relative;overflow:hidden;}
+.qr-center{position:absolute;inset:28%;background:#1a1410;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.qr-label{font-size:.6rem;color:#444;font-weight:700;text-align:center;}
+.upi-right{display:flex;flex-direction:column;gap:10px;}
+.upi-id-box{background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:14px;}
+.upi-id-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;}
+.upi-id-val{font-family:var(--mono);font-size:.95rem;color:var(--gold);font-weight:700;}
+.btn-copy-upi{width:100%;margin-top:8px;padding:8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;color:var(--gold);font-size:.78rem;font-weight:600;transition:all .25s;}
+.btn-copy-upi:hover{background:rgba(245,166,35,.14);}
+
+/* App buttons */
+.pay-apps{display:flex;gap:10px;margin-bottom:16px;}
+.pay-app{flex:1;padding:13px;border-radius:14px;font-size:.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .3s;cursor:pointer;}
+.pa-gpay{background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.25);color:#6ab0ff;}
+.pa-gpay:hover{background:rgba(66,133,244,.16);}
+.pa-phonepe{background:rgba(95,37,159,.12);border:1px solid rgba(95,37,159,.3);color:#b794f4;}
+.pa-phonepe:hover{background:rgba(95,37,159,.2);}
+.pa-paytm{background:rgba(0,185,241,.1);border:1px solid rgba(0,185,241,.25);color:#4de0ff;}
+.pa-paytm:hover{background:rgba(0,185,241,.16);}
+
+/* Upload area */
+.upload-zone{border:2px dashed rgba(245,166,35,.28);border-radius:18px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(245,166,35,.02);position:relative;overflow:hidden;margin-bottom:16px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--gold);background:rgba(245,166,35,.06);}
+.upload-zone .uz-icon{font-size:3rem;display:block;margin-bottom:12px;animation:uzFloat 3s ease-in-out infinite;}
+@keyframes uzFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.upload-zone h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.upload-zone p{font-size:.78rem;color:var(--muted);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.file-preview{background:rgba(93,232,141,.05);border:1px solid rgba(93,232,141,.2);border-radius:12px;padding:14px;display:none;align-items:center;gap:12px;margin-bottom:12px;}
+.file-preview.show{display:flex;}
+.file-preview .fp-icon{font-size:2rem;}
+.file-preview .fp-name{font-size:.85rem;color:var(--text);font-weight:600;}
+.file-preview .fp-size{font-size:.72rem;color:var(--muted);}
+
+/* UTR input */
+.utr-wrap{position:relative;}
+.utr-wrap input{width:100%;padding:14px 16px;background:rgba(255,255,255,.04);border:1px solid var(--dim);border-radius:14px;color:var(--text);font-size:1rem;outline:none;font-family:var(--mono);letter-spacing:.06em;transition:all .25s;}
+.utr-wrap input:focus{border-color:rgba(245,166,35,.4);box-shadow:0 0 0 3px rgba(245,166,35,.07);}
+.utr-wrap input::placeholder{color:var(--muted);font-family:var(--fb);letter-spacing:0;}
+
+/* CONFIRMATION */
+.confirm-wrap{text-align:center;padding:20px 0;}
+.checkmark{width:90px;height:90px;margin:0 auto 24px;background:linear-gradient(135deg,rgba(93,232,141,.15),rgba(60,180,100,.08));border:2px solid rgba(93,232,141,.35);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:confPop .6s var(--spring);}
+@keyframes confPop{0%{transform:scale(0);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.checkmark svg{color:var(--green);}
+.conf-title{font-family:var(--fd);font-size:2rem;font-weight:800;color:var(--text);margin-bottom:8px;}
+.conf-subtitle{font-size:.9rem;color:var(--muted);margin-bottom:28px;line-height:1.7;}
+.conf-order-id{display:inline-block;padding:10px 24px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:14px;font-family:var(--mono);font-size:1rem;color:var(--gold);font-weight:700;margin-bottom:28px;letter-spacing:.08em;}
+.conf-items{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:24px;text-align:left;}
+.conf-eta{background:rgba(77,224,255,.05);border:1px solid rgba(77,224,255,.15);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:24px;text-align:left;}
+.conf-eta .ce-icon{font-size:2rem;flex-shrink:0;}
+.conf-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-primary-co{padding:14px 28px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:800;font-size:.9rem;border-radius:14px;transition:all .3s;box-shadow:0 4px 18px rgba(245,166,35,.3);}
+.btn-primary-co:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,166,35,.4);}
+.btn-ghost-co{padding:14px 28px;background:transparent;border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:.9rem;font-weight:600;transition:all .25s;}
+.btn-ghost-co:hover{border-color:rgba(245,166,35,.3);color:var(--gold);}
+
+/* NAV BUTTONS */
+.nav-btns{display:flex;align-items:center;justify-content:space-between;margin-top:20px;gap:12px;}
+.btn-back{padding:13px 24px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:.875rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:all .25s;}
+.btn-back:hover{border-color:rgba(245,166,35,.25);color:var(--gold);}
+.btn-next{padding:13px 32px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:800;font-size:.9rem;border-radius:14px;display:flex;align-items:center;gap:8px;transition:all .3s var(--spring);box-shadow:0 4px 18px rgba(245,166,35,.3);}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,166,35,.4);}
+.btn-next:disabled{opacity:.5;pointer-events:none;}
+
+/* FOOTER */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:20px 0;position:relative;z-index:2;margin-top:20px;}
+.footer-inner{max-width:1100px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.footer-inner p{font-size:.78rem;color:var(--muted);}
+.footer-links a{font-size:.78rem;color:var(--muted);margin-left:14px;transition:color .2s;}
+.footer-links a:hover{color:var(--gold);}
+
+.wa-fab{position:fixed;bottom:24px;right:24px;width:50px;height:50px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 20px rgba(37,211,102,.4);animation:fabF 3s ease-in-out infinite;}
+@keyframes fabF{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}.form-field.full{grid-column:1;}.upi-row{grid-template-columns:1fr;}.pay-apps{flex-direction:column;}.conf-actions{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<div id="scrollBar"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <svg viewBox="0 0 40 40" fill="none"><polygon points="20,3 37,32 3,32" stroke="url(#ng)" stroke-width="2.5" fill="none" stroke-linejoin="round"/><polygon points="20,10 30,28 10,28" fill="url(#nf)" opacity=".4"/><defs><linearGradient id="ng" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#ffe29a"/><stop offset="100%" stop-color="#c8690a"/></linearGradient><linearGradient id="nf" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#c8690a"/></linearGradient></defs></svg>
+      <span class="logo-txt">Indianmade</span>
+    </a>
+    <div class="nav-secure">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Secure Checkout
+    </div>
+  </div>
+</nav>
+
+<!-- STEPPER -->
+<div class="stepper">
+  <div class="step-track" id="stepTrack">
+    <div class="step-node">
+      <div class="step-bubble active" id="sb1">1</div>
+      <div class="step-name" id="sn1">Address</div>
+    </div>
+    <div class="step-connector" id="sc1"></div>
+    <div class="step-node">
+      <div class="step-bubble pending" id="sb2">2</div>
+      <div class="step-name" id="sn2">Payment</div>
+    </div>
+    <div class="step-connector" id="sc2"></div>
+    <div class="step-node">
+      <div class="step-bubble pending" id="sb3">📸</div>
+      <div class="step-name" id="sn3">Upload</div>
+    </div>
+    <div class="step-connector" id="sc3"></div>
+    <div class="step-node">
+      <div class="step-bubble pending" id="sb4">🎉</div>
+      <div class="step-name" id="sn4">Confirmed</div>
+    </div>
+  </div>
+
+  <!-- PANEL 1: ADDRESS -->
+  <div class="step-panel active" id="panel1">
+    <div class="co-card">
+      <div class="co-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Delivery Address
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label class="f-label">Full Name *</label><input type="text" class="f-input" id="fname" placeholder="Your full name"/></div>
+        <div class="form-field"><label class="f-label">Mobile *</label><input type="tel" class="f-input" id="fmobile" placeholder="+91 XXXXX XXXXX"/></div>
+        <div class="form-field"><label class="f-label">Email</label><input type="email" class="f-input" id="femail" placeholder="email@example.com"/></div>
+        <div class="form-field"><label class="f-label">Pincode *</label><input type="text" class="f-input" id="fpincode" placeholder="6-digit pincode" maxlength="6"/></div>
+        <div class="form-field full"><label class="f-label">Address Line 1 *</label><input type="text" class="f-input" id="faddr1" placeholder="House / Flat No., Street, Area"/></div>
+        <div class="form-field full"><label class="f-label">Address Line 2</label><input type="text" class="f-input" placeholder="Landmark, Locality (optional)"/></div>
+        <div class="form-field"><label class="f-label">City *</label><input type="text" class="f-input" id="fcity" placeholder="City"/></div>
+        <div class="form-field"><label class="f-label">State *</label>
+          <select class="f-input" id="fstate" style="appearance:none;cursor:pointer;">
+            <option value="" style="background:#1a1410">Select state…</option>
+            <option style="background:#1a1410">Maharashtra</option><option style="background:#1a1410">Tamil Nadu</option>
+            <option style="background:#1a1410">Karnataka</option><option style="background:#1a1410">Delhi</option>
+            <option style="background:#1a1410">Gujarat</option><option style="background:#1a1410">West Bengal</option>
+            <option style="background:#1a1410">Rajasthan</option><option style="background:#1a1410">Uttar Pradesh</option>
+            <option style="background:#1a1410">Andhra Pradesh</option><option style="background:#1a1410">Telangana</option>
+            <option style="background:#1a1410">Kerala</option><option style="background:#1a1410">Punjab</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order items -->
+    <div class="co-card">
+      <div class="co-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+        Your Items
+      </div>
+      <div id="checkoutItemsContainer"></div>
+      <div class="sum-row"><span style="color:var(--muted)">Subtotal</span><span id="summarySubtotal">₹0</span></div>
+      <div class="sum-row"><span style="color:var(--muted)">Delivery</span><span id="summaryDelivery">₹0</span></div>
+      <div class="sum-row"><span style="color:var(--muted)">GST (5%)</span><span id="summaryTax">₹0</span></div>
+      <div class="sum-row discount-row" id="summaryDiscountRow" style="display:none;"><span style="color:var(--muted)">Discount</span><span id="summaryDiscount">₹0</span></div>
+      <div class="sum-total"><span>Total</span><span id="summaryTotal">₹0</span></div>
+    </div>
+
+    <div class="nav-btns">
+      <a href="cart.html" class="btn-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to Cart</a>
+      <button class="btn-next" id="btnStep1">Continue to Payment <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: PAYMENT -->
+  <div class="step-panel" id="panel2">
+    <div class="co-card">
+      <div class="co-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        UPI Payment Instructions
+      </div>
+
+      <div class="order-id-block">
+        <div class="order-id-label">Your Order ID</div>
+        <div class="order-id-val" id="generatedOrderId">#IM-20240525-7823</div>
+        <div class="ref-val">Reference: <span id="generatedRef">REF-7823-SNACK</span></div>
+      </div>
+
+      <div class="amount-block">
+        <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;">Amount to Pay</div>
+        <div class="pay-amount">₹552</div>
+        <div class="pay-incl">Inclusive of all taxes · Free Delivery</div>
+      </div>
+
+      <div style="font-size:.8rem;color:var(--muted);background:rgba(245,166,35,.04);border:1px solid rgba(245,166,35,.15);border-radius:12px;padding:12px 14px;margin-bottom:18px;display:flex;align-items:flex-start;gap:8px;">
+        <span>💡</span>
+        <span>Please send the exact amount <strong style="color:var(--gold)">₹552</strong> and use your <strong style="color:var(--gold)">Order ID as the payment note/remark</strong> so we can identify your payment.</span>
+      </div>
+
+      <div class="upi-row">
+        <div class="qr-box">
+          <div class="qr-inner"><div class="qr-center">🏠</div></div>
+          <div class="qr-label">Scan to Pay ₹552</div>
+        </div>
+        <div class="upi-right">
+          <div style="font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Or Pay via UPI ID</div>
+          <div class="upi-id-box">
+            <div class="upi-id-label">UPI ID</div>
+            <div class="upi-id-val">indianmade@ybl</div>
+            <button class="btn-copy-upi" id="copyUpiBtn">📋 Copy UPI ID</button>
+          </div>
+          <div style="font-size:.75rem;color:var(--muted);">Open your payment app → Enter UPI ID → Send exactly ₹552 → Add Order ID in remarks</div>
+        </div>
+      </div>
+
+      <div style="font-size:.78rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Pay with App</div>
+      <div class="pay-apps">
+        <button class="pay-app pa-gpay">
+          <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><text y="32" font-size="28" fill="#4285F4">G</text></svg>
+          Google Pay
+        </button>
+        <button class="pay-app pa-phonepe">📱 PhonePe</button>
+        <button class="pay-app pa-paytm">💳 Paytm</button>
+      </div>
+    </div>
+
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goToStep(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
+      <button class="btn-next" onclick="goToStep(3)">I Have Paid — Upload Proof <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <!-- PANEL 3: UPLOAD -->
+  <div class="step-panel" id="panel3">
+    <div class="co-card">
+      <div class="co-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Payment Screenshot
+      </div>
+
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:18px;padding:12px 14px;background:rgba(77,224,255,.04);border:1px solid rgba(77,224,255,.1);border-radius:12px;">
+        📌 Please upload the payment success screenshot from your GPay / PhonePe / Paytm app.
+      </div>
+
+      <div class="file-preview" id="filePreview">
+        <span class="fp-icon">🖼️</span>
+        <div><div class="fp-name" id="fileName">screenshot.jpg</div><div class="fp-size" id="fileSize">2.4 MB</div></div>
+        <div style="margin-left:auto;color:var(--green);font-weight:700;font-size:.85rem;">✓ Ready</div>
+      </div>
+
+      <label class="upload-zone" id="uploadZone">
+        <span class="uz-icon">📱</span>
+        <h3>Upload Payment Screenshot</h3>
+        <p>Drag & drop or tap to select from gallery</p>
+        <p style="margin-top:4px;font-size:.68rem;">JPG, PNG — Max 5MB</p>
+        <input type="file" accept="image/*" id="screenFile" onchange="handleScreen(this)"/>
+      </label>
+
+      <div class="form-field" style="margin-bottom:16px;">
+        <label class="f-label">UTR / Transaction ID *</label>
+        <div class="utr-wrap">
+          <input type="text" id="utrInput" placeholder="Enter 12-digit UTR or Transaction ID" maxlength="22"/>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:5px;">Find this in your payment app → Transaction Details</div>
+      </div>
+
+      <div class="form-field">
+        <label class="f-label">Additional Notes (optional)</label>
+        <textarea class="f-input" rows="2" style="resize:vertical;" placeholder="Any notes for us…"></textarea>
+      </div>
+    </div>
+
+    <div class="nav-btns">
+      <button class="btn-back" onclick="goToStep(2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
+      <button class="btn-next" id="btnConfirm" onclick="confirmOrder()">🎉 Confirm Order</button>
+    </div>
+  </div>
+
+  <!-- PANEL 4: CONFIRMATION -->
+  <div class="step-panel" id="panel4">
+    <div class="co-card">
+      <div class="confirm-wrap">
+        <div class="checkmark">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1 class="conf-title">Order Placed! 🎉</h1>
+        <p class="conf-subtitle">Thank you for your order, <strong id="confName">Priya</strong>!<br>We've received your payment and will verify it within 30 minutes.</p>
+        <div class="conf-order-id" id="confOrderId">#IM-20240525-7823</div>
+
+        <div class="conf-items">
+          <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;font-weight:700;">Order Summary</div>
+          <div id="confirmationItemsContainer"></div>
+          <div class="sum-total"><span>Total Paid</span><span id="confirmationTotal">₹0</span></div>
+        </div>
+
+        <div class="conf-eta">
+          <span class="ce-icon">🚚</span>
+          <div>
+            <div style="font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px;">Estimated Delivery: 27–28 May 2024</div>
+            <div style="font-size:.78rem;color:var(--muted);">Via India Post EMS · 2–3 business days from confirmation</div>
+          </div>
+        </div>
+
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:24px;">📱 You'll receive WhatsApp updates at every step. Bookmark the tracking page to follow your shipment live.</p>
+
+        <div class="conf-actions">
+          <button class="btn-primary-co" onclick="location.href='track.html'">🚚 Track My Order</button>
+          <button class="btn-ghost-co" onclick="location.href='shop.html'">Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stepper -->
+
+<footer class="footer">
+  <div class="footer-inner">
+    <p>© 2024 Indianmade · 🔒 Payments are manually verified within 30 min</p>
+    <div class="footer-links"><a href="index.html">Home</a><a href="shop.html">Shop</a><a href="cart.html">Cart</a></div>
+  </div>
+</footer>
+
+<a href="https://wa.me/919876543210" class="wa-fab" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 58 58" width="24" height="24"><path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/></svg>
+</a>
+
+<script src="store.js"></script>
+<script>
+"use strict";
+/* Particles */
+(function(){
+  const cv=document.getElementById('bgCanvas'),ctx=cv.getContext('2d');
+  let W,H,pts=[];const rnd=(a,b)=>Math.random()*(b-a)+a;
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  class Pt{constructor(i){this.reset(i);}reset(i){this.x=rnd(0,W);this.y=i?rnd(0,H):H+5;this.r=rnd(.4,1.6);this.vy=-rnd(.1,.4);this.vx=rnd(-.1,.1);this.a=rnd(.04,.22);this.hue=rnd(18,44);this.t=0;this.ml=rnd(250,550);}step(){this.x+=this.vx;this.y+=this.vy;this.t++;if(this.y<-5||this.t>this.ml)this.reset();}draw(){const f=this.t<60?this.t/60:this.t>this.ml-60?(this.ml-this.t)/60:1;ctx.save();ctx.globalAlpha=this.a*f;ctx.fillStyle=`hsl(${this.hue},88%,62%)`;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  function init(){pts=[];for(let i=0;i<55;i++)pts.push(new Pt(true));}
+  function loop(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.step();p.draw();});requestAnimationFrame(loop);}
+  window.addEventListener('resize',()=>{resize();init();},{passive:true});
+  resize();init();loop();
+})();
+
+/* Generate order ID */
+const orderId='#IM-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(1000+Math.random()*9000);
+const refCode='REF-'+Math.floor(1000+Math.random()*9000)+'-SNACK';
+document.getElementById('generatedOrderId').textContent=orderId;
+document.getElementById('generatedRef').textContent=refCode;
+document.getElementById('confOrderId').textContent=orderId;
+
+let currentStep=1;
+function updateStepper(step){
+  currentStep=step;
+  for(let i=1;i<=4;i++){
+    const sb=document.getElementById('sb'+i);
+    const sn=document.getElementById('sn'+i);
+    if(i<step){sb.classList.remove('active','pending');sb.classList.add('done');sb.innerHTML='✓';}
+    else if(i===step){sb.classList.remove('done','pending');sb.classList.add('active');}
+    else{sb.classList.remove('done','active');sb.classList.add('pending');}
+    if(i<4){const sc=document.getElementById('sc'+i);if(sc)sc.classList.toggle('done',i<step);}
+  }
+  document.querySelectorAll('.step-panel').forEach((p,i)=>{p.classList.toggle('active',i+1===step);});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+window.goToStep=updateStepper;
+
+/* Step 1 validation */
+document.getElementById('btnStep1')?.addEventListener('click',()=>{
+  const req=['fname','fmobile','faddr1','fcity','fstate','fpincode'];
+  let valid=true;
+  req.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el||!el.value.trim()){el&&(el.style.borderColor='rgba(255,122,122,.5)');valid=false;}
+    else el.style.borderColor='';
+  });
+  if(!valid){const first=document.querySelector('.f-input[style*="rgba(255"]');first?.focus();return;}
+  const name=document.getElementById('fname').value.split(' ')[0];
+  document.getElementById('confName').textContent=name;
+  updateStepper(2);
+});
+
+/* UPI copy */
+document.getElementById('copyUpiBtn')?.addEventListener('click',function(){
+  navigator.clipboard.writeText('indianmade@ybl');
+  this.textContent='✓ Copied!';setTimeout(()=>this.textContent='📋 Copy UPI ID',2000);
+});
+
+/* File upload */
+window.handleScreen=function(input){
+  if(input.files[0]){
+    const f=input.files[0];
+    const preview=document.getElementById('filePreview');
+    document.getElementById('fileName').textContent=f.name;
+    document.getElementById('fileSize').textContent=(f.size/1024/1024).toFixed(1)+' MB';
+    preview.classList.add('show');
+    document.getElementById('uploadZone').style.borderColor='var(--green)';
+    document.getElementById('uploadZone').style.background='rgba(93,232,141,.04)';
+  }
+};
+
+/* Drag and drop */
+const uz=document.getElementById('uploadZone');
+if(uz){
+  uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+  uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+  uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f){document.getElementById('screenFile').files=e.dataTransfer.files;window.handleScreen(document.getElementById('screenFile'));}});
+}
+
+/* Confirm order */
+window.confirmOrder=function(){
+  const utr=document.getElementById('utrInput').value.trim();
+  if(!utr){document.getElementById('utrInput').style.borderColor='rgba(255,122,122,.5)';document.getElementById('utrInput').focus();return;}
+  document.getElementById('utrInput').style.borderColor='';
+
+  // Save order details to localStorage
+  try {
+    const fname  = document.getElementById('fname')?.value  || '';
+    const fmobile= document.getElementById('fmobile')?.value|| '';
+    const faddr1 = document.getElementById('faddr1')?.value || '';
+    const fcity  = document.getElementById('fcity')?.value  || '';
+    const fstate = document.getElementById('fstate')?.value || '';
+    const fpin   = document.getElementById('fpincode')?.value|| '';
+    const orderDetails = {
+      orderId: orderId,
+      refCode: refCode,
+      items: checkoutData.items,
+      total: checkoutData.total,
+      grandTotal: checkoutData.total,
+      subtotal: checkoutData.subtotal || checkoutData.total,
+      placedAt: new Date().toISOString(),
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      utr: utr,
+      status: 'Pending Verification',
+      buyer: {
+        name:    fname,
+        phone:   fmobile,
+        address: [faddr1, fcity, fstate, fpin].filter(Boolean).join(', '),
+        city:    fcity,
+        state:   fstate,
+        pincode: fpin
+      }
+    };
+    localStorage.setItem('im_last_order', JSON.stringify(orderDetails));
+
+    // Clear cart and checkout cache
+    if (window.Cart) {
+      window.Cart.clearCart();
+    }
+  } catch (err) {
+    console.error("Order completion error:", err);
+  }
+
+  updateStepper(4);
+  // Confetti-like effect
+  for(let i=0;i<20;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');
+      el.style.cssText=`position:fixed;top:${Math.random()*60}%;left:${Math.random()*100}%;font-size:${1+Math.random()*1.5}rem;pointer-events:none;z-index:9999;animation:confDrop 2s forwards;`;
+      el.textContent=['🌀','🌶️','🍌','🎉','⭐','✨','🎊'][Math.floor(Math.random()*7)];
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),2100);
+    },i*100);
+  }
+  if(!document.getElementById('confDropStyle')){
+    const s=document.createElement('style');s.id='confDropStyle';
+    s.textContent='@keyframes confDrop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(80px) rotate(360deg);opacity:0}}';
+    document.head.appendChild(s);
+  }
+};
+
+window.addEventListener('scroll',()=>{
+  const s=window.scrollY,doc=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('scrollBar').style.width=(doc>0?s/doc*100:0)+'%';
+},{passive:true});
+
+// Initialize Checkout Data
+let checkoutData = null;
+function initCheckout() {
+  try {
+    const raw = localStorage.getItem('im_checkout_cart');
+    if (!raw) {
+      window.location.href = 'cart.html';
+      return;
+    }
+    checkoutData = JSON.parse(raw);
+  } catch (e) {
+    console.error(e);
+    window.location.href = 'cart.html';
+    return;
+  }
+
+  // Populate Panel 1 Items Summary
+  const container = document.getElementById('checkoutItemsContainer');
+  if (container) {
+    container.innerHTML = checkoutData.items.map(item => `
+      <div class="item-row">
+        <span class="ir-emoji">${item.emoji}</span>
+        <div class="ir-info">
+          <div class="ir-name">${item.name}</div>
+          <div class="ir-meta">${item.weight || '250g'} · Qty: ${item.qty}</div>
+        </div>
+        <div class="ir-price">₹${item.price * item.qty}</div>
+      </div>
+    `).join('');
+  }
+
+  // Populate Panel 1 Pricing Summary
+  document.getElementById('summarySubtotal').textContent = '₹' + checkoutData.subtotal;
+  document.getElementById('summaryDelivery').textContent = checkoutData.delivery === 0 ? 'FREE ✓' : '₹' + checkoutData.delivery;
+  document.getElementById('summaryDelivery').style.color = checkoutData.delivery === 0 ? 'var(--green)' : '';
+  document.getElementById('summaryTax').textContent = '₹' + checkoutData.tax;
+  
+  const discountRow = document.getElementById('summaryDiscountRow');
+  if (discountRow) {
+    if (checkoutData.discount > 0) {
+      discountRow.style.display = 'flex';
+      document.getElementById('summaryDiscount').textContent = '−₹' + checkoutData.discount;
+    } else {
+      discountRow.style.display = 'none';
+    }
+  }
+  document.getElementById('summaryTotal').textContent = '₹' + checkoutData.total;
+
+  // Populate Panel 2 Amounts
+  document.querySelectorAll('.pay-amount').forEach(el => el.textContent = '₹' + checkoutData.total);
+  document.querySelectorAll('.qr-label').forEach(el => el.textContent = `Scan to Pay ₹${checkoutData.total}`);
+
+  // Populate Panel 4 (Confirmation) Summary
+  const confContainer = document.getElementById('confirmationItemsContainer');
+  if (confContainer) {
+    confContainer.innerHTML = checkoutData.items.map(item => `
+      <div class="item-row">
+        <span class="ir-emoji">${item.emoji}</span>
+        <div class="ir-info">
+          <div class="ir-name">${item.name}</div>
+          <div class="ir-meta">${item.weight || '250g'} · ×${item.qty}</div>
+        </div>
+        <div class="ir-price">₹${item.price * item.qty}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('confirmationTotal').textContent = '₹' + checkoutData.total;
+}
+
+// Run checkout initialization
+initCheckout();
+</script>
+</body>
+</html>

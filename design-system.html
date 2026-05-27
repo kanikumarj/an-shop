@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Indianmade Design System — UI Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  /* Brand Colors */
+  --gold:#f5a623;--gl:#ffe29a;--gd:#c8690a;
+  /* Background */
+  --bg:#0a0804;--bg2:#0f0b06;--bg3:#1a1410;--bg4:#252018;
+  /* Text */
+  --text:#f5f0e8;--muted:#7a6a54;--dim:#2e2618;
+  /* Borders */
+  --border:rgba(245,166,35,.12);--bh:rgba(245,166,35,.32);
+  /* Semantic */
+  --green:#5de88d;--red:#ff7a7a;--blue:#4de0ff;--purple:#b794f4;
+  /* Glass */
+  --glass:rgba(19,16,9,.92);
+  /* Typography */
+  --fd:'Playfair Display',Georgia,serif;
+  --fb:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  /* Easing */
+  --ease:cubic-bezier(.4,0,.2,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --bounce:cubic-bezier(.68,-.55,.265,1.55);
+  /* Sidebar */
+  --sbw:220px;
+}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gd);border-radius:2px;}
+::selection{background:rgba(245,166,35,.2);}
+a{text-decoration:none;color:inherit;}
+button,input,select,textarea{font-family:var(--fb);outline:none;}
+
+/* ── SIDEBAR ─────────────────────── */
+.ds-sidebar{width:var(--sbw);min-width:var(--sbw);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;padding:0 0 24px;}
+.sb-brand{padding:22px 18px 16px;border-bottom:1px solid var(--border);}
+.sb-brand-logo{font-family:var(--fd);font-size:1rem;font-weight:800;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sb-brand-sub{font-size:.62rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.1em;}
+.sb-version{display:inline-block;margin-top:8px;padding:2px 8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:999px;font-size:.6rem;color:var(--gold);}
+.sb-section{padding:16px 18px 4px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--dim);}
+.sb-link{display:flex;align-items:center;gap:8px;padding:9px 18px;font-size:.8rem;color:var(--muted);cursor:pointer;transition:all .2s;border-left:2px solid transparent;}
+.sb-link:hover{color:var(--text);background:rgba(245,166,35,.03);}
+.sb-link.active{color:var(--gold);border-left-color:var(--gold);background:rgba(245,166,35,.05);}
+.sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ── MAIN ────────────────────────── */
+.ds-main{margin-left:var(--sbw);flex:1;padding:40px 48px 80px;max-width:1100px;}
+
+/* SECTION BLOCKS */
+.ds-section{margin-bottom:64px;scroll-margin-top:24px;}
+.ds-section-header{display:flex;align-items:baseline;gap:14px;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.ds-section-header h2{font-family:var(--fd);font-size:1.4rem;font-weight:800;color:var(--text);}
+.section-tag{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
+.ds-desc{font-size:.875rem;color:var(--muted);line-height:1.75;margin-bottom:22px;max-width:600px;}
+
+/* Component group */
+.comp-group{margin-bottom:28px;}
+.comp-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.comp-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.comp-demo{padding:24px;background:rgba(15,11,6,.6);border:1px solid var(--border);border-radius:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
+.comp-demo.dark-stage{background:rgba(10,8,4,.98);}
+.comp-demo.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.comp-demo.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.code-tag{padding:4px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:.65rem;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   1. COLOR SYSTEM
+═══════════════════════════════════ */
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+.swatch{border-radius:14px;overflow:hidden;cursor:pointer;transition:all .25s;position:relative;}
+.swatch:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.swatch-block{height:80px;position:relative;}
+.swatch-copy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s;font-size:.68rem;color:#fff;font-weight:700;}
+.swatch:hover .swatch-copy{opacity:1;}
+.swatch-info{background:rgba(19,16,9,.92);border:1px solid rgba(255,255,255,.06);border-top:none;padding:10px 12px;}
+.sw-name{font-size:.72rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.sw-hex{font-family:var(--mono);font-size:.65rem;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   2. TYPOGRAPHY
+═══════════════════════════════════ */
+.type-row{display:flex;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid rgba(245,166,35,.05);}
+.type-row:last-child{border-bottom:none;}
+.type-meta{width:80px;flex-shrink:0;font-family:var(--mono);font-size:.65rem;color:var(--muted);}
+.type-sample{flex:1;}
+.type-spec{font-family:var(--mono);font-size:.62rem;color:var(--dim);width:160px;flex-shrink:0;text-align:right;}
+.font-card{background:rgba(15,11,6,.8);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;}
+.font-name{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:8px;}
+.font-sample{font-size:1.4rem;color:var(--text);line-height:1.4;margin-bottom:6px;}
+.font-use{font-size:.7rem;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   3. BUTTONS
+═══════════════════════════════════ */
+/* Primary */
+.btn-primary{padding:12px 26px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:800;font-size:.9rem;border-radius:14px;border:none;cursor:pointer;transition:all .35s var(--spring);box-shadow:0 4px 18px rgba(245,166,35,.3);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,166,35,.45);}
+.btn-primary:active{transform:translateY(0);}
+/* Secondary */
+.btn-secondary{padding:12px 26px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);color:var(--gold);font-weight:700;font-size:.9rem;border-radius:14px;cursor:pointer;transition:all .25s;}
+.btn-secondary:hover{background:rgba(245,166,35,.14);border-color:rgba(245,166,35,.4);}
+/* Ghost */
+.btn-ghost{padding:12px 26px;background:transparent;border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:.9rem;border-radius:14px;cursor:pointer;transition:all .25s;}
+.btn-ghost:hover{border-color:rgba(245,166,35,.3);color:var(--gold);}
+/* Danger */
+.btn-danger{padding:12px 26px;background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.25);color:var(--red);font-weight:700;font-size:.9rem;border-radius:14px;cursor:pointer;transition:all .25s;}
+.btn-danger:hover{background:rgba(255,122,122,.15);}
+/* Success */
+.btn-success{padding:12px 26px;background:rgba(93,232,141,.08);border:1px solid rgba(93,232,141,.25);color:var(--green);font-weight:700;font-size:.9rem;border-radius:14px;cursor:pointer;transition:all .25s;}
+.btn-success:hover{background:rgba(93,232,141,.15);}
+/* Icon button */
+.btn-icon{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;font-size:1rem;}
+.btn-icon:hover{border-color:rgba(245,166,35,.3);color:var(--gold);}
+/* FAB */
+.btn-fab{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;box-shadow:0 6px 24px rgba(245,166,35,.4);border:none;transition:all .35s var(--spring);}
+.btn-fab:hover{transform:scale(1.1);}
+/* Sizes */
+.btn-sm{padding:7px 16px;font-size:.78rem;border-radius:10px;}
+.btn-lg{padding:16px 36px;font-size:1.05rem;border-radius:18px;}
+/* Loading state */
+.btn-loading{position:relative;pointer-events:none;opacity:.8;}
+.btn-loading::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;border:2px solid rgba(10,8,4,.4);border-top-color:#0a0804;animation:btnSpin .8s linear infinite;}
+@keyframes btnSpin{to{transform:translateY(-50%) rotate(360deg);}}
+
+/* ═══════════════════════════════════
+   4. FORM INPUTS
+═══════════════════════════════════ */
+.f-label{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;}
+.f-input{width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid var(--dim);border-radius:12px;color:var(--text);font-size:.9rem;transition:all .25s;}
+.f-input::placeholder{color:var(--muted);}
+.f-input:focus{border-color:rgba(245,166,35,.4);box-shadow:0 0 0 3px rgba(245,166,35,.07);outline:none;}
+.f-input.error{border-color:rgba(255,122,122,.4);box-shadow:0 0 0 3px rgba(255,122,122,.06);}
+.f-input.success{border-color:rgba(93,232,141,.3);box-shadow:0 0 0 3px rgba(93,232,141,.06);}
+.f-hint{font-size:.68rem;color:var(--muted);margin-top:5px;}
+.f-hint.err{color:var(--red);}
+.f-hint.ok{color:var(--green);}
+.f-group{display:flex;flex-direction:column;}
+/* Select */
+.f-select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 7L11 1' stroke='%237a6a54' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;}
+/* Input with icon */
+.f-input-wrap{position:relative;}
+.f-input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem;}
+.f-input.has-icon{padding-left:40px;}
+/* Textarea */
+.f-textarea{min-height:100px;resize:vertical;}
+
+/* ═══════════════════════════════════
+   5. CARDS
+═══════════════════════════════════ */
+.card{background:rgba(19,16,9,.92);border:1px solid var(--border);border-radius:18px;padding:22px;transition:all .3s;}
+.card:hover{border-color:rgba(245,166,35,.25);}
+.card-glass{background:rgba(245,166,35,.03);backdrop-filter:blur(20px);border:1px solid rgba(245,166,35,.1);border-radius:18px;padding:22px;}
+.card-elevated{background:var(--bg3);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:22px;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.card-glow{background:rgba(19,16,9,.9);border:1px solid rgba(245,166,35,.2);border-radius:18px;padding:22px;box-shadow:0 0 40px rgba(245,166,35,.05),inset 0 0 40px rgba(245,166,35,.02);}
+.card-title{font-family:var(--fd);font-size:1rem;font-weight:700;color:var(--text);margin-bottom:6px;}
+.card-body{font-size:.82rem;color:var(--muted);line-height:1.65;}
+/* Stat card */
+.stat-card{background:rgba(19,16,9,.9);border:1px solid var(--border);border-radius:18px;padding:20px;position:relative;overflow:hidden;}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sc-icon{font-size:1.4rem;}
+.sc-badge{padding:3px 8px;border-radius:999px;font-size:.65rem;font-weight:700;}
+.sc-val{font-family:var(--fd);font-size:1.8rem;font-weight:800;color:var(--text);}
+.sc-lbl{font-size:.72rem;color:var(--muted);margin-top:4px;}
+/* Product card */
+.product-card{background:rgba(19,16,9,.92);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .3s var(--spring);cursor:pointer;}
+.product-card:hover{border-color:rgba(245,166,35,.3);transform:translateY(-5px);box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.pc-image{height:130px;display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative;overflow:hidden;}
+.pc-image::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(19,16,9,.8));}
+.pc-body{padding:14px;}
+.pc-name{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.pc-sub{font-size:.72rem;color:var(--muted);margin-bottom:10px;}
+.pc-row{display:flex;align-items:center;justify-content:space-between;}
+.pc-price{font-family:var(--fd);font-size:1.1rem;font-weight:800;color:var(--gold);}
+.pc-orig{font-size:.72rem;color:var(--muted);text-decoration:line-through;margin-left:5px;}
+.pc-stars{font-size:.72rem;color:var(--muted);}
+.pc-add{padding:7px 14px;background:linear-gradient(135deg,var(--gd),var(--gold));border-radius:9px;font-size:.72rem;font-weight:800;color:#0a0804;cursor:pointer;border:none;transition:all .25s;}
+.pc-add:hover{box-shadow:0 3px 12px rgba(245,166,35,.35);}
+.pc-badge{position:absolute;top:10px;left:10px;padding:3px 8px;border-radius:999px;font-size:.6rem;font-weight:700;z-index:5;background:rgba(93,232,141,.15);border:1px solid rgba(93,232,141,.3);color:var(--green);}
+
+/* ═══════════════════════════════════
+   6. BADGES & CHIPS
+═══════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:.68rem;font-weight:700;}
+.badge-gold{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:var(--gold);}
+.badge-green{background:rgba(93,232,141,.08);border:1px solid rgba(93,232,141,.2);color:var(--green);}
+.badge-red{background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.2);color:var(--red);}
+.badge-blue{background:rgba(77,224,255,.08);border:1px solid rgba(77,224,255,.2);color:var(--blue);}
+.badge-purple{background:rgba(183,148,244,.08);border:1px solid rgba(183,148,244,.2);color:var(--purple);}
+.badge-ghost{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);}
+/* Category chips */
+.chip{padding:6px 14px;border-radius:999px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,.03);}
+.chip:hover,.chip.active{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3);color:var(--gold);}
+
+/* ═══════════════════════════════════
+   7. NAVIGATION
+═══════════════════════════════════ */
+.nav-demo{background:rgba(10,8,4,.95);border:1px solid var(--border);border-radius:14px;padding:0 20px;height:60px;display:flex;align-items:center;gap:20px;}
+.nav-item{padding:8px 14px;font-size:.84rem;color:var(--muted);border-radius:9px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.nav-item:hover{color:var(--text);}
+.nav-item.active{color:var(--gold);background:rgba(245,166,35,.06);}
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:.78rem;}
+.bc-item{color:var(--muted);cursor:pointer;transition:color .2s;}
+.bc-item:hover{color:var(--gold);}
+.bc-item.current{color:var(--text);font-weight:600;}
+.bc-sep{color:var(--dim);}
+/* Tab bar */
+.tabs{display:flex;gap:2px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:4px;}
+.tab{padding:8px 18px;border-radius:9px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;}
+.tab.active{background:rgba(245,166,35,.1);color:var(--gold);}
+.tab:hover:not(.active){color:var(--text);}
+
+/* ═══════════════════════════════════
+   8. TOAST / ALERTS
+═══════════════════════════════════ */
+.toast-demo{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;font-size:.85rem;font-weight:600;backdrop-filter:blur(16px);}
+.toast-success{background:rgba(93,232,141,.08);border:1px solid rgba(93,232,141,.25);color:var(--green);}
+.toast-error{background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.25);color:var(--red);}
+.toast-info{background:rgba(77,224,255,.08);border:1px solid rgba(77,224,255,.25);color:var(--blue);}
+.toast-warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);color:var(--gold);}
+/* Alert bars */
+.alert{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:14px;font-size:.82rem;line-height:1.6;}
+.alert-title{font-weight:700;margin-bottom:3px;}
+
+/* ═══════════════════════════════════
+   9. PROGRESS BARS
+═══════════════════════════════════ */
+.progress-wrap{margin-bottom:12px;}
+.progress-hdr{display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:6px;}
+.progress-hdr span:first-child{color:var(--muted);}
+.progress-hdr span:last-child{font-weight:700;color:var(--gold);}
+.progress-track{height:6px;background:var(--dim);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;}
+.pf-gold{background:linear-gradient(90deg,var(--gd),var(--gold));}
+.pf-green{background:linear-gradient(90deg,#2e7d4f,var(--green));}
+.pf-blue{background:linear-gradient(90deg,#1a6a7a,var(--blue));}
+
+/* ═══════════════════════════════════
+   10. DASHBOARD COMPONENTS
+═══════════════════════════════════ */
+.dash-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+.data-table-demo{width:100%;border-collapse:collapse;}
+.data-table-demo th{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 14px;text-align:left;background:rgba(255,255,255,.01);}
+.data-table-demo td{padding:12px 14px;font-size:.82rem;border-top:1px solid rgba(245,166,35,.04);}
+.data-table-demo tr:hover td{background:rgba(245,166,35,.02);}
+.oid{font-family:var(--mono);font-size:.75rem;color:var(--gold);}
+.chart-placeholder{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:14px;height:140px;position:relative;overflow:hidden;}
+#miniChart{width:100%;height:140px;}
+
+/* ═══════════════════════════════════
+   11. MOTION / ANIMATION
+═══════════════════════════════════ */
+.easing-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.easing-card{background:rgba(15,11,6,.8);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;}
+.easing-name{font-size:.75rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.easing-val{font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-bottom:14px;}
+.easing-track{height:40px;background:rgba(255,255,255,.03);border-radius:8px;position:relative;overflow:hidden;}
+.easing-ball{width:14px;height:14px;border-radius:50%;background:var(--gold);position:absolute;top:50%;transform:translateY(-50%);left:4px;box-shadow:0 0 10px rgba(245,166,35,.5);}
+.easing-card:hover .easing-ball{animation:ease-demo var(--dur,1s) var(--fn,ease) .2s both;}
+@keyframes ease-demo{0%{left:4px;}50%{left:calc(100% - 18px);}100%{left:4px;}}
+.dur-table{width:100%;border-collapse:collapse;}
+.dur-table th{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.dur-table td{padding:9px 12px;font-size:.82rem;border-bottom:1px solid rgba(245,166,35,.04);}
+.dur-table td:first-child{font-family:var(--mono);color:var(--gold);font-size:.75rem;}
+.dur-demo{display:inline-block;width:60px;height:3px;background:var(--dim);border-radius:2px;position:relative;vertical-align:middle;}
+.dur-demo-fill{position:absolute;inset:0;border-radius:2px;background:var(--gold);width:0%;}
+
+/* ═══════════════════════════════════
+   SPACING VISUALIZER
+═══════════════════════════════════ */
+.space-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.space-box{height:24px;background:rgba(245,166,35,.15);border:1px dashed rgba(245,166,35,.3);border-radius:4px;flex-shrink:0;}
+.space-info{font-family:var(--mono);font-size:.68rem;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   SHADOWS
+═══════════════════════════════════ */
+.shadow-row{display:flex;gap:16px;flex-wrap:wrap;}
+.shadow-card{background:var(--bg3);border-radius:14px;padding:20px 28px;font-size:.78rem;font-weight:700;color:var(--text);text-align:center;}
+.sh-sm{box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.sh-md{box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.sh-lg{box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.sh-xl{box-shadow:0 12px 48px rgba(0,0,0,.6);}
+.sh-gold{box-shadow:0 4px 20px rgba(245,166,35,.25);}
+.sh-glow{box-shadow:0 0 40px rgba(245,166,35,.1),0 8px 32px rgba(0,0,0,.5);}
+
+/* Utility */
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
+.col-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sep{height:1px;background:var(--border);margin:20px 0;}
+.mt-10{margin-top:10px;}
+.gold-text{color:var(--gold);}
+.mono{font-family:var(--mono);}
+.copy-tip{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:9px 20px;background:rgba(19,16,9,.95);border:1px solid rgba(245,166,35,.3);border-radius:999px;font-size:.78rem;color:var(--gold);z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.copy-tip.show{opacity:1;}
+
+@media(max-width:900px){:root{--sbw:0px;}.ds-sidebar{display:none;}.ds-main{padding:24px;}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="ds-sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-logo">Indianmade</div>
+    <div class="sb-brand-sub">Design System</div>
+    <div class="sb-version">v1.0.0</div>
+  </div>
+  <div class="sb-section">Foundation</div>
+  <a href="#colors" class="sb-link active"><span class="sb-dot" style="background:var(--gold)"></span>Color System</a>
+  <a href="#typography" class="sb-link"><span class="sb-dot" style="background:var(--blue)"></span>Typography</a>
+  <a href="#spacing" class="sb-link"><span class="sb-dot" style="background:var(--green)"></span>Spacing & Grid</a>
+  <a href="#shadows" class="sb-link"><span class="sb-dot" style="background:var(--muted)"></span>Shadows</a>
+  <div class="sb-section">Components</div>
+  <a href="#buttons" class="sb-link"><span class="sb-dot" style="background:var(--gold)"></span>Buttons</a>
+  <a href="#inputs" class="sb-link"><span class="sb-dot" style="background:var(--purple)"></span>Form Inputs</a>
+  <a href="#cards" class="sb-link"><span class="sb-dot" style="background:var(--blue)"></span>Cards & Panels</a>
+  <a href="#badges" class="sb-link"><span class="sb-dot" style="background:var(--green)"></span>Badges & Chips</a>
+  <a href="#navigation" class="sb-link"><span class="sb-dot" style="background:var(--muted)"></span>Navigation</a>
+  <a href="#feedback" class="sb-link"><span class="sb-dot" style="background:var(--red)"></span>Alerts & Toast</a>
+  <a href="#progress" class="sb-link"><span class="sb-dot" style="background:var(--gold)"></span>Progress Bars</a>
+  <div class="sb-section">Patterns</div>
+  <a href="#product-cards" class="sb-link"><span class="sb-dot" style="background:var(--gold)"></span>Product Cards</a>
+  <a href="#dashboard" class="sb-link"><span class="sb-dot" style="background:var(--purple)"></span>Dashboard</a>
+  <a href="#motion" class="sb-link"><span class="sb-dot" style="background:var(--blue)"></span>Motion & Animation</a>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="ds-main">
+
+  <!-- HEADER -->
+  <div style="margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border);">
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);margin-bottom:12px;">Design System · v1.0.0</div>
+    <h1 style="font-family:var(--fd);font-size:2.5rem;font-weight:900;margin-bottom:14px;background:linear-gradient(135deg,var(--gl),var(--gold),var(--gd));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Indianmade UI Foundation</h1>
+    <p style="font-size:.95rem;color:var(--muted);max-width:560px;line-height:1.75;">A comprehensive design system for building premium, cinematic dark UI experiences across all Indianmade products. Built on a warm amber palette with glassmorphism and motion-first principles.</p>
+    <div class="row mt-10">
+      <span class="badge badge-gold">Dark Theme</span>
+      <span class="badge badge-green">Glassmorphism</span>
+      <span class="badge badge-blue">Motion-First</span>
+      <span class="badge badge-purple">Responsive</span>
+      <span class="badge badge-ghost">10 Pages</span>
+    </div>
+  </div>
+
+  <!-- ═══ COLORS ════════════════════ -->
+  <section class="ds-section" id="colors">
+    <div class="ds-section-header"><h2>Color System</h2><span class="section-tag">Foundation</span></div>
+    <p class="ds-desc">A warm, luxurious palette built around matte black backgrounds and rich amber gold. Every color is carefully tuned for WCAG readability on dark surfaces.</p>
+
+    <div class="comp-label">Brand Palette</div>
+    <div class="color-grid" style="margin-bottom:20px;">
+      <div class="swatch" onclick="copyColor('#f5a623')"><div class="swatch-block" style="background:#f5a623"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Gold</div><div class="sw-hex">#f5a623 · Primary CTA</div></div></div>
+      <div class="swatch" onclick="copyColor('#ffe29a')"><div class="swatch-block" style="background:#ffe29a"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Gold Light</div><div class="sw-hex">#ffe29a · Text, Glow</div></div></div>
+      <div class="swatch" onclick="copyColor('#c8690a')"><div class="swatch-block" style="background:#c8690a"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Gold Dark</div><div class="sw-hex">#c8690a · Gradient end</div></div></div>
+    </div>
+
+    <div class="comp-label">Background Scale</div>
+    <div class="color-grid" style="margin-bottom:20px;">
+      <div class="swatch" onclick="copyColor('#0a0804')"><div class="swatch-block" style="background:#0a0804;border:1px solid rgba(255,255,255,.06)"><div class="swatch-copy" style="background:rgba(255,255,255,.15)">Copy hex</div></div><div class="swatch-info"><div class="sw-name">BG Primary</div><div class="sw-hex">#0a0804 · Main background</div></div></div>
+      <div class="swatch" onclick="copyColor('#0f0b06')"><div class="swatch-block" style="background:#0f0b06;border:1px solid rgba(255,255,255,.06)"><div class="swatch-copy" style="background:rgba(255,255,255,.15)">Copy hex</div></div><div class="swatch-info"><div class="sw-name">BG Secondary</div><div class="sw-hex">#0f0b06 · Sidebar, panels</div></div></div>
+      <div class="swatch" onclick="copyColor('#1a1410')"><div class="swatch-block" style="background:#1a1410;border:1px solid rgba(255,255,255,.06)"><div class="swatch-copy" style="background:rgba(255,255,255,.15)">Copy hex</div></div><div class="swatch-info"><div class="sw-name">BG Elevated</div><div class="sw-hex">#1a1410 · Cards, modals</div></div></div>
+      <div class="swatch" onclick="copyColor('#252018')"><div class="swatch-block" style="background:#252018;border:1px solid rgba(255,255,255,.06)"><div class="swatch-copy" style="background:rgba(255,255,255,.15)">Copy hex</div></div><div class="swatch-info"><div class="sw-name">BG Hover</div><div class="sw-hex">#252018 · Hover states</div></div></div>
+    </div>
+
+    <div class="comp-label">Semantic Colors</div>
+    <div class="color-grid" style="margin-bottom:20px;">
+      <div class="swatch" onclick="copyColor('#5de88d')"><div class="swatch-block" style="background:#5de88d"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Success</div><div class="sw-hex">#5de88d · Verified, delivered</div></div></div>
+      <div class="swatch" onclick="copyColor('#ff7a7a')"><div class="swatch-block" style="background:#ff7a7a"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Error</div><div class="sw-hex">#ff7a7a · Rejection, danger</div></div></div>
+      <div class="swatch" onclick="copyColor('#4de0ff')"><div class="swatch-block" style="background:#4de0ff"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Info / Transit</div><div class="sw-hex">#4de0ff · In transit, info</div></div></div>
+      <div class="swatch" onclick="copyColor('#b794f4')"><div class="swatch-block" style="background:#b794f4"><div class="swatch-copy">Copy hex</div></div><div class="swatch-info"><div class="sw-name">Premium</div><div class="sw-hex">#b794f4 · Analytics, VIP</div></div></div>
+    </div>
+
+    <div class="comp-label">Gradients</div>
+    <div class="color-grid">
+      <div class="swatch"><div class="swatch-block" style="background:linear-gradient(135deg,#c8690a,#f5a623)"><div class="swatch-copy">Copy</div></div><div class="swatch-info"><div class="sw-name">Brand Gradient</div><div class="sw-hex">135° · gd → gold</div></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:linear-gradient(135deg,#ffe29a,#f5a623,#c8690a)"><div class="swatch-copy">Copy</div></div><div class="swatch-info"><div class="sw-name">Full Gold</div><div class="sw-hex">gl → gold → gd</div></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:radial-gradient(ellipse at 50% 30%,rgba(180,80,0,.4),rgba(10,8,4,0))"><div class="swatch-copy">Copy</div></div><div class="swatch-info"><div class="sw-name">Ambient Glow</div><div class="sw-hex">Radial · hero sections</div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ TYPOGRAPHY ════════════════ -->
+  <section class="ds-section" id="typography">
+    <div class="ds-section-header"><h2>Typography</h2><span class="section-tag">Foundation</span></div>
+    <p class="ds-desc">Three font families form the typographic system — each with a distinct role and personality.</p>
+
+    <div class="comp-label">Font Families</div>
+    <div class="font-card"><div class="font-name">Display — Playfair Display</div><div class="font-sample" style="font-family:'Playfair Display',serif;font-style:italic;font-weight:900;">Taste of Home Aa Bb Cc</div><div class="font-use">Headings, hero text, brand name, stat values. Italic for editorial moments.</div></div>
+    <div class="font-card"><div class="font-name">Body — Inter</div><div class="font-sample" style="font-family:'Inter',sans-serif;font-weight:400;">The quick brown murukku jumps over the lazy sambar Aa Bb Cc 123</div><div class="font-use">UI labels, body copy, buttons, forms, navigation. Scale from 300 to 800 weight.</div></div>
+    <div class="font-card"><div class="font-name">Monospace — JetBrains Mono</div><div class="font-sample" style="font-family:'JetBrains Mono',monospace;color:var(--gold);">#IM-7823 · UTR-412583926174 · ₹552.00</div><div class="font-use">Order IDs, UTR numbers, prices in dashboards, code snippets, timestamps.</div></div>
+
+    <div class="comp-label" style="margin-top:24px;">Type Scale</div>
+    <div class="comp-demo" style="flex-direction:column;gap:0;padding:16px 20px;">
+      <div class="type-row"><span class="type-meta">6xl</span><div class="type-sample" style="font-family:var(--fd);font-size:3.75rem;font-weight:900;line-height:1;color:var(--text)">Display</div><span class="type-spec">3.75rem · 60px · 900</span></div>
+      <div class="type-row"><span class="type-meta">5xl</span><div class="type-sample" style="font-family:var(--fd);font-size:3rem;font-weight:800;line-height:1.05;">Hero Title</div><span class="type-spec">3rem · 48px · 800</span></div>
+      <div class="type-row"><span class="type-meta">4xl</span><div class="type-sample" style="font-family:var(--fd);font-size:2.25rem;font-weight:700;">Section Header</div><span class="type-spec">2.25rem · 36px · 700</span></div>
+      <div class="type-row"><span class="type-meta">3xl</span><div class="type-sample" style="font-size:1.875rem;font-weight:700;">Card Title Large</div><span class="type-spec">1.875rem · 30px · 700</span></div>
+      <div class="type-row"><span class="type-meta">2xl</span><div class="type-sample" style="font-size:1.5rem;font-weight:600;">Card Title</div><span class="type-spec">1.5rem · 24px · 600</span></div>
+      <div class="type-row"><span class="type-meta">xl</span><div class="type-sample" style="font-size:1.25rem;font-weight:600;">Subtitle</div><span class="type-spec">1.25rem · 20px · 600</span></div>
+      <div class="type-row"><span class="type-meta">lg</span><div class="type-sample" style="font-size:1.125rem;font-weight:500;">Body Large</div><span class="type-spec">1.125rem · 18px · 500</span></div>
+      <div class="type-row"><span class="type-meta">md</span><div class="type-sample" style="font-size:1rem;font-weight:400;">Body Default</div><span class="type-spec">1rem · 16px · 400</span></div>
+      <div class="type-row"><span class="type-meta">base</span><div class="type-sample" style="font-size:.875rem;color:var(--muted);">UI Label</div><span class="type-spec">0.875rem · 14px · 400</span></div>
+      <div class="type-row"><span class="type-meta">sm</span><div class="type-sample" style="font-size:.75rem;color:var(--muted);">Caption / Hint</div><span class="type-spec">0.75rem · 12px · 400</span></div>
+      <div class="type-row"><span class="type-meta">xs</span><div class="type-sample" style="font-size:.625rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);">Section Label</div><span class="type-spec">0.625rem · 10px · 700</span></div>
+    </div>
+  </section>
+
+  <!-- ═══ SPACING ═══════════════════ -->
+  <section class="ds-section" id="spacing">
+    <div class="ds-section-header"><h2>Spacing & Grid</h2><span class="section-tag">Foundation</span></div>
+    <p class="ds-desc">Built on an 8px base unit. All spacing, padding and margins are multiples of 4px or 8px.</p>
+    <div class="comp-demo" style="flex-direction:column;gap:8px;">
+      <div class="space-row"><div class="space-box" style="width:4px;"></div><span class="space-info">4px  · 0.25rem  · --space-1  · Micro gap</span></div>
+      <div class="space-row"><div class="space-box" style="width:8px;"></div><span class="space-info">8px  · 0.5rem   · --space-2  · Inline gap, icon margin</span></div>
+      <div class="space-row"><div class="space-box" style="width:12px;"></div><span class="space-info">12px · 0.75rem  · --space-3  · List item padding</span></div>
+      <div class="space-row"><div class="space-box" style="width:16px;"></div><span class="space-info">16px · 1rem     · --space-4  · Component padding</span></div>
+      <div class="space-row"><div class="space-box" style="width:24px;"></div><span class="space-info">24px · 1.5rem   · --space-6  · Card padding, section gap</span></div>
+      <div class="space-row"><div class="space-box" style="width:32px;"></div><span class="space-info">32px · 2rem     · --space-8  · Content section gap</span></div>
+      <div class="space-row"><div class="space-box" style="width:48px;"></div><span class="space-info">48px · 3rem     · --space-12 · Large section margin</span></div>
+      <div class="space-row"><div class="space-box" style="width:80px;"></div><span class="space-info">80px · 5rem     · --space-20 · Hero padding, page section</span></div>
+    </div>
+    <div style="margin-top:16px;font-size:.78rem;color:var(--muted);">Border radius scale: <span class="code-tag">4px</span> <span class="code-tag">8px</span> <span class="code-tag">12px</span> <span class="code-tag">14px</span> <span class="code-tag">18px</span> <span class="code-tag">22px</span> <span class="code-tag">999px (pill)</span></div>
+  </section>
+
+  <!-- ═══ SHADOWS ═══════════════════ -->
+  <section class="ds-section" id="shadows">
+    <div class="ds-section-header"><h2>Shadows</h2><span class="section-tag">Foundation</span></div>
+    <div class="shadow-row">
+      <div class="shadow-card sh-sm"><div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;">sm</div>0 2px 8px</div>
+      <div class="shadow-card sh-md"><div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;">md</div>0 4px 16px</div>
+      <div class="shadow-card sh-lg"><div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;">lg</div>0 8px 32px</div>
+      <div class="shadow-card sh-xl"><div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;">xl</div>0 12px 48px</div>
+      <div class="shadow-card sh-gold"><div style="font-size:.65rem;color:var(--gold);margin-bottom:4px;">gold</div>Gold glow</div>
+      <div class="shadow-card sh-glow"><div style="font-size:.65rem;color:var(--gold);margin-bottom:4px;">ambient</div>Ambient glow</div>
+    </div>
+  </section>
+
+  <!-- ═══ BUTTONS ════════════════════ -->
+  <section class="ds-section" id="buttons">
+    <div class="ds-section-header"><h2>Buttons</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Variants</div>
+    <div class="comp-demo dark-stage">
+      <button class="btn-primary">Primary</button>
+      <button class="btn-secondary">Secondary</button>
+      <button class="btn-ghost">Ghost</button>
+      <button class="btn-success">Success</button>
+      <button class="btn-danger">Danger</button>
+    </div>
+
+    <div class="comp-label">Sizes</div>
+    <div class="comp-demo dark-stage" style="align-items:center;">
+      <button class="btn-primary btn-sm">Small</button>
+      <button class="btn-primary">Default</button>
+      <button class="btn-primary btn-lg">Large</button>
+    </div>
+
+    <div class="comp-label">Icon Buttons & FAB</div>
+    <div class="comp-demo dark-stage" style="align-items:center;">
+      <button class="btn-icon">🔔</button>
+      <button class="btn-icon">🔍</button>
+      <button class="btn-icon">⚙️</button>
+      <button class="btn-icon" style="border-color:rgba(245,166,35,.3);color:var(--gold);">★</button>
+      <button class="btn-fab">+</button>
+    </div>
+
+    <div class="comp-label">States</div>
+    <div class="comp-demo dark-stage">
+      <button class="btn-primary">Normal</button>
+      <button class="btn-primary btn-loading" style="padding-right:36px;">Loading</button>
+      <button class="btn-primary" disabled style="opacity:.4;cursor:not-allowed;">Disabled</button>
+    </div>
+  </section>
+
+  <!-- ═══ INPUTS ════════════════════ -->
+  <section class="ds-section" id="inputs">
+    <div class="ds-section-header"><h2>Form Inputs</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Input States</div>
+    <div class="comp-demo" style="flex-direction:column;gap:14px;">
+      <div class="f-group">
+        <label class="f-label">Default</label>
+        <input type="text" class="f-input" placeholder="Enter your name…"/>
+      </div>
+      <div class="f-group">
+        <label class="f-label">With Icon</label>
+        <div class="f-input-wrap">
+          <span class="f-input-icon">🔍</span>
+          <input type="text" class="f-input has-icon" placeholder="Search products…"/>
+        </div>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Error State</label>
+        <input type="text" class="f-input error" value="invalid@"/>
+        <span class="f-hint err">⚠ Please enter a valid email address.</span>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Success State</label>
+        <input type="text" class="f-input success" value="priya@gmail.com"/>
+        <span class="f-hint ok">✓ Email verified.</span>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Select Dropdown</label>
+        <select class="f-input f-select"><option>Select State…</option><option>Maharashtra</option><option>Tamil Nadu</option><option>Karnataka</option></select>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Textarea</label>
+        <textarea class="f-input f-textarea" placeholder="Write your message…"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CARDS ═════════════════════ -->
+  <section class="ds-section" id="cards">
+    <div class="ds-section-header"><h2>Cards & Panels</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Card Variants</div>
+    <div class="comp-demo grid-2" style="align-items:stretch;">
+      <div class="card"><div class="card-title">Default Card</div><div class="card-body">Standard content panel with a subtle gold border and matte dark surface. Hover to lift.</div></div>
+      <div class="card-glass"><div class="card-title">Glass Card</div><div class="card-body">Glassmorphism panel with backdrop blur. Used for overlays and floating elements.</div></div>
+      <div class="card-elevated"><div class="card-title">Elevated Card</div><div class="card-body">Deep shadow, darker surface. Used for modals and featured content blocks.</div></div>
+      <div class="card-glow"><div class="card-title">Glow Card</div><div class="card-body">Ambient gold glow on borders and inset. Used for highlighted actions and CTAs.</div></div>
+    </div>
+
+    <div class="comp-label">Stat Cards</div>
+    <div class="comp-demo" style="gap:14px;align-items:stretch;flex-wrap:nowrap;">
+      <div class="stat-card" style="flex:1;min-width:130px;">
+        <div class="sc-top"><span class="sc-icon">💰</span><span class="sc-badge" style="background:rgba(93,232,141,.1);color:var(--green);">↑ 18%</span></div>
+        <div class="sc-val" style="color:var(--gold);">₹24.5k</div><div class="sc-lbl">Revenue</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:130px;">
+        <div class="sc-top"><span class="sc-icon">📦</span><span class="sc-badge" style="background:rgba(77,224,255,.1);color:var(--blue);">+4</span></div>
+        <div class="sc-val">128</div><div class="sc-lbl">Orders</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:130px;">
+        <div class="sc-top"><span class="sc-icon">👥</span><span class="sc-badge" style="background:rgba(245,166,35,.1);color:var(--gold);">↑ 12%</span></div>
+        <div class="sc-val">48</div><div class="sc-lbl">Customers</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:130px;border-color:rgba(255,122,122,.2);">
+        <div class="sc-top"><span class="sc-icon">⏳</span><span class="sc-badge" style="background:rgba(255,122,122,.1);color:var(--red);">Urgent</span></div>
+        <div class="sc-val" style="color:var(--red);">5</div><div class="sc-lbl">Pending</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ BADGES ════════════════════ -->
+  <section class="ds-section" id="badges">
+    <div class="ds-section-header"><h2>Badges & Chips</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Status Badges</div>
+    <div class="comp-demo">
+      <span class="badge badge-gold">⏳ Pending</span>
+      <span class="badge badge-blue">🚚 In Transit</span>
+      <span class="badge badge-green">✅ Delivered</span>
+      <span class="badge badge-red">❌ Cancelled</span>
+      <span class="badge badge-purple">⭐ VIP</span>
+      <span class="badge badge-ghost">Draft</span>
+    </div>
+
+    <div class="comp-label">Category Chips</div>
+    <div class="comp-demo">
+      <div class="chip active">All</div>
+      <div class="chip">🌀 Snacks</div>
+      <div class="chip">🌶️ Spices</div>
+      <div class="chip">🫙 Powders</div>
+      <div class="chip">🎁 Combos</div>
+      <div class="chip">🆕 New</div>
+    </div>
+  </section>
+
+  <!-- ═══ NAV ════════════════════════ -->
+  <section class="ds-section" id="navigation">
+    <div class="ds-section-header"><h2>Navigation</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Navbar</div>
+    <div class="comp-demo dark-stage" style="flex-direction:column;gap:0;padding:0;border-radius:14px;overflow:hidden;">
+      <div class="nav-demo">
+        <div style="font-family:var(--fd);font-size:.95rem;font-weight:800;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Indianmade</div>
+        <div class="nav-item active">Home</div>
+        <div class="nav-item">Shop</div>
+        <div class="nav-item">About</div>
+        <div class="nav-item">Contact</div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn-icon">🛒</button>
+          <button class="btn-primary btn-sm">Sign In</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-label">Tabs</div>
+    <div class="comp-demo">
+      <div class="tabs">
+        <div class="tab active">Overview</div>
+        <div class="tab">Orders</div>
+        <div class="tab">Analytics</div>
+        <div class="tab">Settings</div>
+      </div>
+    </div>
+
+    <div class="comp-label">Breadcrumb</div>
+    <div class="comp-demo">
+      <div class="breadcrumb">
+        <span class="bc-item">Home</span><span class="bc-sep">›</span>
+        <span class="bc-item">Shop</span><span class="bc-sep">›</span>
+        <span class="bc-item">Snacks</span><span class="bc-sep">›</span>
+        <span class="bc-item current">Murukku 250g</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FEEDBACK ══════════════════ -->
+  <section class="ds-section" id="feedback">
+    <div class="ds-section-header"><h2>Alerts & Toast</h2><span class="section-tag">Components</span></div>
+
+    <div class="comp-label">Toast Notifications</div>
+    <div class="comp-demo" style="flex-direction:column;gap:10px;">
+      <div class="toast-demo toast-success">✅ Payment verified and approved successfully!</div>
+      <div class="toast-demo toast-error">❌ Payment screenshot does not match UTR number.</div>
+      <div class="toast-demo toast-info">🚚 Your order is out for delivery in your area.</div>
+      <div class="toast-demo toast-warn">⚠️ Only 5 units left. Order soon!</div>
+    </div>
+
+    <div class="comp-label">Alert Panels</div>
+    <div class="comp-demo" style="flex-direction:column;gap:10px;">
+      <div class="alert" style="background:rgba(93,232,141,.05);border:1px solid rgba(93,232,141,.2);"><span style="color:var(--green);font-size:1.2rem;flex-shrink:0;">✅</span><div><div class="alert-title" style="color:var(--green);">Order Confirmed</div><div style="color:var(--muted);font-size:.78rem;">Your order #IM-7823 has been placed. Expected delivery: 27 May 2024.</div></div></div>
+      <div class="alert" style="background:rgba(245,166,35,.04);border:1px solid rgba(245,166,35,.15);"><span style="color:var(--gold);font-size:1.2rem;flex-shrink:0;">💡</span><div><div class="alert-title" style="color:var(--gold);">Payment Tip</div><div style="color:var(--muted);font-size:.78rem;">Please add your Order ID as payment remark for faster verification.</div></div></div>
+      <div class="alert" style="background:rgba(255,122,122,.04);border:1px solid rgba(255,122,122,.15);"><span style="color:var(--red);font-size:1.2rem;flex-shrink:0;">⚠️</span><div><div class="alert-title" style="color:var(--red);">Stock Alert</div><div style="color:var(--muted);font-size:.78rem;">Garam Masala is running low. Only 5 units remaining in inventory.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ PROGRESS ══════════════════ -->
+  <section class="ds-section" id="progress">
+    <div class="ds-section-header"><h2>Progress Bars</h2><span class="section-tag">Components</span></div>
+    <div class="comp-demo" style="flex-direction:column;gap:4px;">
+      <div class="progress-wrap"><div class="progress-hdr"><span>Revenue Goal</span><span>78%</span></div><div class="progress-track"><div class="progress-fill pf-gold" style="width:78%;box-shadow:0 0 8px rgba(245,166,35,.4)"></div></div></div>
+      <div class="progress-wrap"><div class="progress-hdr"><span>Stock Level (Murukku)</span><span>45%</span></div><div class="progress-track"><div class="progress-fill pf-green" style="width:45%"></div></div></div>
+      <div class="progress-wrap"><div class="progress-hdr"><span>Loading</span><span>62%</span></div><div class="progress-track"><div class="progress-fill pf-blue" style="width:62%"></div></div></div>
+      <div class="progress-wrap"><div class="progress-hdr"><span>Low Stock Alert</span><span style="color:var(--red)">12%</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:var(--red);box-shadow:0 0 6px rgba(255,122,122,.4)"></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ PRODUCT CARDS ═════════════ -->
+  <section class="ds-section" id="product-cards">
+    <div class="ds-section-header"><h2>Product Cards</h2><span class="section-tag">Patterns</span></div>
+    <div class="comp-demo grid-3" style="align-items:stretch;">
+      <div class="product-card">
+        <div class="pc-image" style="background:linear-gradient(135deg,rgba(200,100,0,.15),rgba(10,8,4,.8))">🌀<span class="pc-badge">🌿 Veg</span></div>
+        <div class="pc-body">
+          <div class="pc-name">Homemade Murukku</div>
+          <div class="pc-sub">250g · Tamil Nadu Recipe</div>
+          <div class="pc-row"><div><span class="pc-price">₹149</span><span class="pc-orig">₹199</span></div><button class="pc-add">+ Add</button></div>
+          <div class="pc-stars" style="margin-top:6px;">⭐ 4.9 · 124 reviews</div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="pc-image" style="background:linear-gradient(135deg,rgba(180,30,0,.15),rgba(10,8,4,.8))">🌶️<span class="pc-badge" style="background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.3);color:var(--gold);">🔥 Hot</span></div>
+        <div class="pc-body">
+          <div class="pc-name">Sambar Powder</div>
+          <div class="pc-sub">100g · Authentic Blend</div>
+          <div class="pc-row"><div><span class="pc-price">₹99</span><span class="pc-orig">₹139</span></div><button class="pc-add">+ Add</button></div>
+          <div class="pc-stars" style="margin-top:6px;">⭐ 4.8 · 89 reviews</div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="pc-image" style="background:linear-gradient(135deg,rgba(180,150,0,.15),rgba(10,8,4,.8))">🍌<span class="pc-badge" style="background:rgba(77,224,255,.1);border-color:rgba(77,224,255,.25);color:var(--blue);">🆕 New</span></div>
+        <div class="pc-body">
+          <div class="pc-name">Kerala Banana Chips</div>
+          <div class="pc-sub">200g · Coconut Oil Fried</div>
+          <div class="pc-row"><div><span class="pc-price">₹129</span><span class="pc-orig">₹169</span></div><button class="pc-add">+ Add</button></div>
+          <div class="pc-stars" style="margin-top:6px;">⭐ 4.7 · 56 reviews</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ DASHBOARD ═════════════════ -->
+  <section class="ds-section" id="dashboard">
+    <div class="ds-section-header"><h2>Dashboard Components</h2><span class="section-tag">Patterns</span></div>
+
+    <div class="comp-label">Revenue Chart</div>
+    <div class="comp-demo" style="padding:0;border-radius:16px;overflow:hidden;">
+      <div class="chart-placeholder" style="width:100%;"><canvas id="miniChart"></canvas></div>
+    </div>
+
+    <div class="comp-label">Data Table</div>
+    <div class="comp-demo" style="padding:0;overflow:hidden;border-radius:16px;">
+      <table class="data-table-demo" style="width:100%;">
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="oid">#IM-7823</span></td><td>Priya Sharma</td><td style="color:var(--gold);font-weight:700;">₹552</td><td><span class="badge badge-blue">🚚 Shipped</span></td></tr>
+          <tr><td><span class="oid">#IM-7824</span></td><td>Rahul Verma</td><td style="color:var(--gold);font-weight:700;">₹299</td><td><span class="badge badge-gold">⏳ Pending</span></td></tr>
+          <tr><td><span class="oid">#IM-7825</span></td><td>Kavita Nair</td><td style="color:var(--gold);font-weight:700;">₹897</td><td><span class="badge badge-green">✅ Delivered</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ MOTION ════════════════════ -->
+  <section class="ds-section" id="motion">
+    <div class="ds-section-header"><h2>Motion & Animation</h2><span class="section-tag">Patterns</span></div>
+    <p class="ds-desc">All interactions should feel responsive and alive. Hover the cards below to see each easing function in action.</p>
+
+    <div class="comp-label">Easing Functions (hover to play)</div>
+    <div class="easing-row">
+      <div class="easing-card" style="--fn:cubic-bezier(.4,0,.2,1);--dur:.6s;">
+        <div class="easing-name">Standard</div>
+        <div class="easing-val">cubic-bezier(.4,0,.2,1)</div>
+        <div class="easing-track"><div class="easing-ball"></div></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:8px;">UI transitions, hover effects</div>
+      </div>
+      <div class="easing-card" style="--fn:cubic-bezier(.34,1.56,.64,1);--dur:.6s;">
+        <div class="easing-name">Spring</div>
+        <div class="easing-val">cubic-bezier(.34,1.56,.64,1)</div>
+        <div class="easing-track"><div class="easing-ball" style="background:var(--blue);box-shadow:0 0 10px rgba(77,224,255,.5)"></div></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:8px;">Buttons, modals, cards</div>
+      </div>
+      <div class="easing-card" style="--fn:cubic-bezier(.68,-.55,.265,1.55);--dur:.7s;">
+        <div class="easing-name">Bounce</div>
+        <div class="easing-val">cubic-bezier(.68,-.55,.265,1.55)</div>
+        <div class="easing-track"><div class="easing-ball" style="background:var(--purple);box-shadow:0 0 10px rgba(183,148,244,.5)"></div></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:8px;">Checkmarks, confirmations</div>
+      </div>
+    </div>
+
+    <div class="comp-label" style="margin-top:24px;">Duration Scale</div>
+    <table class="dur-table" style="width:100%;background:rgba(15,11,6,.6);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <thead><tr><th>Token</th><th>Duration</th><th>Use Case</th><th>Preview</th></tr></thead>
+      <tbody>
+        <tr><td>--dur-instant</td><td>100ms</td><td>Hover fills, micro-feedback</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill .1s ease forwards 1s both;width:100%"></div></div></td></tr>
+        <tr><td>--dur-fast</td><td>200ms</td><td>Button presses, icon swaps</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill .2s ease forwards 1s both;width:100%"></div></div></td></tr>
+        <tr><td>--dur-base</td><td>300ms</td><td>Dropdowns, tooltips, chips</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill .3s ease forwards 1s both;width:100%"></div></div></td></tr>
+        <tr><td>--dur-smooth</td><td>500ms</td><td>Panel transitions, modals</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill .5s ease forwards 1s both;width:100%"></div></div></td></tr>
+        <tr><td>--dur-slow</td><td>800ms</td><td>Page reveals, hero animations</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill .8s ease forwards 1s both;width:100%"></div></div></td></tr>
+        <tr><td>--dur-cinematic</td><td>1200ms+</td><td>Intro screens, loading states</td><td><div class="dur-demo"><div class="dur-demo-fill" style="animation:durFill 1.2s ease forwards 1s both;width:100%"></div></div></td></tr>
+      </tbody>
+    </table>
+    <style>@keyframes durFill{from{width:0%}to{width:100%}}</style>
+
+    <div class="comp-label" style="margin-top:24px;">Motion Principles</div>
+    <div class="comp-demo grid-2" style="align-items:stretch;">
+      <div class="card"><div class="card-title" style="color:var(--gold);">🎯 Purposeful</div><div class="card-body">Every animation communicates state change. Motion is never decorative alone — it guides attention and confirms actions.</div></div>
+      <div class="card"><div class="card-title" style="color:var(--blue);">⚡ Responsive</div><div class="card-body">Interactions feel instant (≤100ms feedback). Never make the user wait without visual indication of progress.</div></div>
+      <div class="card"><div class="card-title" style="color:var(--green);">🌊 Natural</div><div class="card-body">Physics-based spring easing for UI elements. Avoid linear animations — they feel mechanical and cheap.</div></div>
+      <div class="card"><div class="card-title" style="color:var(--purple);">✨ Cinematic</div><div class="card-body">Hero sections, loading screens and transitions use longer durations with layered staggered reveals for a premium feel.</div></div>
+    </div>
+
+    <div class="comp-label" style="margin-top:24px;">CSS Custom Properties Reference</div>
+    <div class="comp-demo dark-stage" style="flex-direction:column;gap:6px;align-items:flex-start;font-family:var(--mono);font-size:.72rem;">
+      <div style="color:var(--muted);">/* Easing */</div>
+      <div><span style="color:var(--blue);">--ease:</span> <span style="color:var(--gold);">cubic-bezier(.4,0,.2,1)</span>;</div>
+      <div><span style="color:var(--blue);">--spring:</span> <span style="color:var(--gold);">cubic-bezier(.34,1.56,.64,1)</span>;</div>
+      <div><span style="color:var(--blue);">--bounce:</span> <span style="color:var(--gold);">cubic-bezier(.68,-.55,.265,1.55)</span>;</div>
+      <div style="color:var(--muted);margin-top:8px;">/* Gold Gradient */</div>
+      <div><span style="color:var(--blue);">--brand-gradient:</span> <span style="color:var(--gold);">linear-gradient(135deg, #c8690a, #f5a623)</span>;</div>
+      <div style="color:var(--muted);margin-top:8px;">/* Glassmorphism */</div>
+      <div><span style="color:var(--blue);">--glass:</span> <span style="color:var(--gold);">rgba(19,16,9,.92)</span>;</div>
+      <div><span style="color:var(--blue);">--glass-blur:</span> <span style="color:var(--gold);">backdrop-filter: blur(20px)</span>;</div>
+      <div><span style="color:var(--blue);">--border:</span> <span style="color:var(--gold);">rgba(245,166,35,.12)</span>;</div>
+    </div>
+  </section>
+
+  <div style="text-align:center;padding:32px 0;color:var(--muted);font-size:.8rem;">
+    Indianmade Design System · v1.0.0 · Built with ♥ in India<br>
+    <a href="index.html" style="color:var(--gold);margin-top:6px;display:inline-block;">← Back to Site</a>
+  </div>
+
+</main>
+
+<!-- COPY TIP -->
+<div class="copy-tip" id="copyTip">Copied to clipboard!</div>
+
+<script>
+/* SIDEBAR ACTIVE STATE */
+const sections = document.querySelectorAll('.ds-section');
+const sbLinks = document.querySelectorAll('.sb-link');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      sbLinks.forEach(l => l.classList.remove('active'));
+      const id = e.target.id;
+      const active = document.querySelector(`.sb-link[href="#${id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { threshold: 0.3, rootMargin: '-60px 0px -40% 0px' });
+sections.forEach(s => io.observe(s));
+
+/* COPY COLOR */
+window.copyColor = function(hex) {
+  navigator.clipboard.writeText(hex).then(() => {
+    const tip = document.getElementById('copyTip');
+    tip.textContent = `Copied ${hex}`;
+    tip.classList.add('show');
+    setTimeout(() => tip.classList.remove('show'), 2000);
+  });
+};
+
+/* MINI CHART */
+(function() {
+  const canvas = document.getElementById('miniChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth;
+  const H = 140;
+  canvas.width = W; canvas.height = H;
+  const data = [1840, 2150, 980, 3200, 2700, 4100, 3250];
+  const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const maxV = Math.max(...data) * 1.2;
+  const pL=50,pR=20,pT=16,pB=28;
+  const cW=W-pL-pR,cH=H-pT-pB;
+  const toY=v=>pT+cH-(v/maxV)*cH;
+  const toX=i=>pL+i/(data.length-1)*cW;
+  // Grid
+  ctx.strokeStyle='rgba(245,166,35,.06)';ctx.lineWidth=1;
+  for(let i=0;i<4;i++){const y=pT+(i/3)*cH;ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(W-pR,y);ctx.stroke();}
+  // Y labels
+  ctx.fillStyle='rgba(122,106,84,.7)';ctx.font='9px Inter';ctx.textAlign='right';
+  for(let i=0;i<4;i++){const v=Math.round(maxV*(3-i)/3);ctx.fillText('₹'+(v>=1000?(v/1000).toFixed(1)+'k':v),pL-5,pT+(i/3)*cH+4);}
+  // Fill
+  const grad=ctx.createLinearGradient(0,pT,0,H-pB);
+  grad.addColorStop(0,'rgba(245,166,35,.25)');grad.addColorStop(1,'rgba(245,166,35,0)');
+  ctx.beginPath();ctx.moveTo(toX(0),toY(data[0]));
+  for(let i=1;i<data.length;i++){const cx=(toX(i-1)+toX(i))/2;ctx.bezierCurveTo(cx,toY(data[i-1]),cx,toY(data[i]),toX(i),toY(data[i]));}
+  ctx.lineTo(toX(data.length-1),H-pB);ctx.lineTo(toX(0),H-pB);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  // Line
+  ctx.beginPath();ctx.moveTo(toX(0),toY(data[0]));
+  for(let i=1;i<data.length;i++){const cx=(toX(i-1)+toX(i))/2;ctx.bezierCurveTo(cx,toY(data[i-1]),cx,toY(data[i]),toX(i),toY(data[i]));}
+  ctx.strokeStyle='#f5a623';ctx.lineWidth=2;ctx.shadowColor='rgba(245,166,35,.5)';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  // Dots
+  data.forEach((v,i)=>{ctx.beginPath();ctx.arc(toX(i),toY(v),3,0,Math.PI*2);ctx.fillStyle='#f5a623';ctx.fill();ctx.strokeStyle='#0a0804';ctx.lineWidth=1.5;ctx.stroke();});
+  // X labels
+  ctx.fillStyle='rgba(122,106,84,.7)';ctx.font='9px Inter';ctx.textAlign='center';ctx.shadowBlur=0;
+  labels.forEach((l,i)=>ctx.fillText(l,toX(i),H-8));
+})();
+
+/* SMOOTH SCROLL for sidebar links */
+document.querySelectorAll('.sb-link[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indianmade — Premium Homemade Snacks & Authentic Spices</title>
+  <meta name="description" content="Discover Indianmade — handcrafted traditional Indian snacks and authentic cooking powders made with love, delivered across India. Shop murukku, banana chips, spice blends and premium combo packs." />
+  <meta name="keywords" content="Indian homemade snacks, authentic spices, murukku, banana chips, cooking powders, traditional snacks India, combo packs" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════ NAVBAR ═══════════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#" class="nav-logo" id="nav-logo-link">
+      <div class="logo-icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="20,3 37,32 3,32" stroke="url(#logoGrad)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <polygon points="20,10 30,28 10,28" fill="url(#logoFill)" opacity="0.4"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+              <stop offset="0%" stop-color="#f5a623"/>
+              <stop offset="100%" stop-color="#e8660a"/>
+            </linearGradient>
+            <linearGradient id="logoFill" x1="0" y1="0" x2="40" y2="40">
+              <stop offset="0%" stop-color="#f5a623"/>
+              <stop offset="100%" stop-color="#e8660a"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="logo-text">Indianmade</span>
+    </a>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html" class="nav-link">Home</a></li>
+      <li class="nav-dropdown">
+        <a href="shop.html" class="nav-link">Products <span class="dropdown-arrow">▾</span></a>
+        <div class="dropdown-menu">
+          <a href="shop.html?cat=snacks">Authentic Snacks</a>
+          <a href="shop.html?cat=spices">Spice Blends</a>
+          <a href="shop.html?cat=powders">Cooking Powders</a>
+          <a href="shop.html?cat=combos">Combo Packs</a>
+        </div>
+      </li>
+      <li><a href="shop.html" class="nav-link">Shop</a></li>
+      <li><a href="index.html#how-it-works" class="nav-link">How It Works</a></li>
+      <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <button class="nav-search" id="nav-search-btn" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <a href="cart.html" class="nav-icon-btn" id="cartBtn" aria-label="Cart" style="display:inline-flex;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <a href="auth.html" class="btn-nav-cta" id="nav-login-btn" style="display:inline-flex;align-items:center;">Log in</a>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<section class="hero" id="hero">
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="hero-bg-glow"></div>
+  <div class="hero-grid-overlay"></div>
+
+  <div class="hero-content">
+    <div class="hero-left" id="heroLeft">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Crafted with Traditional Recipes</span>
+      </div>
+
+      <h1 class="hero-title" id="heroTitle">
+        <span class="title-line">Homemade</span>
+        <span class="title-line title-accent">with Love,</span>
+        <span class="title-line">Delivered with</span>
+        <span class="title-line title-accent">Happiness</span>
+      </h1>
+
+      <p class="hero-subtitle" id="heroSubtitle">
+        Premium traditional Indian snacks and authentic cooking powders
+        crafted with natural ingredients — straight from our kitchen to yours.
+      </p>
+
+      <div class="hero-cta" id="heroCta">
+        <a href="shop.html" class="btn-primary" id="btn-shop-now">
+          <span>Shop Now</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <a href="#combos" class="btn-ghost" id="btn-explore-combos">
+          <span>Explore Combo Packs</span>
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-number" data-target="2000">0</span><span class="stat-suffix">+</span>
+          <span class="stat-label">Happy Customers</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number" data-target="50">0</span><span class="stat-suffix">+</span>
+          <span class="stat-label">Products</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number" data-target="15">0</span><span class="stat-suffix">+</span>
+          <span class="stat-label">States Delivered</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right" id="heroRight">
+      <div class="scene-3d" id="scene3d">
+        <!-- Impossible Triangle SVG -->
+        <div class="paradox-wrapper" id="paradoxWrapper">
+          <svg class="paradox-triangle" id="paradoxSvg" viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="edge1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f5c842"/>
+                <stop offset="50%" stop-color="#e8870a"/>
+                <stop offset="100%" stop-color="#8B4513"/>
+              </linearGradient>
+              <linearGradient id="edge2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f5a623"/>
+                <stop offset="50%" stop-color="#c8690a"/>
+                <stop offset="100%" stop-color="#5a2d0c"/>
+              </linearGradient>
+              <linearGradient id="edge3" x1="50%" y1="0%" x2="50%" y2="100%">
+                <stop offset="0%" stop-color="#ffe29a"/>
+                <stop offset="50%" stop-color="#f5a623"/>
+                <stop offset="100%" stop-color="#7a3a0a"/>
+              </linearGradient>
+              <filter id="glowFilter">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="strongGlow">
+                <feGaussianBlur stdDeviation="8" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <!-- Outer glow layer -->
+            <g filter="url(#strongGlow)" opacity="0.4">
+              <!-- Top beam -->
+              <polygon points="200,30 230,30 215,55 185,55" fill="#f5a623"/>
+              <!-- Right beam -->
+              <polygon points="350,310 335,335 260,290 275,265" fill="#e8870a"/>
+              <!-- Left beam -->
+              <polygon points="50,310 65,335 140,290 125,265" fill="#f5c842"/>
+            </g>
+
+            <!-- Main Penrose Triangle faces -->
+            <!-- Top horizontal beam -->
+            <polygon points="200,20 245,20 215,72 170,72" fill="url(#edge1)" opacity="0.95"/>
+            <!-- Top beam depth -->
+            <polygon points="245,20 265,55 230,80 215,72" fill="#8B4513" opacity="0.9"/>
+
+            <!-- Right diagonal beam -->
+            <polygon points="265,55 360,330 320,350 225,80" fill="url(#edge2)" opacity="0.95"/>
+            <!-- Right beam depth -->
+            <polygon points="360,330 345,362 310,362 320,350" fill="#5a2d0c" opacity="0.9"/>
+
+            <!-- Left diagonal beam -->
+            <polygon points="170,72 80,335 40,315 135,55" fill="url(#edge3)" opacity="0.95"/>
+            <!-- Left beam depth -->
+            <polygon points="80,335 40,315 50,350 90,362" fill="#7a3a0a" opacity="0.9"/>
+
+            <!-- Bottom connector left-->
+            <polygon points="40,315 90,362 150,362 80,335" fill="url(#edge3)" opacity="0.95"/>
+            <!-- Bottom connector right -->
+            <polygon points="310,362 345,362 360,330 320,350" fill="url(#edge2)" opacity="0.95"/>
+            <!-- Bottom beam -->
+            <polygon points="150,362 310,362 320,350 80,335" fill="url(#edge1)" opacity="0.95"/>
+
+            <!-- Glowing edges -->
+            <polyline points="200,20 245,20 265,55 360,330 345,362 310,362 150,362 90,362 40,315 135,55 170,20 200,20"
+              stroke="url(#edge1)" stroke-width="1.5" fill="none" filter="url(#glowFilter)" opacity="0.8"/>
+
+            <!-- Corner glow dots -->
+            <circle cx="200" cy="20" r="5" fill="#ffe29a" filter="url(#glowFilter)" opacity="0.9"/>
+            <circle cx="360" cy="330" r="5" fill="#f5a623" filter="url(#glowFilter)" opacity="0.9"/>
+            <circle cx="40" cy="315" r="5" fill="#f5c842" filter="url(#glowFilter)" opacity="0.9"/>
+          </svg>
+          <!-- Glow orb behind triangle -->
+          <div class="triangle-glow-orb"></div>
+        </div>
+
+        <!-- Floating snack elements -->
+        <div class="float-item float-murukku" id="floatMurukku">🌀</div>
+        <div class="float-item float-banana" id="floatBanana">🍌</div>
+        <div class="float-item float-cookie" id="floatCookie">🍪</div>
+        <div class="float-item float-spice" id="floatSpice">🌶️</div>
+        <div class="float-item float-leaf1" id="floatLeaf1">🌿</div>
+        <div class="float-item float-leaf2" id="floatLeaf2">🌿</div>
+        <div class="float-item float-star1" id="floatStar1">✦</div>
+        <div class="float-item float-star2" id="floatStar2">✦</div>
+        <div class="float-item float-star3" id="floatStar3">⭐</div>
+
+        <!-- Steam/smoke particles -->
+        <div class="steam-container">
+          <div class="steam s1"></div>
+          <div class="steam s2"></div>
+          <div class="steam s3"></div>
+          <div class="steam s4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="scroll-indicator" id="scrollIndicator">
+    <div class="scroll-mouse">
+      <div class="scroll-wheel"></div>
+    </div>
+    <span>Scroll to explore</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ MARQUEE ═══════════════════════════════ -->
+<div class="marquee-strip">
+  <div class="marquee-track">
+    <span>🌶️ Authentic Recipes</span>
+    <span class="sep">✦</span>
+    <span>🏠 100% Homemade</span>
+    <span class="sep">✦</span>
+    <span>🌿 No Preservatives</span>
+    <span class="sep">✦</span>
+    <span>📦 Pan India Delivery</span>
+    <span class="sep">✦</span>
+    <span>⭐ 2000+ Happy Customers</span>
+    <span class="sep">✦</span>
+    <span>🛡️ Hygienically Packed</span>
+    <span class="sep">✦</span>
+    <span>🌶️ Authentic Recipes</span>
+    <span class="sep">✦</span>
+    <span>🏠 100% Homemade</span>
+    <span class="sep">✦</span>
+    <span>🌿 No Preservatives</span>
+    <span class="sep">✦</span>
+    <span>📦 Pan India Delivery</span>
+    <span class="sep">✦</span>
+    <span>⭐ 2000+ Happy Customers</span>
+    <span class="sep">✦</span>
+    <span>🛡️ Hygienically Packed</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CATEGORIES ═══════════════════════════════ -->
+<section class="section categories-section" id="categories">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Explore Our Range</span>
+      <h2 class="section-title">Product Categories</h2>
+      <p class="section-subtitle">Crafted with generations-old recipes and premium natural ingredients</p>
+    </div>
+
+    <div class="categories-grid">
+
+      <a href="shop.html?cat=snacks" class="cat-card" id="cat-snacks" data-animate-delay="0">
+        <div class="cat-card-inner">
+          <div class="cat-icon-wrap">
+            <div class="cat-icon">🍘</div>
+          </div>
+          <div class="cat-img-zone">
+            <div class="cat-img-placeholder snacks-bg">
+              <div class="food-emoji-float">🌀</div>
+              <div class="food-emoji-float f2">🍌</div>
+              <div class="food-emoji-float f3">🥜</div>
+            </div>
+          </div>
+          <div class="cat-info">
+            <h3>Authentic Snacks</h3>
+            <p>Murukku, Banana Chips, Mixture & more</p>
+            <span class="cat-count">24 Products</span>
+          </div>
+          <div class="cat-arrow">→</div>
+          <div class="cat-glow-border"></div>
+        </div>
+      </a>
+
+      <a href="shop.html?cat=spices" class="cat-card" id="cat-spices" data-animate-delay="100">
+        <div class="cat-card-inner">
+          <div class="cat-icon-wrap">
+            <div class="cat-icon">🌶️</div>
+          </div>
+          <div class="cat-img-zone">
+            <div class="cat-img-placeholder spice-bg">
+              <div class="food-emoji-float">🌶️</div>
+              <div class="food-emoji-float f2">🟡</div>
+              <div class="food-emoji-float f3">🟠</div>
+            </div>
+          </div>
+          <div class="cat-info">
+            <h3>Pure Spice Blends</h3>
+            <p>Sambar Powder, Rasam, Garam Masala</p>
+            <span class="cat-count">18 Products</span>
+          </div>
+          <div class="cat-arrow">→</div>
+          <div class="cat-glow-border"></div>
+        </div>
+      </a>
+
+      <a href="shop.html?cat=powders" class="cat-card" id="cat-powders" data-animate-delay="200">
+        <div class="cat-card-inner">
+          <div class="cat-icon-wrap">
+            <div class="cat-icon">🍵</div>
+          </div>
+          <div class="cat-img-zone">
+            <div class="cat-img-placeholder powder-bg">
+              <div class="food-emoji-float">🫙</div>
+              <div class="food-emoji-float f2">🌿</div>
+              <div class="food-emoji-float f3">✨</div>
+            </div>
+          </div>
+          <div class="cat-info">
+            <h3>Ready-to-Cook Powders</h3>
+            <p>Instant Idli, Dosa & Curry Mixes</p>
+            <span class="cat-count">12 Products</span>
+          </div>
+          <div class="cat-arrow">→</div>
+          <div class="cat-glow-border"></div>
+        </div>
+      </a>
+
+      <a href="shop.html?cat=combos" class="cat-card cat-card-featured" id="cat-combos" data-animate-delay="300">
+        <div class="cat-card-inner">
+          <div class="cat-badge-featured">⭐ Best Value</div>
+          <div class="cat-icon-wrap">
+            <div class="cat-icon">🎁</div>
+          </div>
+          <div class="cat-img-zone">
+            <div class="cat-img-placeholder combo-bg">
+              <div class="food-emoji-float">🎁</div>
+              <div class="food-emoji-float f2">🌟</div>
+              <div class="food-emoji-float f3">🎊</div>
+            </div>
+          </div>
+          <div class="cat-info">
+            <h3>Combo Packs</h3>
+            <p>Festival Bundles & Gift Hampers</p>
+            <span class="cat-count">8 Combos</span>
+          </div>
+          <div class="cat-arrow">→</div>
+          <div class="cat-glow-border"></div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ BESTSELLERS ═══════════════════════════════ -->
+<section class="section bestsellers-section" id="bestsellers">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Top Picks</span>
+      <h2 class="section-title">Bestseller Products</h2>
+      <p class="section-subtitle">Our most loved snacks ordered by thousands of happy families</p>
+    </div>
+
+    <div class="products-grid">
+
+      <div class="product-card" id="prod-1" data-animate-delay="0">
+        <div class="product-badge badge-hot">🔥 Hot</div>
+        <div class="product-img-wrap">
+          <a href="product.html?id=1" style="display:block;width:100%;height:100%;">
+            <div class="product-img-placeholder prod-img-1">
+              <span class="prod-emoji">🌀</span>
+            </div>
+          </a>
+          <button class="product-wishlist" aria-label="Add to wishlist">♡</button>
+        </div>
+        <div class="product-info">
+          <div class="product-category-tag">Authentic Snacks</div>
+          <h3 class="product-name"><a href="product.html?id=1">Homemade Murukku</a></h3>
+          <p class="product-desc">Crispy spiral snack with sesame & cumin</p>
+          <div class="product-rating">
+            <span class="stars">★★★★★</span>
+            <span class="rating-count">(128)</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">
+              <span class="price-current">₹149</span>
+              <span class="price-original">₹199</span>
+              <span class="discount-badge">25% OFF</span>
+            </div>
+            <button class="btn-add-cart" id="cart-1">Add to Cart</button>
+          </div>
+        </div>
+        <div class="product-glow"></div>
+      </div>
+
+      <div class="product-card" id="prod-2" data-animate-delay="100">
+        <div class="product-badge badge-new">✨ New</div>
+        <div class="product-img-wrap">
+          <a href="product.html?id=2" style="display:block;width:100%;height:100%;">
+            <div class="product-img-placeholder prod-img-2">
+              <span class="prod-emoji">🍌</span>
+            </div>
+          </a>
+          <button class="product-wishlist" aria-label="Add to wishlist">♡</button>
+        </div>
+        <div class="product-info">
+          <div class="product-category-tag">Authentic Snacks</div>
+          <h3 class="product-name"><a href="product.html?id=2">Kerala Banana Chips</a></h3>
+          <p class="product-desc">Thin-sliced, coconut oil fried golden chips</p>
+          <div class="product-rating">
+            <span class="stars">★★★★★</span>
+            <span class="rating-count">(94)</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">
+              <span class="price-current">₹129</span>
+              <span class="price-original">₹169</span>
+              <span class="discount-badge">24% OFF</span>
+            </div>
+            <button class="btn-add-cart" id="cart-2">Add to Cart</button>
+          </div>
+        </div>
+        <div class="product-glow"></div>
+      </div>
+
+      <div class="product-card" id="prod-3" data-animate-delay="200">
+        <div class="product-badge badge-best">🏆 Best</div>
+        <div class="product-img-wrap">
+          <a href="product.html?id=3" style="display:block;width:100%;height:100%;">
+            <div class="product-img-placeholder prod-img-3">
+              <span class="prod-emoji">🌶️</span>
+            </div>
+          </a>
+          <button class="product-wishlist" aria-label="Add to wishlist">♡</button>
+        </div>
+        <div class="product-info">
+          <div class="product-category-tag">Pure Spice Blends</div>
+          <h3 class="product-name"><a href="product.html?id=3">Sambar Powder</a></h3>
+          <p class="product-desc">Authentic Chettinad-style aromatic blend</p>
+          <div class="product-rating">
+            <span class="stars">★★★★★</span>
+            <span class="rating-count">(203)</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">
+              <span class="price-current">₹99</span>
+              <span class="price-original">₹139</span>
+              <span class="discount-badge">29% OFF</span>
+            </div>
+            <button class="btn-add-cart" id="cart-3">Add to Cart</button>
+          </div>
+        </div>
+        <div class="product-glow"></div>
+      </div>
+
+      <div class="product-card" id="prod-4" data-animate-delay="300">
+        <div class="product-img-wrap">
+          <a href="product.html?id=4" style="display:block;width:100%;height:100%;">
+            <div class="product-img-placeholder prod-img-4">
+              <span class="prod-emoji">🍪</span>
+            </div>
+          </a>
+          <button class="product-wishlist" aria-label="Add to wishlist">♡</button>
+        </div>
+        <div class="product-info">
+          <div class="product-category-tag">Homemade Baked</div>
+          <h3 class="product-name"><a href="product.html?id=4">Homemade Cookies</a></h3>
+          <p class="product-desc">Cardamom & jaggery flavored soft cookies</p>
+          <div class="product-rating">
+            <span class="stars">★★★★☆</span>
+            <span class="rating-count">(67)</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">
+              <span class="price-current">₹179</span>
+              <span class="price-original">₹229</span>
+              <span class="discount-badge">22% OFF</span>
+            </div>
+            <button class="btn-add-cart" id="cart-4">Add to Cart</button>
+          </div>
+        </div>
+        <div class="product-glow"></div>
+      </div>
+
+    </div>
+
+    <div class="view-all-wrap">
+      <a href="shop.html" class="btn-view-all" id="btn-view-all">View All Products
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ COMBO OFFERS ═══════════════════════════════ -->
+<section class="section combos-section" id="combos">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Special Deals</span>
+      <h2 class="section-title">Combo Offers</h2>
+      <p class="section-subtitle">Thoughtfully curated bundles for festivals, gifting & everyday joy</p>
+    </div>
+
+    <div class="combos-grid">
+
+      <div class="combo-card combo-festival" id="combo-1" data-animate-delay="0">
+        <div class="combo-ribbon">Festival Special</div>
+        <div class="combo-emoji-showcase">
+          <span class="ce ce1">🌀</span>
+          <span class="ce ce2">🍌</span>
+          <span class="ce ce3">🍪</span>
+          <span class="ce ce4">🌶️</span>
+          <span class="ce ce5">🎁</span>
+        </div>
+        <div class="combo-info">
+          <h3>Festival Snack Bundle</h3>
+          <p>Murukku + Banana Chips + Cookies + Sambar Powder</p>
+          <div class="combo-items">
+            <span class="combo-item-tag">Murukku 250g</span>
+            <span class="combo-item-tag">Banana Chips 200g</span>
+            <span class="combo-item-tag">Cookies 300g</span>
+          </div>
+          <div class="combo-price-row">
+            <div>
+              <span class="combo-price">₹499</span>
+              <span class="combo-orig">₹699</span>
+            </div>
+            <span class="combo-savings">Save ₹200</span>
+          </div>
+          <button class="btn-combo" id="btn-combo-1">Order This Bundle</button>
+        </div>
+        <div class="combo-glow-orb"></div>
+      </div>
+
+      <div class="combo-card combo-spice" id="combo-2" data-animate-delay="150">
+        <div class="combo-ribbon spice-ribbon">Spice Master</div>
+        <div class="combo-emoji-showcase">
+          <span class="ce ce1">🌶️</span>
+          <span class="ce ce2">🟡</span>
+          <span class="ce ce3">🟠</span>
+          <span class="ce ce4">🌿</span>
+          <span class="ce ce5">🫙</span>
+        </div>
+        <div class="combo-info">
+          <h3>Spice Collection</h3>
+          <p>6 Premium spice powders for the authentic home cook</p>
+          <div class="combo-items">
+            <span class="combo-item-tag">Sambar Pwd</span>
+            <span class="combo-item-tag">Rasam Pwd</span>
+            <span class="combo-item-tag">Garam Masala</span>
+          </div>
+          <div class="combo-price-row">
+            <div>
+              <span class="combo-price">₹449</span>
+              <span class="combo-orig">₹649</span>
+            </div>
+            <span class="combo-savings">Save ₹200</span>
+          </div>
+          <button class="btn-combo" id="btn-combo-2">Order This Bundle</button>
+        </div>
+        <div class="combo-glow-orb"></div>
+      </div>
+
+      <div class="combo-card combo-family" id="combo-3" data-animate-delay="300">
+        <div class="combo-ribbon family-ribbon">Family Pack</div>
+        <div class="combo-emoji-showcase">
+          <span class="ce ce1">👨‍👩‍👧‍👦</span>
+          <span class="ce ce2">🌀</span>
+          <span class="ce ce3">🍪</span>
+          <span class="ce ce4">🌶️</span>
+          <span class="ce ce5">🎊</span>
+        </div>
+        <div class="combo-info">
+          <h3>Family Combo Pack</h3>
+          <p>Everything your family needs — snacks + spices, all in one</p>
+          <div class="combo-items">
+            <span class="combo-item-tag">All Snacks</span>
+            <span class="combo-item-tag">All Spices</span>
+            <span class="combo-item-tag">Free Gift</span>
+          </div>
+          <div class="combo-price-row">
+            <div>
+              <span class="combo-price">₹899</span>
+              <span class="combo-orig">₹1299</span>
+            </div>
+            <span class="combo-savings">Save ₹400</span>
+          </div>
+          <button class="btn-combo" id="btn-combo-3">Order This Bundle</button>
+        </div>
+        <div class="combo-glow-orb"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FEATURES ═══════════════════════════════ -->
+<section class="section features-section" id="features">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Why Choose Us</span>
+      <h2 class="section-title">The Indianmade Promise</h2>
+    </div>
+
+    <div class="features-grid">
+
+      <div class="feature-card" id="feat-1" data-animate-delay="0">
+        <div class="feature-icon-ring">
+          <div class="feature-icon">🏠</div>
+        </div>
+        <h3>100% Homemade</h3>
+        <p>Every batch crafted in our home kitchen with personal care and attention</p>
+      </div>
+
+      <div class="feature-card" id="feat-2" data-animate-delay="100">
+        <div class="feature-icon-ring">
+          <div class="feature-icon">🌿</div>
+        </div>
+        <h3>No Preservatives</h3>
+        <p>Pure natural ingredients — no artificial colors, flavors or chemicals</p>
+      </div>
+
+      <div class="feature-card" id="feat-3" data-animate-delay="200">
+        <div class="feature-icon-ring">
+          <div class="feature-icon">👩‍🍳</div>
+        </div>
+        <h3>Traditional Taste</h3>
+        <p>Authentic recipes passed down through generations of Indian culinary tradition</p>
+      </div>
+
+      <div class="feature-card" id="feat-4" data-animate-delay="300">
+        <div class="feature-icon-ring">
+          <div class="feature-icon">🛡️</div>
+        </div>
+        <h3>Hygienically Packed</h3>
+        <p>Strict hygiene protocols and food-grade packaging for maximum freshness</p>
+      </div>
+
+      <div class="feature-card" id="feat-5" data-animate-delay="400">
+        <div class="feature-icon-ring">
+          <div class="feature-icon">🚚</div>
+        </div>
+        <h3>Pan India Delivery</h3>
+        <p>Reliable India Post shipping to every corner of the country with tracking</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ HOW IT WORKS ═══════════════════════════════ -->
+<section class="section how-section" id="how-it-works">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Simple Process</span>
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Order in 6 simple steps — safe, easy and transparent</p>
+    </div>
+
+    <div class="how-grid">
+
+      <div class="how-step" id="step-1" data-animate-delay="0">
+        <div class="step-number">01</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">🛒</div>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <div class="connector-line"></div>
+          <div class="connector-dot"></div>
+        </div>
+        <h4>Add to Cart</h4>
+        <p>Browse and add your favourite snacks and spices to the cart</p>
+      </div>
+
+      <div class="how-step" id="step-2" data-animate-delay="150">
+        <div class="step-number">02</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">🔢</div>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <div class="connector-line"></div>
+          <div class="connector-dot"></div>
+        </div>
+        <h4>Generate Order Code</h4>
+        <p>Get a unique order reference code for your purchase</p>
+      </div>
+
+      <div class="how-step" id="step-3" data-animate-delay="300">
+        <div class="step-number">03</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">💳</div>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <div class="connector-line"></div>
+          <div class="connector-dot"></div>
+        </div>
+        <h4>Pay via GPay / PhonePe</h4>
+        <p>Secure UPI payment through Google Pay or PhonePe</p>
+      </div>
+
+      <div class="how-step" id="step-4" data-animate-delay="450">
+        <div class="step-number">04</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">📸</div>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <div class="connector-line"></div>
+          <div class="connector-dot"></div>
+        </div>
+        <h4>Upload Screenshot</h4>
+        <p>Share your payment confirmation screenshot via WhatsApp</p>
+      </div>
+
+      <div class="how-step" id="step-5" data-animate-delay="600">
+        <div class="step-number">05</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">✅</div>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <div class="connector-line"></div>
+          <div class="connector-dot"></div>
+        </div>
+        <h4>Admin Verification</h4>
+        <p>Our team verifies payment and confirms your order within hours</p>
+      </div>
+
+      <div class="how-step" id="step-6" data-animate-delay="750">
+        <div class="step-number">06</div>
+        <div class="step-icon-wrap">
+          <div class="step-icon">📦</div>
+        </div>
+        <h4>Order Shipped</h4>
+        <p>Your package is dispatched via India Post with tracking number</p>
+      </div>
+
+    </div>
+
+    <!-- UPI logos strip -->
+    <div class="payment-strip" data-animate>
+      <span class="pay-label">Accepted Payment Methods</span>
+      <div class="pay-logos">
+        <div class="pay-logo" id="pay-gpay">
+          <span class="pay-logo-text gpay-text">G Pay</span>
+        </div>
+        <div class="pay-logo" id="pay-phonepe">
+          <span class="pay-logo-text phonepe-text">PhonePe</span>
+        </div>
+        <div class="pay-logo" id="pay-upi">
+          <span class="pay-logo-text upi-text">UPI</span>
+        </div>
+        <div class="pay-logo" id="pay-paytm">
+          <span class="pay-logo-text paytm-text">Paytm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ TRACK ORDER ═══════════════════════════════ -->
+<section class="section track-section" id="track">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Stay Updated</span>
+      <h2 class="section-title">Track Your Order</h2>
+      <p class="section-subtitle">Real-time updates via WhatsApp & India Post tracking</p>
+    </div>
+
+    <div class="track-wrapper">
+
+      <div class="track-visual" data-animate>
+        <div class="track-steps">
+          <div class="track-step completed" id="track-1">
+            <div class="track-step-icon">📦</div>
+            <div class="track-step-info">
+              <span class="track-step-title">Order Packed</span>
+              <span class="track-step-time">Day 1</span>
+            </div>
+            <div class="track-line track-line-active"></div>
+          </div>
+          <div class="track-step completed" id="track-2">
+            <div class="track-step-icon">⚙️</div>
+            <div class="track-step-info">
+              <span class="track-step-title">Processed</span>
+              <span class="track-step-time">Day 1-2</span>
+            </div>
+            <div class="track-line track-line-active"></div>
+          </div>
+          <div class="track-step active" id="track-3">
+            <div class="track-step-icon">🚚</div>
+            <div class="track-step-info">
+              <span class="track-step-title">Shipped</span>
+              <span class="track-step-time">Day 2-3</span>
+            </div>
+            <div class="track-line"></div>
+          </div>
+          <div class="track-step" id="track-4">
+            <div class="track-step-icon">🏠</div>
+            <div class="track-step-info">
+              <span class="track-step-title">Delivered</span>
+              <span class="track-step-time">Day 5-7</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="indiapost-badge">
+          <span class="indiapost-icon">📮</span>
+          <span>Shipped via India Post</span>
+        </div>
+      </div>
+
+      <div class="track-whatsapp" data-animate-delay="200">
+        <div class="whatsapp-phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="wa-avatar">IM</div>
+              <div class="wa-info">
+                <span class="wa-name">Indianmade</span>
+                <span class="wa-status">Online</span>
+              </div>
+              <div class="wa-call">📞</div>
+            </div>
+            <div class="phone-messages">
+              <div class="wa-msg wa-msg-in">
+                <p>📦 Your order #IM2024001 has been packed!</p>
+                <span class="wa-time">10:30 AM</span>
+              </div>
+              <div class="wa-msg wa-msg-in">
+                <p>🚚 Your order is on the way! Tracking: EP123456IN</p>
+                <span class="wa-time">2:15 PM</span>
+              </div>
+              <div class="wa-msg wa-msg-out">
+                <p>Thank you! When will it arrive? 😊</p>
+                <span class="wa-time">2:18 PM</span>
+              </div>
+              <div class="wa-msg wa-msg-in">
+                <p>🏠 Expected delivery in 3-5 days. We'll keep you updated!</p>
+                <span class="wa-time">2:20 PM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ REVIEWS ═══════════════════════════════ -->
+<section class="section reviews-section" id="reviews">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-tag">Testimonials</span>
+      <h2 class="section-title">Customer Reviews</h2>
+      <p class="section-subtitle">Real love from real families across India</p>
+    </div>
+
+    <div class="reviews-slider" id="reviewsSlider">
+      <div class="reviews-track" id="reviewsTrack">
+
+        <div class="review-card" id="rev-1">
+          <div class="review-quote">"</div>
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">The murukku is absolutely divine! Just like what my grandmother used to make. Crispy, perfectly salted and fresh. Will definitely order again!</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar" style="background:linear-gradient(135deg,#f5a623,#e8660a)">P</div>
+            <div class="reviewer-info">
+              <span class="reviewer-name">Priya Sharma</span>
+              <span class="reviewer-loc">Mumbai, Maharashtra</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card" id="rev-2">
+          <div class="review-quote">"</div>
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">Ordered the Festival Bundle for Diwali — my whole family loved it. The sambar powder is authentic Chettinad style. Packaging was great too!</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar" style="background:linear-gradient(135deg,#4CAF50,#2e7d32)">R</div>
+            <div class="reviewer-info">
+              <span class="reviewer-name">Rajesh Kumar</span>
+              <span class="reviewer-loc">Chennai, Tamil Nadu</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card" id="rev-3">
+          <div class="review-quote">"</div>
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">Kerala Banana Chips are the best I've had outside Kerala! Crispy, golden and cooked in pure coconut oil. The ordering process was super easy via WhatsApp.</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar" style="background:linear-gradient(135deg,#9c27b0,#6a1b9a)">A</div>
+            <div class="reviewer-info">
+              <span class="reviewer-name">Ananya Nair</span>
+              <span class="reviewer-loc">Bangalore, Karnataka</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card" id="rev-4">
+          <div class="review-quote">"</div>
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">The homemade cookies are incredible — cardamom and jaggery combination is just perfect. My kids absolutely love them. Ordered 3 times already!</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar" style="background:linear-gradient(135deg,#e91e63,#880e4f)">S</div>
+            <div class="reviewer-info">
+              <span class="reviewer-name">Sunita Patel</span>
+              <span class="reviewer-loc">Ahmedabad, Gujarat</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card" id="rev-5">
+          <div class="review-quote">"</div>
+          <div class="review-stars">★★★★★</div>
+          <p class="review-text">Extremely professional service! Payment was easy, got WhatsApp updates throughout, and the package arrived well-protected. Truly premium experience!</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar" style="background:linear-gradient(135deg,#2196F3,#0d47a1)">V</div>
+            <div class="reviewer-info">
+              <span class="reviewer-name">Vikram Reddy</span>
+              <span class="reviewer-loc">Hyderabad, Telangana</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slider-controls">
+        <button class="slider-btn prev-btn" id="prevBtn" aria-label="Previous review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <div class="slider-dots" id="sliderDots">
+          <button class="dot active" data-slide="0" aria-label="Review 1"></button>
+          <button class="dot" data-slide="1" aria-label="Review 2"></button>
+          <button class="dot" data-slide="2" aria-label="Review 3"></button>
+          <button class="dot" data-slide="3" aria-label="Review 4"></button>
+          <button class="dot" data-slide="4" aria-label="Review 5"></button>
+        </div>
+        <button class="slider-btn next-btn" id="nextBtn" aria-label="Next review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ WHATSAPP ═══════════════════════════════ -->
+<section class="section whatsapp-section" id="whatsapp-order">
+  <div class="container">
+    <div class="whatsapp-card" data-animate>
+      <div class="wa-card-glow"></div>
+      <div class="wa-card-content">
+        <div class="wa-card-left">
+          <div class="wa-icon-giant">
+            <svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+              <circle cx="29" cy="29" r="29" fill="#25D366"/>
+              <path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm0 36.4a16.4 16.4 0 0 1-8.4-2.3l-.6-.4-6 1.6 1.6-5.8-.4-.6A16.4 16.4 0 1 1 29 45.4zm9-12.3c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="wa-card-text">
+            <span class="wa-tag">Quick Orders</span>
+            <h2>Place Orders Quickly<br/>via WhatsApp</h2>
+            <p>Skip the queue — chat directly with us on WhatsApp. Get instant order confirmation, share payment screenshot and receive real-time delivery updates.</p>
+            <div class="wa-features">
+              <span>⚡ Instant Response</span>
+              <span>📸 Easy Payment</span>
+              <span>🔔 Live Updates</span>
+            </div>
+          </div>
+        </div>
+        <div class="wa-card-right">
+          <a href="https://wa.me/919876543210?text=Hello!%20I%20would%20like%20to%20order%20from%20Indianmade." 
+             class="btn-whatsapp" id="btn-whatsapp" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white"/>
+            </svg>
+            <svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9z" fill="white"/>
+            </svg>
+            Order on WhatsApp
+          </a>
+          <p class="wa-number">+91 98765 43210</p>
+          <p class="wa-hours">Available Mon–Sat, 9 AM – 9 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ NEWSLETTER ═══════════════════════════════ -->
+<section class="section newsletter-section" id="newsletter">
+  <div class="container">
+    <div class="newsletter-card" data-animate>
+      <div class="newsletter-glow"></div>
+      <div class="nl-content">
+        <div class="nl-icon">✉️</div>
+        <h2>Stay in the Loop</h2>
+        <p>Get exclusive deals, new product launches, festival offers and traditional recipes — delivered to your inbox.</p>
+        <form class="nl-form" id="nlForm" onsubmit="handleNewsletterSubmit(event)">
+          <div class="nl-input-wrap">
+            <input type="email" id="nl-email" placeholder="Enter your email address" required />
+            <button type="submit" class="btn-subscribe" id="btn-subscribe">Subscribe</button>
+          </div>
+          <p class="nl-disclaimer">No spam, ever. Unsubscribe anytime. 🙏</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer class="footer" id="contact">
+  <div class="footer-glow-top"></div>
+  <div class="footer-container">
+
+    <div class="footer-main">
+
+      <div class="footer-brand">
+        <a href="#" class="footer-logo-wrap" id="footer-logo-link">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+            <polygon points="20,3 37,32 3,32" stroke="url(#fLogoGrad)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+            <polygon points="20,10 30,28 10,28" fill="url(#fLogoFill)" opacity="0.4"/>
+            <defs>
+              <linearGradient id="fLogoGrad" x1="0" y1="0" x2="40" y2="40">
+                <stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#e8660a"/>
+              </linearGradient>
+              <linearGradient id="fLogoFill" x1="0" y1="0" x2="40" y2="40">
+                <stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#e8660a"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>Indianmade</span>
+        </a>
+        <p class="footer-tagline">Homemade with Love,<br/>Delivered with Happiness.</p>
+        <p class="footer-desc">Premium traditional Indian snacks and authentic cooking powders crafted with natural ingredients since 2020.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" id="social-insta" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" id="social-fb" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" id="social-yt" aria-label="YouTube">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.54C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM10 15V9l5.2 3-5.2 3z"/>
+            </svg>
+          </a>
+          <a href="https://wa.me/919876543210" class="social-link" id="social-wa" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-links-group">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#hero" id="f-home">Home</a></li>
+          <li><a href="#bestsellers" id="f-shop">Shop</a></li>
+          <li><a href="#categories" id="f-cat">Categories</a></li>
+          <li><a href="#combos" id="f-combos">Combo Packs</a></li>
+          <li><a href="#how-it-works" id="f-how">How It Works</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links-group">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#" id="f-about">About Us</a></li>
+          <li><a href="#reviews" id="f-reviews">Testimonials</a></li>
+          <li><a href="#" id="f-blog">Blog & Recipes</a></li>
+          <li><a href="#contact" id="f-contact">Contact Us</a></li>
+          <li><a href="#" id="f-careers">Careers</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links-group">
+        <h4>Contact</h4>
+        <ul class="contact-list">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.38 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>+91 98765 43210</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>hello@indianmade.in</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Tamil Nadu, India</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <p>© 2024 Indianmade. All rights reserved.</p>
+      </div>
+      <div class="footer-bottom-right">
+        <a href="#" id="f-privacy">Privacy Policy</a>
+        <a href="#" id="f-terms">Terms of Service</a>
+        <a href="#" id="f-refund">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating WhatsApp FAB -->
+<a href="https://wa.me/919876543210?text=Hi!%20I%20want%20to%20order%20from%20Indianmade." 
+   class="whatsapp-fab" id="wa-fab" target="_blank" rel="noopener noreferrer" aria-label="Order on WhatsApp">
+  <svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+    <path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/>
+  </svg>
+  <span class="fab-tooltip">Order via WhatsApp</span>
+</a>
+
+<!-- Scroll to top -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <path d="M18 15l-6-6-6 6"/>
+  </svg>
+</button>
+
+<script src="store.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

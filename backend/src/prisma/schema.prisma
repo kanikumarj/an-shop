@@ -1,0 +1,1361 @@
+// ============================================================
+//   AN SHOP — PRODUCTION DATABASE SCHEMA
+//   Platform : Premium Homemade Snacks E-Commerce
+//   ORM      : Prisma 5.x   |   DB: PostgreSQL
+//   
+//   ORDER FLOW:
+//   User → Cart → Checkout → UPI Payment →
+//   Screenshot Upload → Admin Verification →
+//   Shipment → Tracking
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   ENUMERATIONS
+// ═══════════════════════════════════════════════════════════
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  SUPERADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+enum OrderStatus {
+  // Pre-payment
+  DRAFT             // Cart converted to order, not yet checked out
+  PENDING           // Order placed, awaiting payment
+
+  // Payment flow (UPI screenshot)
+  PAYMENT_PENDING   // Waiting for customer to upload screenshot
+  SCREENSHOT_UPLOADED // Screenshot uploaded, awaiting admin review
+  PAYMENT_VERIFIED  // Admin confirmed payment
+  PAYMENT_REJECTED  // Admin rejected screenshot (wrong/unclear)
+
+  // Fulfillment
+  CONFIRMED         // Order confirmed after payment verification
+  PROCESSING        // Being packed/prepared
+  PACKED            // Packed and ready for dispatch
+  SHIPPED           // Handed to courier
+  OUT_FOR_DELIVERY  // Last-mile delivery in progress
+  DELIVERED         // Successfully delivered
+
+  // Terminal states
+  CANCELLED         // Cancelled by customer or admin
+  REFUND_REQUESTED  // Customer requested refund
+  REFUNDED          // Refund processed
+  RETURNED          // Item returned by customer
+}
+
+enum PaymentMethod {
+  UPI               // Primary method — screenshot verification
+  BANK_TRANSFER     // NEFT/RTGS with screenshot
+  CASH_ON_DELIVERY  // COD — no screenshot needed
+  RAZORPAY          // Future: online gateway
+  PAYTM
+}
+
+enum PaymentStatus {
+  PENDING
+  SCREENSHOT_UPLOADED
+  VERIFIED          // Admin verified
+  REJECTED          // Admin rejected, re-upload needed
+  PAID              // Payment confirmed
+  FAILED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum ScreenshotStatus {
+  PENDING_REVIEW    // Just uploaded
+  APPROVED          // Payment confirmed
+  REJECTED          // Rejected by admin
+  EXPIRED           // Screenshot too old / link expired
+}
+
+enum ShipmentStatus {
+  PENDING           // Not yet shipped
+  LABEL_CREATED     // Shipping label printed
+  PICKED_UP         // Picked up by courier
+  IN_TRANSIT        // Moving through network
+  OUT_FOR_DELIVERY  // Local delivery agent
+  DELIVERED         // Delivered to customer
+  FAILED_DELIVERY   // Delivery attempt failed
+  RETURNED          // Returned to origin
+}
+
+enum TrackingEventType {
+  ORDER_CREATED
+  PAYMENT_RECEIVED
+  ORDER_CONFIRMED
+  PROCESSING_STARTED
+  PACKED
+  DISPATCHED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_ATTEMPTED
+  DELIVERED
+  RETURNED
+  CANCELLED
+  CUSTOM             // Admin-entered custom event
+}
+
+enum NotificationType {
+  // Order lifecycle
+  ORDER_PLACED
+  PAYMENT_REMINDER
+  SCREENSHOT_RECEIVED
+  PAYMENT_VERIFIED
+  PAYMENT_REJECTED
+  ORDER_CONFIRMED
+  ORDER_PROCESSING
+  ORDER_SHIPPED
+  ORDER_OUT_FOR_DELIVERY
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  REFUND_INITIATED
+  REFUND_COMPLETED
+
+  // Account
+  WELCOME
+  EMAIL_VERIFIED
+  PHONE_VERIFIED
+  PASSWORD_CHANGED
+  LOGIN_ALERT
+
+  // Promotions
+  COUPON_EXPIRY_REMINDER
+  PROMOTIONAL
+  RESTOCK_ALERT       // Product back in stock
+  PRICE_DROP          // Wishlist product price dropped
+
+  // Admin
+  LOW_STOCK_ALERT
+  NEW_ORDER_ALERT
+  PAYMENT_SCREENSHOT_ALERT
+  NEW_REVIEW_ALERT
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+enum CouponType {
+  PERCENTAGE          // e.g., 10% off
+  FIXED_AMOUNT        // e.g., ₹50 off
+  FREE_SHIPPING       // Waive shipping charges
+  BUY_X_GET_Y         // BOGO deals
+}
+
+enum ReviewStatus {
+  PENDING_MODERATION
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum AdminActionType {
+  // Orders
+  ORDER_STATUS_CHANGED
+  PAYMENT_SCREENSHOT_APPROVED
+  PAYMENT_SCREENSHOT_REJECTED
+  ORDER_CANCELLED
+  REFUND_PROCESSED
+
+  // Products
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  PRODUCT_DELETED
+  STOCK_UPDATED
+
+  // Users
+  USER_BANNED
+  USER_UNBANNED
+  USER_ROLE_CHANGED
+
+  // Reviews
+  REVIEW_APPROVED
+  REVIEW_REJECTED
+
+  // Settings
+  SETTINGS_UPDATED
+  COUPON_CREATED
+  COUPON_DEACTIVATED
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 1: USERS & AUTHENTICATION
+// ═══════════════════════════════════════════════════════════
+
+/// Core user account — customers, admins, superadmins
+model User {
+  id                String    @id @default(uuid())
+  
+  // Identity
+  name              String
+  email             String    @unique
+  phone             String?   @unique
+  gender            Gender?
+  dateOfBirth       DateTime?
+  
+  // Auth
+  password          String
+  role              Role      @default(CUSTOMER)
+  
+  // Profile
+  avatar            String?
+  avatarPublicId    String?   // Cloudinary public ID for deletion
+  bio               String?   @db.VarChar(300)
+  
+  // Verification & Status
+  isActive          Boolean   @default(true)
+  isEmailVerified   Boolean   @default(false)
+  isPhoneVerified   Boolean   @default(false)
+  isBanned          Boolean   @default(false)
+  banReason         String?
+  bannedAt          DateTime?
+  
+  // Session tracking
+  lastLogin         DateTime?
+  lastLoginIp       String?
+  loginCount        Int       @default(0)
+  
+  // Password management
+  passwordChangedAt DateTime?
+  
+  // Referral
+  referralCode      String?   @unique @default(dbgenerated("upper(substring(md5(random()::text), 1, 8))"))
+  referredById      String?
+  referredBy        User?     @relation("Referrals", fields: [referredById], references: [id])
+  referrals         User[]    @relation("Referrals")
+  
+  // Soft delete
+  deletedAt         DateTime?
+  
+  // Relations
+  addresses         Address[]
+  orders            Order[]
+  cart              CartItem[]
+  wishlist          WishlistItem[]
+  reviews           Review[]
+  reviewHelpful     ReviewHelpful[]
+  notifications     Notification[]
+  couponUsages      CouponUsage[]
+  otpTokens         OtpToken[]
+  refreshTokens     RefreshToken[]
+  adminLogs         AdminLog[]      @relation("AdminActions")
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([email])
+  @@index([phone])
+  @@index([role, isActive])
+  @@index([referralCode])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// OTP tokens for email/phone verification, password reset
+model OtpToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  code        String                          // 6-digit OTP or token hash
+  type        String                          // "email_verify" | "phone_verify" | "password_reset" | "login"
+  channel     String    @default("email")     // "email" | "sms" | "whatsapp"
+  target      String                          // Email or phone it was sent to
+  
+  isUsed      Boolean   @default(false)
+  usedAt      DateTime?
+  expiresAt   DateTime
+  attempts    Int       @default(0)           // Track brute-force attempts
+  maxAttempts Int       @default(5)
+  
+  // Metadata
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, type])
+  @@index([code, type])
+  @@index([expiresAt])
+  @@map("otp_tokens")
+}
+
+/// JWT refresh tokens — stored for revocation support
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tokenHash   String    @unique           // SHA-256 hash of the token (not raw)
+  jti         String    @unique           // JWT ID from token payload
+  family      String?                    // Token family (rotation tracking)
+  
+  isRevoked   Boolean   @default(false)
+  revokedAt   DateTime?
+  revokedReason String?                  // "logout" | "refresh" | "security" | "admin"
+  
+  expiresAt   DateTime
+  
+  // Device info
+  deviceName  String?
+  deviceType  String?   // "mobile" | "desktop" | "tablet"
+  userAgent   String?
+  ipAddress   String?
+  
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([jti])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// Delivery addresses
+model Address {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        AddressType @default(HOME)
+  label       String?                    // Custom label: "Mom's Place", "Office"
+  isDefault   Boolean     @default(false)
+  
+  // Recipient
+  fullName    String
+  phone       String
+  alternatePhone String?
+  
+  // Address lines
+  line1       String                     // House no, building
+  line2       String?                    // Street, area
+  landmark    String?
+  city        String
+  state       String
+  pincode     String
+  country     String      @default("India")
+  
+  // Geolocation (optional, for delivery routing)
+  latitude    Decimal?    @db.Decimal(10, 8)
+  longitude   Decimal?    @db.Decimal(11, 8)
+  
+  // Soft delete
+  deletedAt   DateTime?
+  
+  // Relations
+  orders      Order[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, isDefault])
+  @@index([pincode])
+  @@map("addresses")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 2: CATEGORIES
+// ═══════════════════════════════════════════════════════════
+
+/// Product categories — supports infinite nesting
+model Category {
+  id              String      @id @default(uuid())
+  
+  name            String      @db.VarChar(100)
+  slug            String      @unique
+  description     String?     @db.Text
+  
+  // Media
+  image           String?
+  imagePublicId   String?
+  icon            String?                        // Emoji or icon class
+  bannerImage     String?
+  
+  // Hierarchy
+  parentId        String?
+  parent          Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[]  @relation("CategoryHierarchy")
+  depth           Int         @default(0)        // 0 = root, 1 = child, etc.
+  
+  // Display
+  sortOrder       Int         @default(0)
+  isActive        Boolean     @default(true)
+  isFeatured      Boolean     @default(false)
+  
+  // SEO
+  metaTitle       String?     @db.VarChar(70)
+  metaDescription String?     @db.VarChar(160)
+  
+  // Soft delete
+  deletedAt       DateTime?
+  
+  // Relations
+  products        Product[]
+  
+  // Audit
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+  @@index([isActive, sortOrder])
+  @@index([deletedAt])
+  @@map("categories")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 3: PRODUCTS
+// ═══════════════════════════════════════════════════════════
+
+/// Core product listing
+model Product {
+  id                String    @id @default(uuid())
+  
+  // Basics
+  name              String    @db.VarChar(200)
+  slug              String    @unique
+  sku               String    @unique
+  
+  // Content
+  description       String    @db.Text
+  shortDescription  String?   @db.VarChar(500)
+  
+  // Homemade-specific fields
+  ingredients       String?   @db.Text
+  allergens         String?   @db.VarChar(500)
+  nutritionInfo     Json?                          // Per 100g nutritional data
+  shelfLife         String?   @db.VarChar(100)     // "15 days", "1 month"
+  storageInfo       String?   @db.VarChar(300)     // "Store in cool dry place"
+  madeIn            String?   @db.VarChar(100)     // City/region made
+  certifications    String[]                       // "FSSAI", "Organic", "Homemade"
+  
+  // Pricing
+  basePrice         Decimal   @db.Decimal(10, 2)   // Selling price (no variants)
+  comparePrice      Decimal?  @db.Decimal(10, 2)   // Crossed-out MRP
+  costPrice         Decimal?  @db.Decimal(10, 2)   // Internal — hidden from customers
+  taxPercent        Decimal   @db.Decimal(5, 2)    @default(18.00)  // GST %
+  taxInclusive      Boolean   @default(true)        // Is price tax-inclusive?
+  
+  // Inventory
+  stock             Int       @default(0)
+  reservedStock     Int       @default(0)           // In active carts
+  lowStockThreshold Int       @default(10)
+  trackInventory    Boolean   @default(true)
+  allowBackorder    Boolean   @default(false)
+  
+  // Physical
+  weight            Decimal?  @db.Decimal(8, 2)    // In grams
+  dimensions        Json?                          // { l, w, h } in cm
+  
+  // Category
+  categoryId        String
+  category          Category  @relation(fields: [categoryId], references: [id])
+  
+  // Tags & discovery
+  tags              String[]
+  searchKeywords    String?   @db.Text             // Hidden SEO keywords
+  
+  // Status flags
+  isActive          Boolean   @default(true)
+  isFeatured        Boolean   @default(false)
+  isBestseller      Boolean   @default(false)
+  isNewArrival      Boolean   @default(false)
+  isOnSale          Boolean   @default(false)
+  hasVariants       Boolean   @default(false)
+  
+  // Aggregated (maintained by triggers/jobs)
+  avgRating         Decimal   @db.Decimal(3, 2)    @default(0.00)
+  totalReviews      Int       @default(0)
+  totalSold         Int       @default(0)
+  totalViews        Int       @default(0)
+  
+  // SEO
+  metaTitle         String?   @db.VarChar(70)
+  metaDescription   String?   @db.VarChar(160)
+  
+  // Soft delete
+  deletedAt         DateTime?
+  deletedBy         String?
+  
+  // Relations
+  images            ProductImage[]
+  variants          ProductVariant[]
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  wishlistItems     WishlistItem[]
+  reviews           Review[]
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([categoryId, isActive])
+  @@index([isActive, isFeatured])
+  @@index([isActive, isBestseller])
+  @@index([isActive, isNewArrival])
+  @@index([isActive, isOnSale])
+  @@index([tags])
+  @@index([avgRating])
+  @@index([totalSold])
+  @@index([stock])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+/// Product media (images, videos)
+model ProductImage {
+  id          String  @id @default(uuid())
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  url         String
+  publicId    String?                  // Cloudinary public ID
+  alt         String?   @db.VarChar(200)
+  caption     String?   @db.VarChar(300)
+  
+  isPrimary   Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  
+  // Media type
+  type        String    @default("image")  // "image" | "video"
+  width       Int?
+  height      Int?
+  sizeBytes   Int?
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([productId, isPrimary])
+  @@index([productId, sortOrder])
+  @@map("product_images")
+}
+
+/// Product variants — different sizes, weights, or flavours
+model ProductVariant {
+  id              String    @id @default(uuid())
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  name            String    @db.VarChar(100)   // "250g", "500g", "1kg", "Spicy"
+  sku             String    @unique
+  
+  // Pricing
+  price           Decimal   @db.Decimal(10, 2)
+  comparePrice    Decimal?  @db.Decimal(10, 2)
+  costPrice       Decimal?  @db.Decimal(10, 2)
+  
+  // Inventory
+  stock           Int       @default(0)
+  reservedStock   Int       @default(0)
+  
+  // Attributes (flexible JSON)
+  attributes      Json?     // { "weight": "250g", "flavor": "spicy", "pack_of": 2 }
+  
+  // Optional variant-specific image
+  imageUrl        String?
+  imagePublicId   String?
+  
+  sortOrder       Int       @default(0)
+  isActive        Boolean   @default(true)
+  isDefault       Boolean   @default(false)   // Default selection on product page
+  
+  // Soft delete
+  deletedAt       DateTime?
+  
+  // Relations
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([productId, isActive])
+  @@index([sku])
+  @@index([deletedAt])
+  @@map("product_variants")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 4: CART
+// ═══════════════════════════════════════════════════════════
+
+/// Shopping cart — one item per product+variant combination
+model CartItem {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  quantity    Int             @default(1)
+  
+  // Price snapshot (at time of add — used for price change detection)
+  priceAtAdd  Decimal         @db.Decimal(10, 2)
+  
+  // Notes from customer (e.g., "Extra spicy please")
+  notes       String?         @db.VarChar(300)
+  
+  // Saved for later (wishlist-like but stays in cart)
+  isSavedForLater Boolean     @default(false)
+  
+  // Session-based cart support (guest checkout)
+  sessionId   String?
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([userId, productId, variantId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([userId, isSavedForLater])
+  @@map("cart_items")
+}
+
+/// Wishlist — products saved for later
+model WishlistItem {
+  id          String  @id @default(uuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Price tracking (notify on drop)
+  priceAtSave Decimal? @db.Decimal(10, 2)
+  notifyOnPriceDrop Boolean @default(false)
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("wishlist_items")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 5: ORDERS
+// ═══════════════════════════════════════════════════════════
+
+/// Main order record
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique                // e.g., AN-2024-00001
+  
+  // Customer
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  
+  // Delivery address (snapshot at order time)
+  addressId       String?
+  address         Address?    @relation(fields: [addressId], references: [id])
+  shippingAddress Json?       // Snapshot — preserved if address deleted
+  
+  // Order lifecycle
+  status          OrderStatus @default(PENDING)
+  
+  // Pricing breakdown
+  subtotal        Decimal     @db.Decimal(10, 2)     // Sum of items before discounts
+  discountAmount  Decimal     @db.Decimal(10, 2)     @default(0)
+  couponDiscount  Decimal     @db.Decimal(10, 2)     @default(0)
+  shippingCharge  Decimal     @db.Decimal(10, 2)     @default(0)
+  taxAmount       Decimal     @db.Decimal(10, 2)     @default(0)
+  total           Decimal     @db.Decimal(10, 2)     // Final payable amount
+  
+  // Coupon
+  couponId        String?
+  coupon          Coupon?     @relation(fields: [couponId], references: [id])
+  couponCode      String?                            // Snapshot of code used
+  
+  // Payment
+  paymentMethod   PaymentMethod?
+  paymentStatus   PaymentStatus @default(PENDING)
+  
+  // Shipping
+  trackingNumber  String?
+  courierName     String?
+  estimatedDelivery DateTime?
+  deliveredAt     DateTime?
+  
+  // Notes
+  customerNotes   String?     @db.VarChar(500)       // Customer's special instructions
+  adminNotes      String?     @db.Text               // Internal admin notes
+  cancellationReason String?  @db.VarChar(500)
+  
+  // Timing
+  placedAt        DateTime?                          // When order was confirmed
+  paidAt          DateTime?
+  shippedAt       DateTime?
+  
+  // Soft delete
+  deletedAt       DateTime?
+  
+  // Relations
+  items           OrderItem[]
+  payments        Payment[]
+  statusHistory   OrderStatusHistory[]
+  tracking        Shipment?
+  
+  // Audit
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([placedAt])
+  @@index([couponId])
+  @@index([deletedAt])
+  @@map("orders")
+}
+
+/// Order line items — snapshot of product at time of purchase
+model OrderItem {
+  id            String          @id @default(uuid())
+  orderId       String
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id])
+  
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  // Full snapshot — never changes even if product is edited
+  productName   String          @db.VarChar(200)
+  variantName   String?         @db.VarChar(100)
+  productSku    String
+  imageUrl      String?
+  
+  // Pricing at time of order
+  unitPrice     Decimal         @db.Decimal(10, 2)
+  comparePrice  Decimal?        @db.Decimal(10, 2)
+  taxPercent    Decimal         @db.Decimal(5, 2)
+  quantity      Int
+  subtotal      Decimal         @db.Decimal(10, 2)   // unitPrice × quantity
+  
+  // Per-item discount
+  discountAmount Decimal        @db.Decimal(10, 2)   @default(0)
+  total         Decimal         @db.Decimal(10, 2)   // subtotal - discountAmount
+  
+  // Return/refund tracking at item level
+  returnedQuantity Int          @default(0)
+  refundedAmount  Decimal       @db.Decimal(10, 2)   @default(0)
+  
+  createdAt     DateTime        @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/// Full audit trail of every status change on an order
+model OrderStatusHistory {
+  id          String      @id @default(uuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  
+  note        String?     @db.VarChar(500)    // Reason / admin comment
+  changedBy   String?                         // userId of admin or "SYSTEM"
+  changedByRole Role?
+  
+  // Metadata
+  ipAddress   String?
+  
+  createdAt   DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_status_history")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 6: PAYMENTS  (UPI-First)
+// ═══════════════════════════════════════════════════════════
+
+/// Payment record — one or more per order (retry logic)
+model Payment {
+  id                String        @id @default(uuid())
+  
+  // Reference
+  orderId           String
+  order             Order         @relation(fields: [orderId], references: [id])
+  
+  // A unique reference the customer enters in UPI
+  paymentReference  String        @unique @default(dbgenerated("'PAY-' || upper(substring(md5(random()::text), 1, 10))"))
+  
+  // Method & Status
+  method            PaymentMethod @default(UPI)
+  status            PaymentStatus @default(PENDING)
+  
+  // UPI-specific
+  upiId             String?                       // Customer's UPI ID they paid from
+  upiTransactionId  String?                       // UTR number customer mentions
+  merchantUpiId     String?                       // Shop's UPI ID (snapshot)
+  merchantName      String?                       // Shop name (snapshot)
+  qrCodeUrl         String?                       // QR code image URL
+  
+  // Amount
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  
+  // Verification
+  verifiedAt        DateTime?
+  verifiedBy        String?                       // Admin userId
+  rejectionReason   String?       @db.VarChar(500)
+  rejectedAt        DateTime?
+  rejectedBy        String?
+  
+  // Online gateway fields (Razorpay etc.)
+  gatewayOrderId    String?       @unique
+  gatewayPaymentId  String?       @unique
+  gatewaySignature  String?
+  gatewayResponse   Json?                         // Raw gateway webhook data
+  
+  // Refund tracking
+  refundAmount      Decimal?      @db.Decimal(10, 2)
+  refundId          String?       @unique
+  refundReason      String?       @db.VarChar(500)
+  refundedAt        DateTime?
+  refundedBy        String?
+  
+  // Expiry (UPI payment window)
+  expiresAt         DateTime?
+  
+  // Relations
+  screenshots       PaymentScreenshot[]
+  
+  // Audit
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([paymentReference])
+  @@index([status])
+  @@index([upiTransactionId])
+  @@index([gatewayOrderId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 7: PAYMENT SCREENSHOTS
+//   (UPI Proof Upload & Admin Verification)
+// ═══════════════════════════════════════════════════════════
+
+/// Screenshot of UPI payment uploaded by customer
+model PaymentScreenshot {
+  id              String           @id @default(uuid())
+  
+  // Links
+  paymentId       String
+  payment         Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  
+  uploadedBy      String                             // userId who uploaded
+  
+  // File details
+  fileUrl         String                             // Cloudinary / S3 URL
+  publicId        String?                            // Cloudinary public ID
+  thumbnailUrl    String?                            // Auto-generated thumbnail
+  
+  fileName        String           @db.VarChar(255)
+  fileType        String           @db.VarChar(50)  // "image/jpeg" | "image/png" | "image/webp"
+  fileSizeBytes   Int
+  
+  // Image metadata
+  width           Int?
+  height          Int?
+  
+  // Customer-provided info
+  utrNumber       String?          @db.VarChar(50)  // UTR / transaction reference
+  payerName       String?          @db.VarChar(100)
+  paidAmount      Decimal?         @db.Decimal(10, 2)
+  paidAt          DateTime?                          // When customer says they paid
+  remarks         String?          @db.VarChar(500)
+  
+  // Admin review
+  status          ScreenshotStatus @default(PENDING_REVIEW)
+  reviewedAt      DateTime?
+  reviewedBy      String?                            // Admin userId
+  reviewerName    String?                            // Snapshot
+  approvalNote    String?          @db.VarChar(500)
+  rejectionReason String?          @db.VarChar(500)
+  
+  // Which upload attempt (retry counter)
+  attemptNumber   Int              @default(1)
+  
+  // Soft delete
+  deletedAt       DateTime?
+  
+  // Upload metadata
+  uploadedAt      DateTime         @default(now())
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([paymentId])
+  @@index([uploadedBy])
+  @@index([status])
+  @@index([utrNumber])
+  @@index([reviewedBy])
+  @@index([deletedAt])
+  @@map("payment_screenshots")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 8: TRACKING & SHIPMENT
+// ═══════════════════════════════════════════════════════════
+
+/// Shipment record — one per order
+model Shipment {
+  id              String          @id @default(uuid())
+  orderId         String          @unique
+  order           Order           @relation(fields: [orderId], references: [id])
+  
+  // Courier info
+  courierName     String?         @db.VarChar(100)   // "Delhivery", "Shiprocket"
+  courierPartner  String?         @db.VarChar(100)   // Internal courier code
+  trackingNumber  String?         @db.VarChar(100)
+  trackingUrl     String?                            // Direct tracking link
+  awbNumber       String?         @db.VarChar(100)   // Airway Bill Number
+  
+  // Status
+  status          ShipmentStatus  @default(PENDING)
+  
+  // Addresses (snapshots)
+  originAddress   Json?                              // Warehouse/pickup address
+  destAddress     Json?                              // Delivery address snapshot
+  
+  // Weight & dimensions (for billing)
+  actualWeight    Decimal?        @db.Decimal(8, 2)  // In grams
+  chargedWeight   Decimal?        @db.Decimal(8, 2)
+  dimensions      Json?                              // { l, w, h }
+  
+  // Timing
+  expectedPickup  DateTime?
+  pickedUpAt      DateTime?
+  expectedDelivery DateTime?
+  deliveredAt     DateTime?
+  
+  // Last known location
+  lastLocation    String?         @db.VarChar(300)
+  lastUpdateAt    DateTime?
+  
+  // Delivery agent
+  agentName       String?
+  agentPhone      String?
+  
+  // Failed delivery
+  deliveryAttempts Int            @default(0)
+  failureReason   String?
+  
+  // Label
+  labelUrl        String?                            // Shipping label PDF URL
+  labelGeneratedAt DateTime?
+  
+  // Relations
+  events          TrackingEvent[]
+  
+  // Audit
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([trackingNumber])
+  @@index([awbNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("shipments")
+}
+
+/// Granular tracking events — full delivery journey log
+model TrackingEvent {
+  id              String              @id @default(uuid())
+  shipmentId      String
+  shipment        Shipment            @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  
+  eventType       TrackingEventType
+  
+  // Location
+  location        String?             @db.VarChar(300)   // "Mumbai Hub"
+  city            String?
+  state           String?
+  pincode         String?
+  latitude        Decimal?            @db.Decimal(10, 8)
+  longitude       Decimal?            @db.Decimal(11, 8)
+  
+  // Description
+  title           String              @db.VarChar(200)
+  description     String?             @db.VarChar(500)
+  
+  // Source
+  source          String              @default("SYSTEM")  // "COURIER_API" | "ADMIN" | "SYSTEM"
+  rawPayload      Json?               // Original courier API response
+  
+  // Who logged it
+  loggedBy        String?             // Admin userId or "SYSTEM"
+  
+  occurredAt      DateTime                              // When the event actually happened
+  createdAt       DateTime            @default(now())
+
+  @@index([shipmentId])
+  @@index([occurredAt])
+  @@index([eventType])
+  @@map("tracking_events")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 9: COUPONS
+// ═══════════════════════════════════════════════════════════
+
+/// Discount coupons
+model Coupon {
+  id                  String      @id @default(uuid())
+  code                String      @unique             // Always stored uppercase
+  
+  description         String?     @db.VarChar(300)
+  type                CouponType  @default(PERCENTAGE)
+  
+  // Discount value
+  value               Decimal     @db.Decimal(10, 2)  // % or fixed ₹ amount
+  maxDiscountAmount   Decimal?    @db.Decimal(10, 2)  // Cap for % coupons
+  
+  // Eligibility
+  minOrderAmount      Decimal?    @db.Decimal(10, 2)  // Min cart value
+  minItemCount        Int?                            // Min qty of items
+  
+  // BUY_X_GET_Y specific
+  buyQuantity         Int?
+  getQuantity         Int?
+  
+  // Scope limits (empty = applies to all)
+  applicableCategories String[]                       // Category IDs
+  applicableProducts   String[]                       // Product IDs
+  excludedProducts     String[]                       // Product IDs excluded
+  
+  // Usage limits
+  totalUsageLimit     Int?                            // Global cap
+  perUserUsageLimit   Int         @default(1)         // Per customer
+  currentUsageCount   Int         @default(0)
+  
+  // Target audience
+  isPublic            Boolean     @default(true)      // false = private/referral
+  targetUserIds       String[]                        // Empty = everyone
+  
+  // Validity
+  isActive            Boolean     @default(true)
+  validFrom           DateTime    @default(now())
+  validUntil          DateTime?
+  
+  // First-time / new user only
+  firstOrderOnly      Boolean     @default(false)
+  newUsersOnly        Boolean     @default(false)
+  
+  // Soft delete
+  deletedAt           DateTime?
+  createdBy           String?                         // Admin userId
+  
+  // Relations
+  usages              CouponUsage[]
+  orders              Order[]
+  
+  // Audit
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([code])
+  @@index([isActive, isPublic])
+  @@index([validFrom, validUntil])
+  @@index([deletedAt])
+  @@map("coupons")
+}
+
+/// Per-user coupon usage tracking
+model CouponUsage {
+  id          String    @id @default(uuid())
+  couponId    String
+  coupon      Coupon    @relation(fields: [couponId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  orderId     String?                       // Which order it was applied to
+  
+  discountApplied Decimal @db.Decimal(10, 2)
+  
+  usedAt      DateTime  @default(now())
+
+  @@unique([couponId, userId, orderId])
+  @@index([couponId])
+  @@index([userId])
+  @@map("coupon_usages")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 10: REVIEWS
+// ═══════════════════════════════════════════════════════════
+
+/// Product reviews with moderation
+model Review {
+  id            String        @id @default(uuid())
+  
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId       String?                             // Verify purchase
+  
+  // Content
+  rating        Int                                 // 1 - 5
+  title         String?       @db.VarChar(100)
+  body          String?       @db.Text
+  
+  // Media
+  images        String[]                            // Cloudinary URLs
+  imagePublicIds String[]
+  
+  // Verification
+  isVerifiedPurchase Boolean  @default(false)       // Bought this product
+  
+  // Moderation
+  status        ReviewStatus  @default(PENDING_MODERATION)
+  moderatedAt   DateTime?
+  moderatedBy   String?
+  moderationNote String?      @db.VarChar(300)
+  
+  // Engagement
+  helpfulCount  Int           @default(0)
+  notHelpfulCount Int         @default(0)
+  flagCount     Int           @default(0)           // Community flags
+  
+  // Admin reply
+  adminReply    String?       @db.Text
+  adminReplyAt  DateTime?
+  adminReplyBy  String?
+  
+  // Soft delete
+  deletedAt     DateTime?
+  deletedBy     String?
+  
+  // Helpful votes
+  helpfulVotes  ReviewHelpful[]
+  
+  // Audit
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([userId, productId])                     // One review per product per user
+  @@index([productId, status])
+  @@index([userId])
+  @@index([rating])
+  @@index([status])
+  @@index([isVerifiedPurchase])
+  @@index([deletedAt])
+  @@map("reviews")
+}
+
+/// Tracks who voted helpful/not-helpful on a review
+model ReviewHelpful {
+  id          String    @id @default(uuid())
+  reviewId    String
+  review      Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isHelpful   Boolean                               // true = helpful, false = not helpful
+  
+  createdAt   DateTime  @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@map("review_helpful")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 11: NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+
+/// In-app notification store
+model Notification {
+  id          String              @id @default(uuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        NotificationType
+  channel     NotificationChannel @default(IN_APP)
+  
+  title       String              @db.VarChar(200)
+  message     String              @db.Text
+  imageUrl    String?
+  
+  // Deep link / action
+  actionUrl   String?
+  actionLabel String?             @db.VarChar(50)
+  
+  // Rich data payload (for rendering)
+  data        Json?               // { orderId, productId, amount, etc. }
+  
+  // Status
+  isRead      Boolean             @default(false)
+  readAt      DateTime?
+  
+  // Delivery
+  isSent      Boolean             @default(false)
+  sentAt      DateTime?
+  failureReason String?
+  
+  // Soft delete
+  deletedAt   DateTime?
+  
+  createdAt   DateTime            @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, type])
+  @@index([userId, createdAt])
+  @@index([deletedAt])
+  @@map("notifications")
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//   MODULE 12: ADMIN
+// ═══════════════════════════════════════════════════════════
+
+/// Immutable audit log — every admin action is recorded
+model AdminLog {
+  id            String          @id @default(uuid())
+  
+  adminId       String
+  admin         User            @relation("AdminActions", fields: [adminId], references: [id])
+  adminName     String                               // Snapshot
+  adminRole     Role
+  
+  action        AdminActionType
+  
+  // What was affected
+  entityType    String          @db.VarChar(50)      // "Order", "Product", "User", etc.
+  entityId      String?
+  entityRef     String?         @db.VarChar(200)     // Human-readable ref (order number)
+  
+  // Change details
+  description   String          @db.Text
+  previousValue Json?                                // Before state
+  newValue      Json?                                // After state
+  
+  // Context
+  ipAddress     String?
+  userAgent     String?
+  requestId     String?                              // Correlation ID
+  
+  // Immutable — never updated or deleted
+  createdAt     DateTime        @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
+
+/// Global key-value settings store
+model Setting {
+  id          String    @id @default(uuid())
+  
+  key         String    @unique
+  value       Json
+  group       String    @default("general")          // "general" | "payment" | "shipping" | "seo"
+  label       String?   @db.VarChar(200)             // Human-readable label
+  description String?   @db.VarChar(500)
+  
+  type        String    @default("string")           // "string" | "number" | "boolean" | "json"
+  isPublic    Boolean   @default(false)              // Expose to frontend?
+  isEditable  Boolean   @default(true)               // Protect system settings
+  
+  updatedBy   String?                                // Admin userId
+  updatedAt   DateTime  @updatedAt
+
+  @@index([group, isPublic])
+  @@map("settings")
+}
+
+/// UPI payment accounts (shop's UPI IDs)
+model PaymentAccount {
+  id          String    @id @default(uuid())
+  
+  name        String    @db.VarChar(100)             // "Main UPI", "Backup"
+  type        String    @default("UPI")              // "UPI" | "BANK"
+  
+  // UPI
+  upiId       String?   @db.VarChar(100)
+  upiName     String?   @db.VarChar(100)
+  qrCodeUrl   String?
+  qrPublicId  String?
+  
+  // Bank transfer
+  bankName    String?
+  accountName String?
+  accountNo   String?
+  ifscCode    String?
+  
+  isActive    Boolean   @default(true)
+  isPrimary   Boolean   @default(false)
+  displayOrder Int      @default(0)
+  
+  note        String?   @db.VarChar(300)             // Instructions for customer
+  
+  // Soft delete
+  deletedAt   DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, isPrimary])
+  @@map("payment_accounts")
+}

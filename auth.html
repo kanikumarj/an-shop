@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indianmade — Sign In | Premium Homemade Snacks</title>
+  <meta name="description" content="Sign in to Indianmade — your premium destination for homemade Indian snacks and authentic spices." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet" />
+  <style>
+/* ════════════════════════════════════════════════════════════
+   RESET & BASE
+   ════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:         #080604;
+  --gold:       #f5a623;
+  --gold-light: #ffe29a;
+  --gold-dark:  #c8690a;
+  --gold-deep:  #7a3a05;
+  --cream:      #f5f0e8;
+  --muted:      #7a6a54;
+  --glass-bg:   rgba(20,14,6,0.72);
+  --glass-border: rgba(245,166,35,0.22);
+  --input-bg:   rgba(255,255,255,0.04);
+  --font-d:     'Playfair Display',Georgia,serif;
+  --font-b:     'Inter',system-ui,sans-serif;
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+  --ease-out:   cubic-bezier(0.4,0,0.2,1);
+}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:var(--font-b);
+  background:var(--bg);
+  color:var(--cream);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  position:relative;
+}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:2px;}
+::selection{background:rgba(245,166,35,0.3);color:var(--gold-light);}
+
+/* ════════════════════════════════════════════════════════════
+   BACKGROUND LAYERS
+   ════════════════════════════════════════════════════════════ */
+.bg-layer{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 50%, rgba(180,80,0,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 20%, rgba(245,166,35,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 70% 80%, rgba(120,40,0,0.08) 0%, transparent 55%),
+    #080604;
+}
+.bg-grid{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(245,166,35,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(245,166,35,0.018) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+#particleCanvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  pointer-events:none;z-index:1;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MAIN LAYOUT
+   ════════════════════════════════════════════════════════════ */
+.auth-page{
+  position:relative;z-index:10;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  width:min(1120px,96vw);
+  min-height:min(680px,90vh);
+  gap:0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LEFT PANEL — 3D Scene
+   ════════════════════════════════════════════════════════════ */
+.left-panel{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px 32px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Brand logo top-left */
+.brand-mark{
+  position:absolute;top:28px;left:32px;
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;
+}
+.brand-mark svg{width:34px;height:34px;}
+.brand-mark span{
+  font-family:var(--font-d);font-size:1.25rem;font-weight:700;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* Scene container */
+.scene-wrap{
+  position:relative;width:420px;height:420px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Ambient orb */
+.scene-orb{
+  position:absolute;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,105,10,0.28) 0%,transparent 68%);
+  animation:orbPulse 3.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes orbPulse{
+  0%,100%{transform:scale(1);opacity:.7;}
+  50%{transform:scale(1.12);opacity:1;}
+}
+
+/* Paradox Triangle SVG */
+.triangle-wrap{
+  position:relative;z-index:2;
+  animation:triSpin 22s linear infinite;
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+@keyframes triSpin{
+  0%{transform:rotate(0deg) rotateY(0deg);}
+  100%{transform:rotate(360deg) rotateY(360deg);}
+}
+.paradox-svg{
+  width:300px;height:285px;
+  filter:
+    drop-shadow(0 0 28px rgba(245,166,35,.55))
+    drop-shadow(0 0 60px rgba(180,80,0,.3));
+  animation:triGlow 2.8s ease-in-out infinite alternate;
+}
+@keyframes triGlow{
+  from{filter:drop-shadow(0 0 18px rgba(245,166,35,.4)) drop-shadow(0 0 40px rgba(180,80,0,.2));}
+  to  {filter:drop-shadow(0 0 50px rgba(245,166,35,.8)) drop-shadow(0 0 90px rgba(200,105,10,.45));}
+}
+
+/* Orbiting snack items */
+.orbit-ring{
+  position:absolute;inset:0;
+  pointer-events:none;z-index:3;
+}
+.orbit-item{
+  position:absolute;font-size:2.6rem;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(245,166,35,.3));
+  animation:floatOrbit 1s linear infinite;
+  will-change:transform;
+}
+/* Each item placed & animated via JS for true orbit */
+
+/* Floating leaves & spice */
+.env-particle{
+  position:fixed;pointer-events:none;z-index:2;
+  animation:leafDrift linear infinite;
+  will-change:transform,opacity;
+}
+@keyframes leafDrift{
+  0%  {transform:translateY(0) rotate(0deg);  opacity:0;}
+  10% {opacity:1;}
+  90% {opacity:.7;}
+  100%{transform:translateY(110vh) rotate(720deg);opacity:0;}
+}
+
+/* Left caption */
+.left-caption{
+  position:absolute;bottom:40px;left:0;right:0;
+  text-align:center;
+  padding:0 32px;
+}
+.left-caption h2{
+  font-family:var(--font-d);font-size:1.45rem;font-weight:700;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:6px;
+}
+.left-caption p{
+  font-size:.8rem;color:var(--muted);letter-spacing:.04em;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RIGHT PANEL — Auth Card
+   ════════════════════════════════════════════════════════════ */
+.right-panel{
+  display:flex;align-items:center;justify-content:center;
+  padding:32px 24px;
+}
+
+.auth-card{
+  width:100%;max-width:420px;
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  border-radius:28px;
+  padding:40px 36px;
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,.6),
+    0 0 0 1px rgba(255,255,255,.04) inset,
+    0 1px 0 rgba(245,166,35,.15) inset;
+  position:relative;overflow:hidden;
+}
+
+/* Card inner glow */
+.auth-card::before{
+  content:'';position:absolute;
+  top:-60px;left:50%;transform:translateX(-50%);
+  width:300px;height:180px;
+  background:radial-gradient(ellipse,rgba(200,105,10,.12),transparent 70%);
+  pointer-events:none;
+}
+.auth-card::after{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(245,166,35,.25),transparent);
+}
+
+/* ── Tab Navigation ── */
+.auth-tabs{
+  display:flex;gap:0;margin-bottom:32px;
+  border-bottom:1px solid rgba(245,166,35,.12);
+  position:relative;
+}
+.auth-tab{
+  flex:1;padding:10px 8px;
+  background:transparent;border:none;
+  font-family:var(--font-b);font-size:.875rem;font-weight:500;
+  color:var(--muted);cursor:pointer;
+  position:relative;transition:color .25s var(--ease-out);
+  white-space:nowrap;
+}
+.auth-tab:hover{color:rgba(245,166,35,.7);}
+.auth-tab.active{color:var(--gold);}
+.auth-tab.active::after{
+  content:'';position:absolute;
+  bottom:-1px;left:10%;right:10%;height:2px;
+  background:linear-gradient(90deg,var(--gold-dark),var(--gold),var(--gold-dark));
+  border-radius:2px;
+  box-shadow:0 0 10px rgba(245,166,35,.6);
+}
+
+/* ── Form Panels ── */
+.form-panel{display:none;animation:panelFadeIn .35s var(--ease-out);}
+.form-panel.active{display:block;}
+@keyframes panelFadeIn{
+  from{opacity:0;transform:translateY(10px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+
+/* ── Form Groups ── */
+.form-group{margin-bottom:18px;position:relative;}
+.form-label{
+  display:block;font-size:.75rem;font-weight:600;
+  color:var(--muted);letter-spacing:.07em;text-transform:uppercase;
+  margin-bottom:7px;
+}
+
+/* ── Inputs ── */
+.form-input{
+  width:100%;
+  padding:13px 18px;
+  background:var(--input-bg);
+  border:1px solid rgba(245,166,35,.15);
+  border-radius:12px;
+  color:var(--cream);
+  font-family:var(--font-b);font-size:.9rem;
+  outline:none;
+  transition:border-color .25s,box-shadow .25s,background .25s;
+}
+.form-input::placeholder{color:rgba(180,150,100,.45);}
+.form-input:focus{
+  border-color:rgba(245,166,35,.6);
+  background:rgba(245,166,35,.04);
+  box-shadow:0 0 0 3px rgba(245,166,35,.1),0 0 20px rgba(245,166,35,.08);
+}
+.form-input:hover:not(:focus){
+  border-color:rgba(245,166,35,.28);
+}
+
+/* Password wrapper */
+.pw-wrap{position:relative;}
+.pw-wrap .form-input{padding-right:46px;}
+.pw-toggle{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:transparent;border:none;cursor:pointer;
+  color:var(--muted);padding:4px;
+  transition:color .2s;
+}
+.pw-toggle:hover{color:var(--gold);}
+
+/* Phone row */
+.phone-row{display:flex;gap:10px;}
+.country-code{
+  width:80px;flex-shrink:0;
+  padding:13px 10px;text-align:center;
+  font-weight:600;font-size:.9rem;color:var(--gold);
+}
+
+/* OTP row */
+.otp-row{display:flex;gap:10px;justify-content:center;}
+.otp-digit{
+  width:50px;height:56px;
+  text-align:center;font-size:1.4rem;font-weight:700;
+  letter-spacing:0;padding:0;
+}
+.otp-digit:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,166,35,.15);}
+
+/* ── Primary Button ── */
+.btn-primary{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--gold-dark) 0%,var(--gold) 55%,var(--gold-light) 100%);
+  color:#0a0804;
+  font-family:var(--font-b);font-size:.95rem;font-weight:700;
+  border:none;border-radius:12px;cursor:pointer;
+  position:relative;overflow:hidden;
+  transition:transform .3s var(--ease-spring),box-shadow .3s;
+  box-shadow:0 4px 20px rgba(245,166,35,.3),inset 0 1px 0 rgba(255,255,255,.25);
+  letter-spacing:.01em;
+}
+.btn-primary::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.18),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 36px rgba(245,166,35,.5),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-primary:hover::before{opacity:1;}
+.btn-primary:active{transform:translateY(0);}
+
+/* ── Ghost Button ── */
+.btn-ghost{
+  width:100%;padding:13px;
+  background:rgba(245,166,35,.06);
+  color:var(--cream);
+  font-family:var(--font-b);font-size:.875rem;font-weight:600;
+  border:1px solid rgba(245,166,35,.22);
+  border-radius:12px;cursor:pointer;
+  transition:all .3s var(--ease-out);
+}
+.btn-ghost:hover{
+  background:rgba(245,166,35,.1);
+  border-color:rgba(245,166,35,.45);
+  transform:translateY(-1px);
+  box-shadow:0 4px 16px rgba(245,166,35,.12);
+}
+
+/* ── Split buttons row ── */
+.btn-row{display:flex;gap:12px;margin-bottom:4px;}
+.btn-row .btn-primary,.btn-row .btn-ghost{width:50%;margin:0;}
+
+/* ── Links ── */
+.form-link{
+  font-size:.8rem;color:var(--muted);cursor:pointer;
+  transition:color .2s;border:none;background:transparent;
+  font-family:var(--font-b);
+}
+.form-link:hover{color:var(--gold);}
+
+.link-row{
+  display:flex;align-items:center;justify-content:flex-end;
+  margin-top:8px;margin-bottom:16px;
+}
+
+/* ── Divider ── */
+.or-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:16px 0;
+}
+.or-divider::before,.or-divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(245,166,35,.2),transparent);
+}
+.or-divider span{font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+
+/* ── Google Button ── */
+.btn-google{
+  width:100%;padding:13px;
+  background:rgba(255,255,255,.05);
+  color:var(--cream);
+  font-family:var(--font-b);font-size:.875rem;font-weight:600;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .3s var(--ease-out);
+}
+.btn-google:hover{
+  background:rgba(255,255,255,.09);
+  border-color:rgba(255,255,255,.2);
+  transform:translateY(-1px);
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.btn-google svg{flex-shrink:0;}
+
+/* ── Terms ── */
+.terms-text{
+  font-size:.72rem;color:var(--muted);text-align:center;
+  margin-top:18px;line-height:1.6;
+}
+.terms-text a{color:rgba(245,166,35,.7);text-decoration:none;}
+.terms-text a:hover{color:var(--gold);}
+
+/* ── Success / Error states ── */
+.field-error{
+  font-size:.72rem;color:#ff6b6b;margin-top:5px;
+  display:none;
+}
+.field-error.show{display:block;}
+.form-input.error{border-color:rgba(255,100,100,.4);}
+
+/* ── OTP Timer ── */
+.otp-info{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;
+}
+.otp-timer{font-size:.75rem;color:var(--muted);}
+.otp-resend{
+  font-size:.75rem;color:rgba(245,166,35,.6);cursor:pointer;
+  background:transparent;border:none;font-family:var(--font-b);
+  transition:color .2s;
+}
+.otp-resend:hover{color:var(--gold);}
+.otp-resend:disabled{opacity:.4;cursor:default;}
+
+/* ── Forgot panel ── */
+.back-link{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.8rem;color:var(--muted);cursor:pointer;
+  background:transparent;border:none;font-family:var(--font-b);
+  margin-bottom:24px;transition:color .2s;padding:0;
+}
+.back-link:hover{color:var(--gold);}
+.back-link svg{transition:transform .2s;}
+.back-link:hover svg{transform:translateX(-3px);}
+
+.panel-title{
+  font-family:var(--font-d);font-size:1.3rem;font-weight:700;
+  color:var(--cream);margin-bottom:6px;
+}
+.panel-sub{
+  font-size:.82rem;color:var(--muted);margin-bottom:24px;line-height:1.6;
+}
+
+/* ── Strength meter ── */
+.pw-strength{margin-top:6px;}
+.strength-bar{
+  height:3px;border-radius:2px;background:rgba(255,255,255,.07);
+  overflow:hidden;margin-bottom:4px;
+}
+.strength-fill{
+  height:100%;width:0%;border-radius:2px;
+  transition:width .4s var(--ease-out),background .4s;
+}
+.strength-label{font-size:.7rem;color:var(--muted);}
+
+/* ════════════════════════════════════════════════════════════
+   SCROLL-INDICATOR SPARKLE (bottom-right corner)
+   ════════════════════════════════════════════════════════════ */
+.sparkle{
+  position:fixed;bottom:24px;right:24px;
+  font-size:1.6rem;opacity:.35;
+  animation:sparkleAnim 3s ease-in-out infinite;
+  pointer-events:none;z-index:5;
+}
+@keyframes sparkleAnim{
+  0%,100%{opacity:.2;transform:scale(1) rotate(0deg);}
+  50%{opacity:.6;transform:scale(1.2) rotate(20deg);}
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════════════════ */
+@media(max-width:860px){
+  body{overflow:auto;}
+  html,body{height:auto;}
+  .auth-page{grid-template-columns:1fr;width:min(480px,94vw);min-height:auto;}
+  .left-panel{display:none;}
+  .right-panel{padding:24px 16px;}
+  .auth-card{padding:32px 28px;}
+}
+@media(max-width:420px){
+  .auth-card{padding:28px 20px;border-radius:20px;}
+  .otp-digit{width:42px;height:50px;font-size:1.2rem;}
+}
+  </style>
+</head>
+<body>
+
+<!-- ── Background Layers ── -->
+<div class="bg-layer" aria-hidden="true"></div>
+<div class="bg-grid"  aria-hidden="true"></div>
+<canvas id="particleCanvas" aria-hidden="true"></canvas>
+
+<!-- ── Environmental Particles (leaves/spice) ── -->
+<div id="envParticles" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     MAIN PAGE
+     ════════════════════════════════════════════════════════════ -->
+<main class="auth-page" role="main">
+
+  <!-- ════ LEFT PANEL ════ -->
+  <div class="left-panel" id="leftPanel" aria-hidden="true">
+
+    <!-- Brand -->
+    <a href="index.html" class="brand-mark">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="20,3 37,32 3,32" stroke="url(#bG)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <polygon points="20,10 30,28 10,28" fill="url(#bF)" opacity=".45"/>
+        <defs>
+          <linearGradient id="bG" x1="0" y1="0" x2="40" y2="40">
+            <stop offset="0%" stop-color="#ffe29a"/><stop offset="100%" stop-color="#c8690a"/>
+          </linearGradient>
+          <linearGradient id="bF" x1="0" y1="0" x2="40" y2="40">
+            <stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#c8690a"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>Indianmade</span>
+    </a>
+
+    <!-- 3D Scene -->
+    <div class="scene-wrap" id="sceneWrap">
+      <div class="scene-orb"></div>
+
+      <!-- Paradox Triangle -->
+      <div class="triangle-wrap" id="triangleWrap">
+        <svg class="paradox-svg" viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="eg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f5c842"/>
+              <stop offset="40%" stop-color="#e8870a"/>
+              <stop offset="100%" stop-color="#7a3a05"/>
+            </linearGradient>
+            <linearGradient id="eg2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#f5a623"/>
+              <stop offset="50%" stop-color="#c8690a"/>
+              <stop offset="100%" stop-color="#4a1e05"/>
+            </linearGradient>
+            <linearGradient id="eg3" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stop-color="#ffe29a"/>
+              <stop offset="50%" stop-color="#f5a623"/>
+              <stop offset="100%" stop-color="#6a2d08"/>
+            </linearGradient>
+            <filter id="gf1"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="gf2"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <!-- Glow layer -->
+          <g filter="url(#gf2)" opacity=".3">
+            <polygon points="200,30 230,30 215,55 185,55" fill="#f5a623"/>
+            <polygon points="350,310 335,335 260,290 275,265" fill="#e8870a"/>
+            <polygon points="50,310 65,335 140,290 125,265" fill="#f5c842"/>
+          </g>
+          <!-- Top beam -->
+          <polygon points="200,20 245,20 215,72 170,72" fill="url(#eg1)" opacity=".95"/>
+          <polygon points="245,20 265,55 230,80 215,72" fill="#7a3a05" opacity=".9"/>
+          <!-- Right beam -->
+          <polygon points="265,55 360,330 320,350 225,80" fill="url(#eg2)" opacity=".95"/>
+          <polygon points="360,330 345,362 310,362 320,350" fill="#4a1e05" opacity=".9"/>
+          <!-- Left beam -->
+          <polygon points="170,72 80,335 40,315 135,55" fill="url(#eg3)" opacity=".95"/>
+          <polygon points="80,335 40,315 50,350 90,362" fill="#6a2d08" opacity=".9"/>
+          <!-- Bottom -->
+          <polygon points="40,315 90,362 150,362 80,335" fill="url(#eg3)" opacity=".95"/>
+          <polygon points="310,362 345,362 360,330 320,350" fill="url(#eg2)" opacity=".95"/>
+          <polygon points="150,362 310,362 320,350 80,335" fill="url(#eg1)" opacity=".95"/>
+          <!-- Edge glow -->
+          <polyline points="200,20 245,20 265,55 360,330 345,362 310,362 150,362 90,362 40,315 135,55 170,20 200,20"
+            stroke="url(#eg1)" stroke-width="1.5" fill="none" filter="url(#gf1)" opacity=".7"/>
+          <!-- Corner dots -->
+          <circle cx="200" cy="20" r="5" fill="#ffe29a" filter="url(#gf1)" opacity=".9"/>
+          <circle cx="360" cy="330" r="5" fill="#f5a623" filter="url(#gf1)" opacity=".9"/>
+          <circle cx="40"  cy="315" r="5" fill="#f5c842" filter="url(#gf1)" opacity=".9"/>
+        </svg>
+      </div>
+
+      <!-- Orbiting items (positioned by JS) -->
+      <div class="orbit-ring" id="orbitRing"></div>
+    </div>
+
+    <!-- Caption -->
+    <div class="left-caption">
+      <h2>Taste the Tradition</h2>
+      <p>Premium homemade snacks crafted with love &amp; heritage</p>
+    </div>
+  </div>
+
+  <!-- ════ RIGHT PANEL ════ -->
+  <div class="right-panel">
+    <div class="auth-card" id="authCard">
+
+      <!-- ── Tab navigation ── -->
+      <div class="auth-tabs" role="tablist" id="authTabs">
+        <button class="auth-tab active" role="tab" aria-selected="true"  data-tab="login"    id="tab-login">Login</button>
+        <button class="auth-tab"        role="tab" aria-selected="false" data-tab="register" id="tab-register">Register</button>
+        <button class="auth-tab"        role="tab" aria-selected="false" data-tab="otp"      id="tab-otp">OTP Login</button>
+      </div>
+
+      <!-- ══ LOGIN PANEL ══ -->
+      <div class="form-panel active" id="panel-login" role="tabpanel">
+        <form id="loginForm" novalidate autocomplete="off">
+
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input class="form-input" type="email" id="login-email"
+              placeholder="you@example.com" autocomplete="email" />
+            <span class="field-error" id="login-email-err">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-pw">Password</label>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="login-pw"
+                placeholder="Your password" autocomplete="current-password" />
+              <button type="button" class="pw-toggle" aria-label="Toggle password visibility"
+                data-target="login-pw">
+                <svg id="eye-login" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <span class="field-error" id="login-pw-err">Password must be at least 6 characters.</span>
+          </div>
+
+          <div class="link-row">
+            <button type="button" class="form-link" id="showForgot">Forgot Password?</button>
+          </div>
+
+          <div class="btn-row">
+            <button type="submit" class="btn-primary" id="btn-login">Login</button>
+            <button type="button" class="btn-ghost"   id="btn-to-register">Register</button>
+          </div>
+
+          <div class="or-divider"><span>or</span></div>
+
+          <button type="button" class="btn-google" id="btn-google-login">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </form>
+      </div>
+
+      <!-- ══ REGISTER PANEL ══ -->
+      <div class="form-panel" id="panel-register" role="tabpanel">
+        <form id="registerForm" novalidate autocomplete="off">
+
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name</label>
+            <input class="form-input" type="text" id="reg-name"
+              placeholder="Your full name" autocomplete="name" />
+            <span class="field-error" id="reg-name-err">Please enter your name.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Email Address</label>
+            <input class="form-input" type="email" id="reg-email"
+              placeholder="you@example.com" autocomplete="email" />
+            <span class="field-error" id="reg-email-err">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-phone">Mobile Number</label>
+            <div class="phone-row">
+              <input class="form-input country-code" type="text" value="+91" readonly aria-label="Country code" />
+              <input class="form-input" type="tel" id="reg-phone"
+                placeholder="10-digit mobile number" maxlength="10" autocomplete="tel" />
+            </div>
+            <span class="field-error" id="reg-phone-err">Enter a valid 10-digit mobile number.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-pw">Create Password</label>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="reg-pw"
+                placeholder="Min. 8 characters" autocomplete="new-password" />
+              <button type="button" class="pw-toggle" aria-label="Toggle password visibility"
+                data-target="reg-pw">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="pw-strength" id="strengthMeter">
+              <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+              <span class="strength-label" id="strengthLabel"></span>
+            </div>
+            <span class="field-error" id="reg-pw-err">Password must be at least 8 characters.</span>
+          </div>
+
+          <button type="submit" class="btn-primary" id="btn-register" style="margin-bottom:12px;">
+            Create Account
+          </button>
+
+          <div class="or-divider"><span>or</span></div>
+
+          <button type="button" class="btn-google" id="btn-google-register">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign up with Google
+          </button>
+
+          <p class="terms-text">
+            By registering you agree to our
+            <a href="#">Terms of Service</a> &amp; <a href="#">Privacy Policy</a>.
+          </p>
+        </form>
+      </div>
+
+      <!-- ══ OTP PANEL ══ -->
+      <div class="form-panel" id="panel-otp" role="tabpanel">
+        <form id="otpForm" novalidate autocomplete="off">
+
+          <!-- Step 1: Enter phone -->
+          <div id="otp-step1">
+            <div class="panel-title">OTP Login</div>
+            <p class="panel-sub">We'll send a 6-digit code to your mobile number.</p>
+
+            <div class="form-group">
+              <label class="form-label" for="otp-phone">Mobile Number</label>
+              <div class="phone-row">
+                <input class="form-input country-code" type="text" value="+91" readonly aria-label="Country code" />
+                <input class="form-input" type="tel" id="otp-phone"
+                  placeholder="10-digit number" maxlength="10" autocomplete="tel" />
+              </div>
+              <span class="field-error" id="otp-phone-err">Enter a valid 10-digit mobile number.</span>
+            </div>
+
+            <button type="button" class="btn-primary" id="btn-send-otp">Send OTP</button>
+
+            <div class="or-divider"><span>or</span></div>
+
+            <button type="button" class="btn-google" id="btn-google-otp">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </button>
+          </div>
+
+          <!-- Step 2: Enter OTP -->
+          <div id="otp-step2" style="display:none;">
+            <button type="button" class="back-link" id="btn-back-otp">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              Back
+            </button>
+            <div class="panel-title">Enter OTP</div>
+            <p class="panel-sub" id="otp-sent-msg">Code sent to +91 XXXXXX0000</p>
+
+            <div class="otp-row" id="otpDigits" role="group" aria-label="OTP input">
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 1" id="otp-d1"/>
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 2" id="otp-d2"/>
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 3" id="otp-d3"/>
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 4" id="otp-d4"/>
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 5" id="otp-d5"/>
+              <input class="form-input otp-digit" type="text" maxlength="1" inputmode="numeric" pattern="\d" aria-label="Digit 6" id="otp-d6"/>
+            </div>
+            <span class="field-error" id="otp-code-err" style="display:none;margin-top:8px;">Invalid OTP. Please try again.</span>
+
+            <div class="otp-info">
+              <span class="otp-timer" id="otpTimer">Resend in 30s</span>
+              <button type="button" class="otp-resend" id="btn-resend" disabled>Resend OTP</button>
+            </div>
+
+            <button type="submit" class="btn-primary" id="btn-verify-otp" style="margin-top:20px;">
+              Verify &amp; Login
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- ══ FORGOT PASSWORD PANEL ══ -->
+      <div class="form-panel" id="panel-forgot" role="tabpanel">
+        <form id="forgotForm" novalidate autocomplete="off">
+          <button type="button" class="back-link" id="btn-back-forgot">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Login
+          </button>
+          <div class="panel-title">Reset Password</div>
+          <p class="panel-sub">Enter your registered email and we'll send you a reset link.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Email Address</label>
+            <input class="form-input" type="email" id="forgot-email"
+              placeholder="you@example.com" autocomplete="email" />
+            <span class="field-error" id="forgot-email-err">Please enter a valid email address.</span>
+          </div>
+
+          <button type="submit" class="btn-primary" id="btn-forgot">Send Reset Link</button>
+
+          <div id="forgot-success" style="display:none;margin-top:16px;padding:14px;background:rgba(60,200,100,.06);border:1px solid rgba(60,200,100,.2);border-radius:10px;font-size:.82rem;color:#5de88d;text-align:center;">
+            ✅ Reset link sent! Check your inbox.
+          </div>
+        </form>
+      </div>
+
+    </div><!-- /auth-card -->
+  </div><!-- /right-panel -->
+
+</main>
+
+<div class="sparkle" aria-hidden="true">✦</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ════════════════════════════════════════════════════════════ -->
+<script src="store.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const $$ = sel => [...document.querySelectorAll(sel)];
+const lerp = (a,b,t) => a+(b-a)*t;
+const rnd  = (mn,mx) => Math.random()*(mx-mn)+mn;
+const clamp= (v,mn,mx) => Math.min(Math.max(v,mn),mx);
+
+function handleAuthRedirect(role) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirect = urlParams.get('redirect');
+  if (redirect) {
+    const target = redirect.endsWith('.html') ? redirect : redirect + '.html';
+    window.location.href = target;
+  } else {
+    if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   1. PARTICLE CANVAS
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const cv  = $('particleCanvas');
+  if(!cv)return;
+  const ctx = cv.getContext('2d');
+  let W,H,pts=[],aid;
+
+  function resize(){
+    W=cv.width=window.innerWidth;
+    H=cv.height=window.innerHeight;
+    if(!aid)loop();
+  }
+
+  class Pt{
+    constructor(init){
+      this.reset(init);
+    }
+    reset(init){
+      this.x   =rnd(0,W);
+      this.y   =init?rnd(0,H):H+10;
+      this.r   =rnd(.5,2);
+      this.vy  =-rnd(.15,.6);
+      this.vx  =rnd(-.2,.2);
+      this.a   =rnd(.06,.4);
+      this.hue =rnd(18,44);
+      this.t   =0;
+      this.ml  =rnd(180,420);
+    }
+    update(){
+      this.x+=this.vx+Math.sin(this.t*.015)*.15;
+      this.y+=this.vy;
+      this.t++;
+      if(this.y<-8||this.t>this.ml)this.reset();
+    }
+    draw(){
+      const fade=this.t<50?this.t/50:this.t>this.ml-50?(this.ml-this.t)/50:1;
+      ctx.save();
+      ctx.globalAlpha=this.a*fade;
+      ctx.shadowColor=`hsl(${this.hue},90%,60%)`;
+      ctx.shadowBlur=5;
+      ctx.fillStyle=`hsl(${this.hue},90%,62%)`;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function init(){
+    pts=[];
+    for(let i=0;i<100;i++)pts.push(new Pt(true));
+  }
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{p.update();p.draw();});
+    aid=requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',()=>{resize();init();},{passive:true});
+  resize();init();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   2. ENVIRONMENTAL PARTICLES (leaves & spice seeds)
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const container = $('envParticles');
+  const items=['🌿','🍃','🌶️','🫙','✦','·','·'];
+  for(let i=0;i<22;i++){
+    const el=document.createElement('div');
+    el.className='env-particle';
+    const emoji=items[Math.floor(rnd(0,items.length))];
+    el.textContent=emoji;
+    const sz=rnd(12,28);
+    el.style.cssText=`
+      font-size:${sz}px;
+      left:${rnd(0,100)}vw;
+      top:-${rnd(20,120)}px;
+      opacity:0;
+      animation-duration:${rnd(8,18)}s;
+      animation-delay:${rnd(0,12)}s;
+      filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+    `;
+    container.appendChild(el);
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════
+   3. ORBITING SNACKS
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const ring    = $('orbitRing');
+  if(!ring)return;
+  const snacks  = ['🌀','🍪','🌀','🍪','🌀','🍪','🌀'];
+  const COUNT   = snacks.length;
+  const RADIUS  = 155;
+  const els     = [];
+  const speeds  = [];
+  const phases  = [];
+
+  snacks.forEach((s,i)=>{
+    const el=document.createElement('div');
+    el.className='orbit-item';
+    el.textContent=s;
+    el.style.fontSize= s==='🌀'?'2.6rem':'2.2rem';
+    ring.appendChild(el);
+    els.push(el);
+    speeds.push(rnd(.35,.65)*(Math.random()<.5?1:-1)); // mixed CW/CCW
+    phases.push((i/COUNT)*Math.PI*2);
+  });
+
+  let t=0;
+  (function tick(){
+    t+=0.008;
+    els.forEach((el,i)=>{
+      const angle=phases[i]+t*speeds[i];
+      const r=RADIUS+(Math.sin(t*1.1+i)*12);
+      const cx=ring.offsetWidth/2;
+      const cy=ring.offsetHeight/2;
+      const x=cx+Math.cos(angle)*r-el.offsetWidth/2;
+      const y=cy+Math.sin(angle)*r-el.offsetHeight/2;
+      const scale=0.75+0.3*((Math.sin(angle)+1)/2); // depth scale
+      const brightness=0.7+0.4*((Math.sin(angle)+1)/2);
+      el.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
+      el.style.opacity=`${brightness}`;
+      el.style.zIndex=Math.sin(angle)>0?4:1;
+    });
+    requestAnimationFrame(tick);
+  })();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   4. MOUSE PARALLAX (left panel)
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const wrap=document.getElementById('triangleWrap');
+  const scene=document.getElementById('sceneWrap');
+  if(!wrap||!scene)return;
+  let mx=0,my=0,cx=0,cy=0;
+
+  document.addEventListener('mousemove',e=>{
+    const vw=window.innerWidth/2, vh=window.innerHeight/2;
+    mx=(e.clientX-vw)/vw;
+    my=(e.clientY-vh)/vh;
+  },{passive:true});
+
+  (function tick(){
+    cx=lerp(cx,mx,.06); cy=lerp(cy,my,.06);
+    wrap.style.transform=`rotate(${cx*10}deg) rotateX(${-cy*8}deg) rotateY(${cx*8}deg)`;
+    scene.style.transform=`translate(${cx*-10}px,${cy*-7}px)`;
+    requestAnimationFrame(tick);
+  })();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   5. AUTH TABS
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const tabs  = $$('.auth-tab');
+  const panels= $$('.form-panel');
+
+  function activate(tabId){
+    tabs.forEach(t=>{
+      t.classList.toggle('active',t.dataset.tab===tabId);
+      t.setAttribute('aria-selected',t.dataset.tab===tabId);
+    });
+    panels.forEach(p=>{
+      const show = p.id==='panel-'+tabId;
+      p.classList.toggle('active',show);
+    });
+  }
+
+  tabs.forEach(t=>{
+    t.addEventListener('click',()=>activate(t.dataset.tab));
+  });
+
+  // "Register" ghost button in login tab
+  $('btn-to-register')?.addEventListener('click',()=>activate('register'));
+  $('showForgot')?.addEventListener('click',()=>{
+    panels.forEach(p=>p.classList.remove('active'));
+    $('panel-forgot')?.classList.add('active');
+    tabs.forEach(t=>t.classList.remove('active'));
+  });
+  $('btn-back-forgot')?.addEventListener('click',()=>activate('login'));
+})();
+
+/* ════════════════════════════════════════════════════════════
+   6. PASSWORD TOGGLE
+   ════════════════════════════════════════════════════════════ */
+$$('.pw-toggle').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    const inp=document.getElementById(this.dataset.target);
+    if(!inp)return;
+    const show=inp.type==='password';
+    inp.type=show?'text':'password';
+    this.innerHTML=show
+      ?`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>`
+      :`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>`;
+  });
+});
+
+/* ════════════════════════════════════════════════════════════
+   7. PASSWORD STRENGTH
+   ════════════════════════════════════════════════════════════ */
+$('reg-pw')?.addEventListener('input',function(){
+  const v=this.value;
+  const fill=$('strengthFill');
+  const label=$('strengthLabel');
+  if(!fill||!label)return;
+  let score=0;
+  if(v.length>=8)score++;
+  if(/[A-Z]/.test(v))score++;
+  if(/[0-9]/.test(v))score++;
+  if(/[^A-Za-z0-9]/.test(v))score++;
+  const levels=[
+    {w:'0%',  c:'transparent',l:''},
+    {w:'25%', c:'#ff4444',    l:'Weak'},
+    {w:'50%', c:'#ff8c00',    l:'Fair'},
+    {w:'75%', c:'#ffd700',    l:'Good'},
+    {w:'100%',c:'#00cc66',    l:'Strong'},
+  ];
+  const lv=levels[score]||levels[0];
+  fill.style.width=lv.w;
+  fill.style.background=lv.c;
+  label.textContent=lv.l;
+  label.style.color=lv.c;
+});
+
+/* ════════════════════════════════════════════════════════════
+   8. OTP DIGIT AUTO-ADVANCE
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const digits=$$('.otp-digit');
+  digits.forEach((inp,i)=>{
+    inp.addEventListener('input',function(){
+      this.value=this.value.replace(/\D/g,'');
+      if(this.value&&i<digits.length-1)digits[i+1].focus();
+    });
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Backspace'&&!this.value&&i>0)digits[i-1].focus();
+    });
+    inp.addEventListener('paste',function(e){
+      e.preventDefault();
+      const text=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
+      digits.forEach((d,j)=>{if(text[j])d.value=text[j];});
+      const last=Math.min(text.length,digits.length)-1;
+      if(last>=0)digits[last].focus();
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   9. OTP TIMER
+   ════════════════════════════════════════════════════════════ */
+let otpTimerInterval;
+function startOTPTimer(seconds=30){
+  clearInterval(otpTimerInterval);
+  const timerEl=$('otpTimer');
+  const resendBtn=$('btn-resend');
+  let remaining=seconds;
+  resendBtn&&(resendBtn.disabled=true);
+  otpTimerInterval=setInterval(()=>{
+    remaining--;
+    if(timerEl)timerEl.textContent=`Resend in ${remaining}s`;
+    if(remaining<=0){
+      clearInterval(otpTimerInterval);
+      if(timerEl)timerEl.textContent='';
+      if(resendBtn)resendBtn.disabled=false;
+    }
+  },1000);
+}
+
+/* ════════════════════════════════════════════════════════════
+   10. SEND OTP BUTTON
+   ════════════════════════════════════════════════════════════ */
+$('btn-send-otp')?.addEventListener('click',function(){
+  const phone=$('otp-phone');
+  const err=$('otp-phone-err');
+  const val=phone?.value.trim()??'';
+  if(!/^\d{10}$/.test(val)){
+    phone?.classList.add('error');
+    if(err)err.style.display='block';
+    return;
+  }
+  phone?.classList.remove('error');
+  if(err)err.style.display='none';
+
+  // Simulate send
+  this.textContent='Sending…';
+  this.disabled=true;
+  setTimeout(()=>{
+    $('otp-step1').style.display='none';
+    $('otp-step2').style.display='block';
+    const msg=$('otp-sent-msg');
+    if(msg)msg.textContent=`Code sent to +91 ${val.slice(0,4)}XXXXXX`;
+    startOTPTimer(30);
+    $('otp-d1')?.focus();
+    this.textContent='Send OTP';
+    this.disabled=false;
+  },1000);
+});
+
+$('btn-back-otp')?.addEventListener('click',()=>{
+  clearInterval(otpTimerInterval);
+  $('otp-step1').style.display='block';
+  $('otp-step2').style.display='none';
+  $$('.otp-digit').forEach(d=>d.value='');
+});
+
+$('btn-resend')?.addEventListener('click',function(){
+  $$('.otp-digit').forEach(d=>d.value='');
+  startOTPTimer(30);
+  $('otp-d1')?.focus();
+});
+
+/* ════════════════════════════════════════════════════════════
+   11. FORM VALIDATION HELPERS
+   ════════════════════════════════════════════════════════════ */
+function validateEmail(v){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}
+function showErr(inpId,errId,show){
+  const inp=document.getElementById(inpId);
+  const err=document.getElementById(errId);
+  inp?.classList.toggle('error',show);
+  if(err)err.style.display=show?'block':'none';
+}
+function btnLoading(btn,msg='Processing…'){
+  btn.disabled=true;
+  const orig=btn.textContent;
+  btn.textContent=msg;
+  return ()=>{btn.disabled=false;btn.textContent=orig;};
+}
+
+/* ── Login Form ── */
+$('loginForm')?.addEventListener('submit',function(e){
+  e.preventDefault();
+  const email=$('login-email')?.value.trim();
+  const pw   =$('login-pw')?.value;
+  let ok=true;
+  if(!validateEmail(email)){showErr('login-email','login-email-err',true);ok=false;}
+  else showErr('login-email','login-email-err',false);
+  if(!pw||pw.length<6){showErr('login-pw','login-pw-err',true);ok=false;}
+  else showErr('login-pw','login-pw-err',false);
+  if(!ok)return;
+  const restore=btnLoading($('btn-login'),'Signing in…');
+  setTimeout(()=>{
+    restore();
+    let name = email.split('@')[0];
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+    const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+    if (window.Auth) {
+      window.Auth.loginUser({ name, email, role });
+    }
+    handleAuthRedirect(role);
+  },1000);
+});
+
+/* ── Register Form ── */
+$('registerForm')?.addEventListener('submit',function(e){
+  e.preventDefault();
+  const name  =$('reg-name')?.value.trim();
+  const email =$('reg-email')?.value.trim();
+  const phone =$('reg-phone')?.value.trim();
+  const pw    =$('reg-pw')?.value;
+  let ok=true;
+  if(!name){showErr('reg-name','reg-name-err',true);ok=false;}
+  else showErr('reg-name','reg-name-err',false);
+  if(!validateEmail(email)){showErr('reg-email','reg-email-err',true);ok=false;}
+  else showErr('reg-email','reg-email-err',false);
+  if(!/^\d{10}$/.test(phone)){showErr('reg-phone','reg-phone-err',true);ok=false;}
+  else showErr('reg-phone','reg-phone-err',false);
+  if(!pw||pw.length<8){showErr('reg-pw','reg-pw-err',true);ok=false;}
+  else showErr('reg-pw','reg-pw-err',false);
+  if(!ok)return;
+  const restore=btnLoading($('btn-register'),'Creating Account…');
+  setTimeout(()=>{
+    restore();
+    const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+    if (window.Auth) {
+      window.Auth.loginUser({ name, email, role, phone });
+    }
+    handleAuthRedirect(role);
+  },1000);
+});
+
+/* ── OTP verify ── */
+$('otpForm')?.addEventListener('submit',function(e){
+  e.preventDefault();
+  const otp=$$('.otp-digit').map(d=>d.value).join('');
+  const errEl=$('otp-code-err');
+  if(otp.length<6){
+    if(errEl){errEl.textContent='Please enter all 6 digits.';errEl.style.display='block';}
+    return;
+  }
+  if(errEl)errEl.style.display='none';
+  const restore=btnLoading($('btn-verify-otp'),'Verifying…');
+  setTimeout(()=>{
+    restore();
+    if (window.Auth) {
+      window.Auth.loginUser({ name: 'Priya Sharma', email: 'priya@gmail.com', role: 'user', phone: '9876543210' });
+    }
+    handleAuthRedirect('user');
+  },1000);
+});
+
+/* ── Forgot form ── */
+$('forgotForm')?.addEventListener('submit',function(e){
+  e.preventDefault();
+  const email=$('forgot-email')?.value.trim();
+  if(!validateEmail(email)){showErr('forgot-email','forgot-email-err',true);return;}
+  showErr('forgot-email','forgot-email-err',false);
+  const restore=btnLoading($('btn-forgot'),'Sending…');
+  setTimeout(()=>{
+    restore();
+    const suc=$('forgot-success');
+    if(suc)suc.style.display='block';
+  },1200);
+});
+
+/* ════════════════════════════════════════════════════════════
+   12. GOOGLE BUTTONS (stub)
+   ════════════════════════════════════════════════════════════ */
+$$('#btn-google-login,#btn-google-register,#btn-google-otp').forEach(btn=>{
+  btn.addEventListener('click',()=>console.log('Google OAuth flow'));
+});
+
+/* ════════════════════════════════════════════════════════════
+   13. CURSOR GLOW
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  const glow=document.createElement('div');
+  glow.style.cssText=`
+    position:fixed;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(180,80,0,.07) 0%,transparent 70%);
+    pointer-events:none;z-index:0;transform:translate(-50%,-50%);
+    transition:opacity .3s;
+  `;
+  document.body.appendChild(glow);
+  let gx=0,gy=0,tgx=0,tgy=0;
+  document.addEventListener('mousemove',e=>{tgx=e.clientX;tgy=e.clientY;},{passive:true});
+  document.addEventListener('mouseleave',()=>glow.style.opacity='0');
+  document.addEventListener('mouseenter',()=>glow.style.opacity='1');
+  (function tick(){
+    gx=lerp(gx,tgx,.08);gy=lerp(gy,tgy,.08);
+    glow.style.left=gx+'px';glow.style.top=gy+'px';
+    requestAnimationFrame(tick);
+  })();
+})();
+
+console.log('%c🍛 Indianmade Auth','font-size:14px;font-weight:bold;color:#f5a623;');
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Exclude the backend directory from Vercel static frontend deployments
+backend/
+node_modules/
+.git/
+.env
+logs/
+coverage/

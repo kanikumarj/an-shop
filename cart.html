@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Your Cart — Indianmade | Premium Homemade Snacks</title>
+<meta name="description" content="Review your cart and checkout securely at Indianmade."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0804;--bg2:#0f0b06;--card:rgba(19,16,9,0.9);
+  --gold:#f5a623;--gl:#ffe29a;--gd:#c8690a;
+  --text:#f5f0e8;--muted:#7a6a54;--dim:#3a3028;
+  --border:rgba(245,166,35,0.12);--bh:rgba(245,166,35,0.35);
+  --glass:rgba(19,16,9,0.88);
+  --fd:'Playfair Display',Georgia,serif;--fb:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1);
+  --nav:68px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gd);border-radius:3px;}
+::selection{background:rgba(245,166,35,.25);color:var(--gl);}
+a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:none;font-family:var(--fb);}
+
+/* ─── SCROLL PROGRESS ─── */
+#scrollBar{position:fixed;top:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,var(--gd),var(--gold),var(--gl));z-index:9999;}
+
+/* ─── CANVAS ─── */
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 65% 55% at 20% 40%,rgba(180,80,0,.09),transparent 60%),
+             radial-gradient(ellipse 40% 40% at 80% 70%,rgba(245,166,35,.04),transparent 55%),var(--bg);}
+
+/* ─── NAVBAR ─── */
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:1000;background:rgba(10,8,4,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:background .3s,box-shadow .3s;}
+.navbar.scrolled{background:rgba(10,8,4,.97);box-shadow:0 4px 30px rgba(0,0,0,.5);}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;height:100%;display:flex;align-items:center;gap:1.5rem;}
+.nav-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.nav-logo svg{width:32px;height:32px;}
+.logo-txt{font-family:var(--fd);font-size:1.2rem;font-weight:700;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;margin-left:8px;}
+.nav-links a{padding:7px 14px;font-size:.875rem;font-weight:500;color:var(--muted);border-radius:8px;transition:all .2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-actions{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.nav-icon-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:transparent;color:var(--muted);border-radius:8px;position:relative;transition:all .2s;}
+.nav-icon-btn:hover{color:var(--gold);background:rgba(245,166,35,.07);}
+.cart-badge{position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:var(--gold);color:#0a0804;font-size:.65rem;font-weight:800;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.btn-nav-login{padding:8px 20px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:700;font-size:.82rem;border-radius:999px;transition:all .3s;}
+.btn-nav-login:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,166,35,.35);}
+
+/* ─── CART HERO ─── */
+.cart-hero{margin-top:var(--nav);padding:28px 0 20px;border-bottom:1px solid var(--border);position:relative;z-index:2;background:linear-gradient(135deg,rgba(200,105,10,.06),rgba(245,166,35,.02));}
+.cart-hero-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.cart-hero h1{font-family:var(--fd);font-size:1.8rem;font-weight:800;color:var(--text);}
+.cart-hero h1 span{background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);}
+.breadcrumb a{color:var(--muted);transition:color .2s;}
+.breadcrumb a:hover{color:var(--gold);}
+.breadcrumb span{color:var(--gold);}
+
+/* ─── EMPTY CART ─── */
+.empty-cart{text-align:center;padding:80px 24px;display:none;}
+.empty-cart h2{font-family:var(--fd);font-size:1.8rem;color:var(--muted);margin:20px 0 10px;}
+.empty-cart p{color:var(--dim);margin-bottom:24px;}
+.empty-emoji{font-size:5rem;animation:emptyFloat 3s ease-in-out infinite;}
+@keyframes emptyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.btn-shop-empty{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:700;border-radius:14px;font-size:.9rem;transition:all .3s;}
+.btn-shop-empty:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,166,35,.4);}
+
+/* ─── MAIN LAYOUT ─── */
+.cart-layout{max-width:1280px;margin:0 auto;padding:28px 1.5rem 80px;display:grid;grid-template-columns:1fr 380px;gap:28px;position:relative;z-index:2;}
+
+/* ─── LEFT: CART ITEMS ─── */
+.cart-items-section{min-width:0;}
+.cart-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cart-section-hdr h2{font-family:var(--fd);font-size:1.2rem;font-weight:700;color:var(--text);}
+.btn-clear-cart{padding:6px 14px;background:transparent;border:1px solid var(--dim);border-radius:999px;color:var(--muted);font-size:.75rem;transition:all .25s;}
+.btn-clear-cart:hover{border-color:rgba(255,100,100,.3);color:#ff7a7a;}
+
+/* Cart Item Card */
+.cart-item{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:20px;display:flex;align-items:center;gap:16px;margin-bottom:14px;
+  transition:transform .4s var(--ease),border-color .3s,box-shadow .3s,opacity .4s;position:relative;overflow:hidden;}
+.cart-item:hover{border-color:var(--bh);box-shadow:0 8px 30px rgba(0,0,0,.4);transform:translateY(-2px);}
+.cart-item.removing{transform:translateX(120%) scale(.9);opacity:0;transition:all .55s var(--ease);}
+
+/* Item glow accent */
+.cart-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--gd),var(--gold),transparent);border-radius:3px 0 0 3px;opacity:.7;}
+
+/* Emoji zone */
+.item-img{width:80px;height:80px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;flex-shrink:0;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));transition:transform .35s var(--spring);}
+.cart-item:hover .item-img{transform:scale(1.08) rotate(-3deg);}
+
+/* Item info */
+.item-info{flex:1;min-width:0;}
+.item-cat{font-size:.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.item-name{font-family:var(--fd);font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-variant{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
+.item-unit-price{font-size:.8rem;color:var(--muted);}
+.item-unit-price strong{color:var(--gold);}
+
+/* Qty Controls */
+.item-controls{display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.qty-wrap{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.qty-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:transparent;color:var(--gold);font-size:1.1rem;font-weight:700;transition:background .2s;}
+.qty-btn:hover{background:rgba(245,166,35,.1);}
+.qty-btn:active{background:rgba(245,166,35,.18);}
+.qty-num{width:42px;text-align:center;font-size:1rem;font-weight:700;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);height:36px;line-height:36px;user-select:none;transition:transform .2s var(--spring);}
+.qty-num.bump{animation:qBump .3s var(--spring);}
+@keyframes qBump{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+
+/* Subtotal */
+.item-subtotal{text-align:right;flex-shrink:0;min-width:80px;}
+.item-subtotal-label{font-size:.7rem;color:var(--muted);margin-bottom:3px;}
+.item-subtotal-val{font-family:var(--fd);font-size:1.2rem;font-weight:800;color:var(--gold);}
+
+/* Remove */
+.btn-remove{width:32px;height:32px;border-radius:50%;background:rgba(255,100,100,.05);border:1px solid rgba(255,100,100,.15);color:rgba(255,100,100,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .25s;margin-left:8px;}
+.btn-remove:hover{background:rgba(255,100,100,.12);border-color:rgba(255,100,100,.35);color:#ff7a7a;transform:scale(1.1);}
+
+/* Continue shopping */
+.continue-shopping{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-size:.85rem;font-weight:500;margin-top:8px;transition:all .25s;}
+.continue-shopping:hover{border-color:rgba(245,166,35,.3);color:var(--gold);}
+
+/* ─── RIGHT: ORDER SUMMARY ─── */
+.order-summary{position:sticky;top:calc(var(--nav) + 20px);align-self:start;}
+.summary-card{background:var(--glass);border:1px solid var(--border);border-radius:22px;padding:28px;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.4);}
+.summary-title{font-family:var(--fd);font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:22px;display:flex;align-items:center;gap:8px;}
+.summary-title svg{color:var(--gold);}
+
+/* Price rows */
+.summary-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(245,166,35,.06);font-size:.875rem;}
+.summary-row:last-of-type{border-bottom:none;}
+.summary-row .label{color:var(--muted);}
+.summary-row .val{font-weight:600;color:var(--text);}
+.summary-row .val.green{color:#5de88d;}
+.summary-row .val.gold{color:var(--gold);}
+.discount-row .val{color:#5de88d;}
+.total-row{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.total-row .label{font-size:1rem;font-weight:700;color:var(--text);}
+.total-row .val{font-family:var(--fd);font-size:1.6rem;font-weight:800;color:var(--gold);}
+
+/* Savings badge */
+.savings-badge{background:rgba(60,200,100,.07);border:1px solid rgba(60,200,100,.18);border-radius:10px;padding:10px 14px;text-align:center;margin:16px 0;font-size:.82rem;color:#5de88d;}
+.savings-badge strong{font-size:1rem;}
+
+/* Coupon */
+.coupon-section{margin:18px 0;}
+.coupon-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.coupon-row{display:flex;gap:8px;}
+.coupon-input{flex:1;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:.875rem;font-family:var(--fb);outline:none;transition:border-color .25s,box-shadow .25s;text-transform:uppercase;letter-spacing:.06em;}
+.coupon-input:focus{border-color:rgba(245,166,35,.4);box-shadow:0 0 0 3px rgba(245,166,35,.08);}
+.coupon-input::placeholder{color:var(--muted);text-transform:none;letter-spacing:0;}
+.coupon-input.valid{border-color:rgba(60,200,100,.4);box-shadow:0 0 0 3px rgba(60,200,100,.07);}
+.btn-apply{padding:11px 18px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:700;font-size:.82rem;border-radius:12px;transition:all .3s;white-space:nowrap;}
+.btn-apply:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(245,166,35,.35);}
+.coupon-msg{font-size:.75rem;margin-top:6px;display:none;}
+.coupon-msg.success{color:#5de88d;display:block;}
+.coupon-msg.error{color:#ff7a7a;display:block;}
+
+/* Delivery estimate */
+.delivery-est{background:rgba(245,166,35,.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:14px 0;display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--muted);}
+.delivery-est svg{color:var(--gold);flex-shrink:0;}
+
+/* Checkout button */
+.btn-checkout{width:100%;padding:16px;background:linear-gradient(135deg,var(--gd),var(--gold));color:#0a0804;font-weight:800;font-size:1rem;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;transition:transform .3s var(--spring),box-shadow .3s;box-shadow:0 4px 24px rgba(245,166,35,.35);margin-top:20px;letter-spacing:.01em;}
+.btn-checkout:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(245,166,35,.5);}
+.btn-checkout::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);opacity:0;transition:opacity .2s;}
+.btn-checkout:hover::before{opacity:1;}
+
+/* Trust badges */
+.trust-badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;}
+.trust-badge{text-align:center;padding:10px 8px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;}
+.trust-badge .tb-icon{font-size:1.3rem;margin-bottom:4px;}
+.trust-badge .tb-label{font-size:.65rem;color:var(--muted);line-height:1.4;}
+
+/* Pay methods */
+.pay-strip{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;}
+.pay-strip span{font-size:.68rem;color:var(--dim);}
+.pay-pill{padding:4px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;font-size:.7rem;font-weight:700;color:var(--muted);}
+
+/* ─── FLOATING NOTICE ─── */
+.float-notice{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(60,200,100,.1);border:1px solid rgba(60,200,100,.25);backdrop-filter:blur(16px);border-radius:12px;padding:12px 20px;color:#5de88d;font-size:.85rem;font-weight:600;z-index:500;transition:transform .4s var(--spring),opacity .3s;opacity:0;white-space:nowrap;}
+.float-notice.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ─── FOOTER ─── */
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:20px 0;position:relative;z-index:2;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.footer-inner p{font-size:.8rem;color:var(--muted);}
+.footer-links a{font-size:.8rem;color:var(--muted);margin-left:16px;transition:color .2s;}
+.footer-links a:hover{color:var(--gold);}
+
+/* WhatsApp */
+.wa-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 20px rgba(37,211,102,.4);animation:fabF 3s ease-in-out infinite;}
+.wa-fab:hover{transform:scale(1.1);}
+@keyframes fabF{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .cart-layout{grid-template-columns:1fr;}
+  .order-summary{position:static;}
+}
+@media(max-width:640px){
+  .cart-item{flex-wrap:wrap;}
+  .item-controls{width:100%;justify-content:space-between;}
+  .nav-links{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div id="scrollBar"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="bg-glow"></div>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <svg viewBox="0 0 40 40" fill="none">
+        <polygon points="20,3 37,32 3,32" stroke="url(#ng)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <polygon points="20,10 30,28 10,28" fill="url(#nf)" opacity=".4"/>
+        <defs>
+          <linearGradient id="ng" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#ffe29a"/><stop offset="100%" stop-color="#c8690a"/></linearGradient>
+          <linearGradient id="nf" x1="0" y1="0" x2="40" y2="40"><stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#c8690a"/></linearGradient>
+        </defs>
+      </svg>
+      <span class="logo-txt">Indianmade</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="product.html">Products</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="cart.html" class="nav-icon-btn" id="cartBtn" aria-label="Cart" style="display:inline-flex;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <a href="auth.html" class="btn-nav-login">Log in</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── CART HERO ── -->
+<div class="cart-hero">
+  <div class="cart-hero-inner">
+    <div>
+      <nav class="breadcrumb">
+        <a href="index.html">Home</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        <a href="shop.html">Shop</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        <span>Cart</span>
+      </nav>
+      <h1>Your Cart <span id="cartCount">(4 items)</span></h1>
+    </div>
+    <div style="font-size:.85rem;color:var(--muted);">🚚 Free delivery on orders ₹499+</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="cart-layout" id="cartLayout">
+
+  <!-- LEFT -->
+  <div class="cart-items-section">
+    <div class="cart-section-hdr">
+      <h2>Cart Items</h2>
+      <button class="btn-clear-cart" id="clearCartBtn">Remove All</button>
+    </div>
+    <div id="cartItemsContainer"></div>
+
+    <div class="empty-cart" id="emptyCart">
+      <div class="empty-emoji">🛒</div>
+      <h2>Your cart is empty</h2>
+      <p>Add some delicious snacks and spices to get started!</p>
+      <a href="shop.html" class="btn-shop-empty">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Explore Products
+      </a>
+    </div>
+
+    <a href="shop.html" class="continue-shopping" id="continueShop">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Continue Shopping
+    </a>
+  </div>
+
+  <!-- RIGHT: SUMMARY -->
+  <div class="order-summary">
+    <div class="summary-card">
+      <div class="summary-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+        Order Summary
+      </div>
+
+      <div class="summary-row"><span class="label">Subtotal</span><span class="val" id="subtotalVal">₹526</span></div>
+      <div class="summary-row" id="deliveryRow"><span class="label">Delivery</span><span class="val green" id="deliveryVal">FREE ✓</span></div>
+      <div class="summary-row"><span class="label">GST (5%)</span><span class="val" id="taxVal">₹26.30</span></div>
+      <div class="summary-row discount-row" id="discountRow" style="display:none;"><span class="label">Coupon Discount</span><span class="val" id="discountVal">−₹0</span></div>
+
+      <div class="savings-badge" id="savingsBadge">
+        🎉 You're saving <strong id="savingsAmt">₹133</strong> on this order!
+      </div>
+
+      <div class="summary-row total-row">
+        <span class="label">Total</span>
+        <span class="val gold" id="totalVal">₹552</span>
+      </div>
+
+      <!-- Coupon -->
+      <div class="coupon-section">
+        <div class="coupon-label">Have a Coupon?</div>
+        <div class="coupon-row">
+          <input type="text" class="coupon-input" id="couponInput" placeholder="Enter code (SAVE10)"/>
+          <button class="btn-apply" id="applyCoupon">Apply</button>
+        </div>
+        <div class="coupon-msg" id="couponMsg"></div>
+      </div>
+
+      <!-- Delivery estimate -->
+      <div class="delivery-est">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>Estimated delivery: <strong style="color:var(--text)">3–5 business days</strong> via India Post</span>
+      </div>
+
+      <!-- Checkout -->
+      <button class="btn-checkout" id="checkoutBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Proceed to Checkout
+      </button>
+
+      <!-- Trust badges -->
+      <div class="trust-badges">
+        <div class="trust-badge"><div class="tb-icon">🔒</div><div class="tb-label">Secure Payment</div></div>
+        <div class="trust-badge"><div class="tb-icon">↩️</div><div class="tb-label">7-Day Returns</div></div>
+        <div class="trust-badge"><div class="tb-icon">🌿</div><div class="tb-label">100% Natural</div></div>
+      </div>
+
+      <!-- Payment methods -->
+      <div class="pay-strip">
+        <span>Pay via:</span>
+        <span class="pay-pill" style="color:#4285F4;">GPay</span>
+        <span class="pay-pill" style="color:#5f259f;">PhonePe</span>
+        <span class="pay-pill" style="color:#00B9F1;">Paytm</span>
+        <span class="pay-pill">UPI</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cart-layout -->
+
+<!-- Float notice -->
+<div class="float-notice" id="floatNotice"></div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>© 2024 Indianmade. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="auth.html">Login</a>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/919876543210" class="wa-fab" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 58 58" width="26" height="26"><path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/></svg>
+</a>
+
+<script src="store.js"></script>
+<script>
+"use strict";
+/* ── Particles ─────────────────────────── */
+(function(){
+  const cv=document.getElementById('bgCanvas'),ctx=cv.getContext('2d');
+  let W,H,pts=[];const rnd=(a,b)=>Math.random()*(b-a)+a;
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  class Pt{constructor(i){this.reset(i);}reset(i){this.x=rnd(0,W);this.y=i?rnd(0,H):H+5;this.r=rnd(.4,1.8);this.vy=-rnd(.1,.4);this.vx=rnd(-.12,.12);this.a=rnd(.05,.28);this.hue=rnd(18,44);this.t=0;this.ml=rnd(220,520);}step(){this.x+=this.vx;this.y+=this.vy;this.t++;if(this.y<-5||this.t>this.ml)this.reset();}draw(){const f=this.t<60?this.t/60:this.t>this.ml-60?(this.ml-this.t)/60:1;ctx.save();ctx.globalAlpha=this.a*f;ctx.fillStyle=`hsl(${this.hue},88%,62%)`;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  function init(){pts=[];for(let i=0;i<70;i++)pts.push(new Pt(true));}
+  function loop(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.step();p.draw();});requestAnimationFrame(loop);}
+  window.addEventListener('resize',()=>{resize();init();},{passive:true});
+  resize();init();loop();
+})();
+
+/* ── Cart Data ─────────────────────────── */
+let cart=window.Cart ? window.Cart.getCart() : [];
+let couponDiscount=0;
+let couponCode='';
+
+const COUPONS={'SAVE10':{type:'pct',val:10,label:'10% off'},'FLAT50':{type:'flat',val:50,label:'Flat ₹50 off'},'WELCOME':{type:'pct',val:15,label:'15% off for new users'}};
+
+/* ── Calculations ──────────────────────── */
+function calcSubtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0);}
+function calcOrigTotal(){return cart.reduce((s,i)=>s+i.orig*i.qty,0);}
+function calcDelivery(sub){return sub>=499?0:60;}
+function calcTax(sub){return Math.round(sub*0.05*100)/100;}
+function calcCoupon(sub,code){
+  const c=COUPONS[code];if(!c)return 0;
+  return c.type==='pct'?Math.round(sub*c.val/100):Math.min(c.val,sub);
+}
+function calcTotal(){
+  const sub=calcSubtotal();
+  const del=calcDelivery(sub);
+  const tax=calcTax(sub);
+  const disc=calcCoupon(sub,couponCode);
+  return {sub,del,tax,disc,total:sub+del+tax-disc};
+}
+
+/* ── Render ────────────────────────────── */
+function renderCart(){
+  const container=document.getElementById('cartItemsContainer');
+  const emptyEl=document.getElementById('emptyCart');
+  const continueEl=document.getElementById('continueShop');
+  const clearBtn=document.getElementById('clearCartBtn');
+
+  if(cart.length===0){
+    container.innerHTML='';
+    emptyEl.style.display='block';
+    continueEl.style.display='none';
+    clearBtn.style.display='none';
+    document.getElementById('checkoutBtn').disabled=true;
+    document.getElementById('checkoutBtn').style.opacity='.5';
+  } else {
+    emptyEl.style.display='none';
+    continueEl.style.display='inline-flex';
+    clearBtn.style.display='';
+    document.getElementById('checkoutBtn').disabled=false;
+    document.getElementById('checkoutBtn').style.opacity='1';
+  }
+
+  const totalQty=cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('cartCount').textContent=`(${totalQty} item${totalQty!==1?'s':''})`;
+  if (document.getElementById('cartBadge')) {
+    document.getElementById('cartBadge').textContent=totalQty;
+  }
+
+  container.innerHTML=cart.map((item,idx)=>{
+    const product = window.PRODUCTS.find(p => p.id === item.id);
+    const color = product ? product.color : 'rgba(245,166,35,0.08)';
+    const cleanWeight = (item.weight || '250g').replace(/\s+/g, '');
+    return `
+    <div class="cart-item" id="ci-${item.id}-${cleanWeight}" data-id="${item.id}" data-weight="${item.weight || '250g'}">
+      <div class="item-img" style="background:${color}">${item.emoji}</div>
+      <div class="item-info">
+        <div class="item-cat">${item.cat === 'snacks' ? 'Authentic Snacks' : item.cat === 'spices' ? 'Spice Blends' : item.cat === 'powders' ? 'Cooking Powders' : 'Combo Pack'}</div>
+        <div class="item-name">${item.name}</div>
+        <div class="item-variant">${item.weight || '250g'}</div>
+        <div class="item-unit-price">Unit price: <strong>₹${item.price}</strong></div>
+      </div>
+      <div class="item-controls">
+        <div class="qty-wrap">
+          <button class="qty-btn" data-action="dec" data-id="${item.id}" data-weight="${item.weight || '250g'}" aria-label="Decrease quantity">−</button>
+          <div class="qty-num" id="qn-${item.id}-${cleanWeight}">${item.qty}</div>
+          <button class="qty-btn" data-action="inc" data-id="${item.id}" data-weight="${item.weight || '250g'}" aria-label="Increase quantity">+</button>
+        </div>
+        <div class="item-subtotal">
+          <div class="item-subtotal-label">Subtotal</div>
+          <div class="item-subtotal-val" id="sub-${item.id}-${cleanWeight}">₹${item.price*item.qty}</div>
+        </div>
+        <button class="btn-remove" data-id="${item.id}" data-weight="${item.weight || '250g'}" aria-label="Remove item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Stagger-reveal cards
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.cart-item').forEach((el,i)=>{
+      el.style.opacity='0';el.style.transform='translateY(20px)';
+      setTimeout(()=>{el.style.transition='opacity .4s ease,transform .4s ease';el.style.opacity='1';el.style.transform='none';},i*80);
+    });
+  });
+
+  updateSummary();
+  bindItemEvents();
+}
+
+function updateSummary(){
+  const {sub,del,tax,disc,total}=calcTotal();
+  const origTotal=calcOrigTotal();
+  const savings=origTotal-sub+disc;
+
+  document.getElementById('subtotalVal').textContent='₹'+sub;
+  document.getElementById('deliveryVal').textContent=del===0?'FREE ✓':'₹'+del;
+  document.getElementById('deliveryVal').className='val'+(del===0?' green':'');
+  document.getElementById('taxVal').textContent='₹'+tax.toFixed(2);
+
+  if(disc>0){
+    document.getElementById('discountRow').style.display='flex';
+    document.getElementById('discountVal').textContent='−₹'+disc;
+  } else {
+    document.getElementById('discountRow').style.display='none';
+  }
+
+  // Animate total
+  animateValue('totalVal',total);
+  document.getElementById('savingsAmt').textContent='₹'+savings;
+  document.getElementById('savingsBadge').style.display=savings>0?'block':'none';
+}
+
+function animateValue(id,target){
+  const el=document.getElementById(id);
+  const current=parseFloat(el.textContent.replace('₹',''))||0;
+  const diff=target-current;
+  const steps=20;let step=0;
+  const interval=setInterval(()=>{
+    step++;
+    const val=current+diff*(step/steps);
+    el.textContent='₹'+val.toFixed(0);
+    if(step>=steps){el.textContent='₹'+target.toFixed(0);clearInterval(interval);}
+  },16);
+}
+
+function showNotice(msg){
+  const n=document.getElementById('floatNotice');
+  n.textContent=msg;n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),2800);
+}
+
+/* ── Events ────────────────────────────── */
+function bindItemEvents(){
+  // Qty buttons
+  document.querySelectorAll('.qty-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const id=+this.dataset.id;
+      const weight=this.dataset.weight || '250g';
+      const action=this.dataset.action;
+      const item=cart.find(c=>c.id===id && c.weight===weight);
+      if(!item)return;
+      const delta = action === 'inc' ? 1 : -1;
+      
+      if (action === 'dec' && item.qty === 1) {
+        removeItem(id, weight);
+        return;
+      }
+      
+      window.Cart.updateQty(id, weight, delta);
+      cart = window.Cart.getCart();
+      
+      const cleanWeight = weight.replace(/\s+/g, '');
+      const qNum = document.getElementById(`qn-${id}-${cleanWeight}`);
+      if (qNum) {
+        qNum.textContent = item.qty;
+        qNum.classList.remove('bump');
+        void qNum.offsetWidth;
+        qNum.classList.add('bump');
+      }
+      const subEl = document.getElementById(`sub-${id}-${cleanWeight}`);
+      if (subEl) subEl.textContent = '₹' + (item.price * item.qty);
+      
+      updateSummary();
+    });
+  });
+
+  // Remove buttons
+  document.querySelectorAll('.btn-remove').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const id=+this.dataset.id;
+      const weight=this.dataset.weight || '250g';
+      removeItem(id, weight);
+    });
+  });
+}
+
+function removeItem(id, weight){
+  const cleanWeight = (weight || '250g').replace(/\s+/g, '');
+  const el=document.getElementById(`ci-${id}-${cleanWeight}`);
+  if(!el)return;
+  el.classList.add('removing');
+  showNotice('Item removed from cart');
+  setTimeout(()=>{
+    window.Cart.removeItem(id, weight);
+    cart = window.Cart.getCart();
+    if(couponCode&&cart.length===0){couponCode='';}
+    renderCart();
+  },550);
+}
+
+/* ── Clear all ─────────────────────────── */
+document.getElementById('clearCartBtn')?.addEventListener('click',()=>{
+  document.querySelectorAll('.cart-item').forEach((el,i)=>{
+    setTimeout(()=>el.classList.add('removing'),i*80);
+  });
+  setTimeout(()=>{
+    window.Cart.clearCart();
+    cart=[];
+    couponCode='';
+    renderCart();
+    showNotice('Cart cleared');
+  },cart.length*80+550);
+});
+
+/* ── Coupon ────────────────────────────── */
+document.getElementById('applyCoupon')?.addEventListener('click',()=>{
+  const val=document.getElementById('couponInput').value.trim().toUpperCase();
+  const inp=document.getElementById('couponInput');
+  const msg=document.getElementById('couponMsg');
+  if(!val){msg.textContent='Please enter a coupon code.';msg.className='coupon-msg error';return;}
+  if(COUPONS[val]){
+    couponCode=val;
+    inp.classList.add('valid');
+    msg.textContent='✓ Coupon "'+val+'" applied! '+COUPONS[val].label;
+    msg.className='coupon-msg success';
+    showNotice('🎉 Coupon applied! '+COUPONS[val].label);
+    updateSummary();
+  } else {
+    couponCode='';inp.classList.remove('valid');
+    msg.textContent='✗ Invalid coupon code.';msg.className='coupon-msg error';
+    updateSummary();
+  }
+});
+// Checkout Button Listener to save checkout cart snapshot
+document.getElementById('checkoutBtn')?.addEventListener('click', () => {
+  const summary = calcTotal();
+  const checkoutData = {
+    items: cart,
+    subtotal: summary.sub,
+    delivery: summary.del,
+    tax: summary.tax,
+    discount: summary.disc,
+    total: summary.total,
+    coupon: couponCode
+  };
+  localStorage.setItem('im_checkout_cart', JSON.stringify(checkoutData));
+  window.location.href = 'checkout.html';
+});
+/* ── Scroll ────────────────────────────── */
+window.addEventListener('scroll',()=>{
+  document.getElementById('scrollBar').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100)+'%';
+  document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>30);
+},{passive:true});
+
+/* ── Init ──────────────────────────────── */
+renderCart();
+</script>
+</body>
+</html>
