@@ -536,6 +536,32 @@ window.confirmOrder=function(){
     };
     localStorage.setItem('im_last_order', JSON.stringify(orderDetails));
 
+    // Send real WhatsApp notification via DBuddyZ!
+    if (fmobile) {
+      const itemsCount = (checkoutData.items || []).reduce((sum, item) => sum + item.qty, 0);
+      const textMessage = `🎉 *Order Placed Successfully! — Indianmade* 🛍️\n\n` +
+                          `Hi ${fname}! Your order has been received and is pending payment verification.\n\n` +
+                          `📋 *Order ID:* ${orderId}\n` +
+                          `🛍️ *Total Items:* ${itemsCount}\n` +
+                          `💰 *Total Paid:* ₹${checkoutData.total}\n` +
+                          `🔑 *UTR Number:* ${utr}\n\n` +
+                          `🚚 We will verify your payment screenshot within 30 minutes and dispatch your snacks! Thank you for shopping with us! 🙏`;
+
+      const waForm = new FormData();
+      waForm.append('token', 'be68c87331ffe75b3636420f61aa8e6d');
+      waForm.append('tonumber', fmobile.startsWith('+91') ? fmobile : '+91' + fmobile.replace(/\D/g, ''));
+      waForm.append('body', textMessage);
+      waForm.append('fullmessage', '1');
+
+      fetch('https://dbuddyz.prismswift.com/send/', {
+        method: 'POST',
+        body: waForm
+      })
+      .then(res => res.json())
+      .then(data => console.log('WhatsApp Order Notification Response:', data))
+      .catch(err => console.error('WhatsApp Notification Error:', err));
+    }
+
     // Clear cart and checkout cache
     if (window.Cart) {
       window.Cart.clearCart();

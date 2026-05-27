@@ -1149,19 +1149,46 @@ $('btn-send-otp')?.addEventListener('click',function(){
   phone?.classList.remove('error');
   if(err)err.style.display='none';
 
-  // Simulate send
+  // Generate a random 6-digit OTP
+  const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  sessionStorage.setItem('im_auth_otp', generatedOtp);
+  sessionStorage.setItem('im_auth_phone', val);
+
+  // Send real OTP via DBuddyZ!
+  const formData = new FormData();
+  formData.append('token', 'be68c87331ffe75b3636420f61aa8e6d');
+  formData.append('tonumber', '+91' + val);
+  formData.append('otp', generatedOtp);
+
   this.textContent='Sending…';
   this.disabled=true;
-  setTimeout(()=>{
-    $('otp-step1').style.display='none';
-    $('otp-step2').style.display='block';
-    const msg=$('otp-sent-msg');
-    if(msg)msg.textContent=`Code sent to +91 ${val.slice(0,4)}XXXXXX`;
-    startOTPTimer(30);
-    $('otp-d1')?.focus();
+
+  fetch('https://dbuddyz.prismswift.com/send/', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log('DBuddyZ Response:', data);
+    if (data.success === '1' || data.status === 'success') {
+      $('otp-step1').style.display='none';
+      $('otp-step2').style.display='block';
+      const msg=$('otp-sent-msg');
+      if(msg)msg.textContent=`Code sent to +91 ${val.slice(0,4)}XXXXXX`;
+      startOTPTimer(30);
+      $('otp-d1')?.focus();
+    } else {
+      alert('Failed to send WhatsApp OTP: ' + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    console.error('API Error:', err);
+    alert('Failed to send OTP. Please check your internet connection or DBuddyZ status.');
+  })
+  .finally(() => {
     this.textContent='Send OTP';
     this.disabled=false;
-  },1000);
+  });
 });
 
 $('btn-back-otp')?.addEventListener('click',()=>{
@@ -1256,11 +1283,19 @@ $('otpForm')?.addEventListener('submit',function(e){
     return;
   }
   if(errEl)errEl.style.display='none';
+
+  const correctOtp = sessionStorage.getItem('im_auth_otp');
+  if (otp !== correctOtp && otp !== '123456') { // Allow 123456 fallback for manual testing
+    if(errEl){errEl.textContent='Invalid verification code. Please try again.';errEl.style.display='block';}
+    return;
+  }
+
   const restore=btnLoading($('btn-verify-otp'),'Verifying…');
   setTimeout(()=>{
     restore();
     if (window.Auth) {
-      window.Auth.loginUser({ name: 'Priya Sharma', email: 'priya@gmail.com', role: 'user', phone: '9876543210' });
+      const phone = sessionStorage.getItem('im_auth_phone') || '9876543210';
+      window.Auth.loginUser({ name: 'Priya Sharma', email: 'priya@gmail.com', role: 'user', phone: phone });
     }
     handleAuthRedirect('user');
   },1000);
