@@ -63,6 +63,10 @@ const META_PHONE_ID = process.env.META_WHATSAPP_PHONE_ID || '';
 const META_TOKEN    = process.env.META_WHATSAPP_TOKEN    || '';
 const META_ENABLED  = !!(META_PHONE_ID && META_TOKEN);
 
+// ─── Provider: DBuddyZ (Free Gateway Alternative) ────────────────────────────
+const DBUDDYZ_TOKEN = process.env.DBUDDYZ_WHATSAPP_TOKEN || '';
+const DBUDDYZ_ENABLED  = !!DBUDDYZ_TOKEN;
+
 // ─── Phone Normalizer ─────────────────────────────────────────────────────────
 /**
  * Normalize any Indian phone number to E.164 format (+91XXXXXXXXXX)
@@ -130,7 +134,38 @@ const sendMessage = async (phone, body, metaPayload = null) => {
     return null;
   }
 
-  // ── Try Twilio first ────────────────────────────────────
+  // ── Try DBuddyZ first if enabled (Free Gateway Alternative) ──────────────
+  if (DBUDDYZ_ENABLED) {
+    try {
+      const axios = require('axios');
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('token', DBUDDYZ_TOKEN);
+      form.append('tonumber', e164);
+      form.append('body', body);
+      form.append('fullmessage', '1'); // Send formatted message
+
+      const resp = await axios.post(
+        'https://dbuddyz.prismswift.com/send/',
+        form,
+        {
+          headers: form.getHeaders(),
+          timeout: 10000,
+        }
+      );
+
+      if (resp.data && (resp.data.status === 'success' || resp.data.success)) {
+        logger.info('📱 WhatsApp sent (Free DBuddyZ):', { to: e164 });
+        return { provider: 'dbuddyz', status: 'sent', data: resp.data };
+      } else {
+        logger.warn('⚠️ DBuddyZ rejected message, trying next provider:', { data: resp.data });
+      }
+    } catch (err) {
+      logger.warn('⚠️ DBuddyZ WhatsApp failed — trying next provider:', { error: err.message });
+    }
+  }
+
+  // ── Try Twilio second ────────────────────────────────────
   const tc = getTwilioClient();
   if (tc) {
     try {
@@ -169,9 +204,9 @@ const sendMessage = async (phone, body, metaPayload = null) => {
     }
   }
 
-  // ── Both providers failed ────────────────────────────────
-  if (!tc && !META_ENABLED) {
-    logger.warn('⚠️ WhatsApp: no provider configured (set TWILIO or META env vars)');
+  // ── All providers failed ─────────────────────────────────
+  if (!tc && !META_ENABLED && !DBUDDYZ_ENABLED) {
+    logger.warn('⚠️ WhatsApp: no provider configured (set DBUDDYZ, TWILIO, or META env vars)');
   }
 
   return null;
