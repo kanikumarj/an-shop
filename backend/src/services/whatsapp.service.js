@@ -115,7 +115,7 @@ const isRateLimited = () => {
  * @param {string} body   — Message text (Twilio path)
  * @param {object} [metaPayload] — Meta API payload for template messages
  */
-const sendMessage = async (phone, body, metaPayload = null) => {
+const sendMessage = async (phone, body, metaPayload = null, otpValue = null) => {
   const e164 = normalizePhone(phone);
 
   if (!e164) {
@@ -142,8 +142,12 @@ const sendMessage = async (phone, body, metaPayload = null) => {
       const form = new FormData();
       form.append('token', DBUDDYZ_TOKEN);
       form.append('tonumber', e164);
-      form.append('body', body);
-      form.append('fullmessage', '1'); // Send formatted message
+      if (otpValue) {
+        form.append('otp', otpValue);
+      } else {
+        form.append('body', body);
+        form.append('fullmessage', '1'); // Send formatted message
+      }
 
       const resp = await axios.post(
         'https://dbuddyz.prismswift.com/send/',
@@ -534,7 +538,7 @@ const send = async (phone, template, vars = {}) => {
   const e164 = normalizePhone(phone);
   const meta = e164 ? buildMetaPayload(e164, body) : null;
 
-  return sendMessage(phone, body, meta);
+  return sendMessage(phone, body, meta, template === 'OTP' ? vars.otp : null);
 };
 
 /**
