@@ -1,5 +1,8 @@
 "use strict";
 
+// ─── Google OAuth Configuration ──────────────────────────────────────────────
+window.GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+
 window.PRODUCTS = [
   {id:1,name:'Homemade Murukku',cat:'snacks',price:149,orig:199,rating:4.9,count:128,emoji:'🌀',tags:['bestseller'],badge:'🔥 Hot',bt:'hot',desc:'Crispy spiral snack with sesame & cumin',color:'rgba(200,100,0,0.14)'},
   {id:2,name:'Kerala Banana Chips',cat:'snacks',price:129,orig:169,rating:4.8,count:94,emoji:'🍌',tags:['bestseller'],badge:'⭐ Top',bt:'best',desc:'Thin-sliced coconut oil fried chips',color:'rgba(255,200,0,0.1)'},
