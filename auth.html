@@ -1256,16 +1256,55 @@ $('loginForm')?.addEventListener('submit',function(e){
   
   if(!ok)return;
   const restore=btnLoading($('btn-login'),'Signing in…');
-  setTimeout(()=>{
-    restore();
-    let name = email.split('@')[0];
-    name = name.charAt(0).toUpperCase() + name.slice(1);
-    const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
-    if (window.Auth) {
-      window.Auth.loginUser({ name, email, role });
+  const isAdminEmail = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com');
+  const loginUrl = isAdminEmail ? 'http://localhost:5000/api/v1/auth/admin/login' : 'http://localhost:5000/api/v1/auth/login';
+  
+  fetch(loginUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pw })
+  })
+  .then(res => {
+    if (!res.ok) {
+      return res.json().then(err => { throw new Error(err.message || 'Login failed.'); });
     }
-    handleAuthRedirect(role);
-  },1000);
+    return res.json();
+  })
+  .then(response => {
+    restore();
+    if (response.success && response.data) {
+      const user = response.data.user;
+      const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? 'admin' : 'user';
+      if (window.Auth) {
+        window.Auth.loginUser({ name: user.name, email: user.email, role: role, token: response.data.accessToken });
+      }
+      handleAuthRedirect(role);
+    }
+  })
+  .catch(err => {
+    if (err instanceof TypeError || err.message.includes('Failed to fetch')) {
+      console.warn('Backend server offline. Falling back to frontend simulated auth.');
+      setTimeout(()=>{
+        restore();
+        let name = email.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        const role = isAdminEmail ? 'admin' : 'user';
+        if (window.Auth) {
+          window.Auth.loginUser({ name, email, role });
+        }
+        handleAuthRedirect(role);
+      },1000);
+    } else {
+      restore();
+      const pwErr = $('login-pw-err');
+      if (pwErr) {
+        pwErr.textContent = err.message || 'Invalid email or password.';
+        showErr('login-pw', 'login-pw-err', true);
+      } else {
+        alert(err.message);
+      }
+    }
+  });
 });
 
 /* ── Register Form ── */
@@ -1284,16 +1323,61 @@ $('registerForm')?.addEventListener('submit',function(e){
   else showErr('reg-phone','reg-phone-err',false);
   if(!pw||pw.length<8){showErr('reg-pw','reg-pw-err',true);ok=false;}
   else showErr('reg-pw','reg-pw-err',false);
+  
   if(!ok)return;
   const restore=btnLoading($('btn-register'),'Creating Account…');
-  setTimeout(()=>{
-    restore();
-    const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
-    if (window.Auth) {
-      window.Auth.loginUser({ name, email, role, phone });
+  
+  fetch('http://localhost:5000/api/v1/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name,
+      email,
+      phone,
+      password: pw,
+      confirmPassword: pw,
+      agreeToTerms: true
+    })
+  })
+  .then(res => {
+    if (!res.ok) {
+      return res.json().then(err => { throw new Error(err.message || 'Registration failed.'); });
     }
-    handleAuthRedirect(role);
-  },1000);
+    return res.json();
+  })
+  .then(response => {
+    restore();
+    if (response.success && response.data) {
+      const user = response.data.user;
+      const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? 'admin' : 'user';
+      if (window.Auth) {
+        window.Auth.loginUser({
+          name: user.name,
+          email: user.email,
+          role: role,
+          phone: user.phone,
+          token: response.data.accessToken
+        });
+      }
+      handleAuthRedirect(role);
+    }
+  })
+  .catch(err => {
+    if (err instanceof TypeError || err.message.includes('Failed to fetch')) {
+      console.warn('Backend server offline. Falling back to frontend simulated registration.');
+      setTimeout(()=>{
+        restore();
+        const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
+        if (window.Auth) {
+          window.Auth.loginUser({ name, email, role, phone });
+        }
+        handleAuthRedirect(role);
+      },1000);
+    } else {
+      restore();
+      alert(err.message);
+    }
+  });
 });
 
 /* ── OTP verify ── */
