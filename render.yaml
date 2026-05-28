@@ -6,13 +6,11 @@ services:
     plan: free
     rootDir: backend
 
-    # Build: install ALL deps (prisma is in dependencies), generate client, push schema
+    # prisma is in dependencies (not devDependencies) — npm install installs it
     buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss
 
-    # Start command
     startCommand: node server.js
 
-    # Health check
     healthCheckPath: /api/v1/health
 
     envVars:
@@ -25,17 +23,15 @@ services:
       - key: APP_URL
         value: https://an-shop.onrender.com
 
-      # Frontend on Vercel — used for CORS and email links
       - key: FRONTEND_URL
         value: https://anandhshop.vercel.app
 
-      # CORS: allow both Vercel frontend and Render itself
       - key: ALLOWED_ORIGINS
         value: https://anandhshop.vercel.app,https://an-shop.onrender.com
 
-      # ─── Secrets (set in Render Dashboard → Environment) ─────────────────────
+      # ─── Secrets: set these in Render Dashboard → Environment ────────────────
       - key: DATABASE_URL
-        sync: false  # postgresql://neondb_owner:...@neon.tech/neondb?sslmode=require
+        sync: false
 
       - key: JWT_SECRET
         sync: false
@@ -50,7 +46,7 @@ services:
         sync: false
 
       - key: REDIS_URL
-        sync: false  # Optional — leave blank to run without Redis cache
+        sync: false
 
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
