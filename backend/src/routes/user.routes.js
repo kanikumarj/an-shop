@@ -16,7 +16,7 @@ const { updateProfileSchema, addressSchema } = require('../validations/user.vali
 router.use(protect);
 router.get('/profile', getProfile);
 router.patch('/profile', validate(updateProfileSchema), updateProfile);
-router.patch('/avatar', uploadAvatar.single('avatar'), updateAvatar);
+router.patch('/avatar', uploadAvatar, updateAvatar);
 router.delete('/account', deleteAccount);
 router.get('/addresses', getAddresses);
 router.post('/addresses', validate(addressSchema), addAddress);

@@ -9,7 +9,7 @@ const {
   createCategory, updateCategory, deleteCategory,
 } = require('../controllers/category.controller');
 const { protect, restrictTo } = require('../middleware/auth');
-const { uploadProductImage } = require('../config/cloudinary');
+const { uploadCategoryImage } = require('../config/cloudinary');
 const { validate } = require('../middleware/validate');
 const { categorySchema } = require('../validations/category.validation');
 
@@ -20,8 +20,8 @@ router.get('/:slug/products', getCategoryProducts);
 
 // Admin
 router.use(protect, restrictTo('ADMIN', 'SUPERADMIN'));
-router.post('/', uploadProductImage.single('image'), validate(categorySchema), createCategory);
-router.put('/:id', uploadProductImage.single('image'), validate(categorySchema), updateCategory);
+router.post('/', uploadCategoryImage, validate(categorySchema), createCategory);
+router.put('/:id', uploadCategoryImage, validate(categorySchema), updateCategory);
 router.delete('/:id', deleteCategory);
 
 module.exports = router;

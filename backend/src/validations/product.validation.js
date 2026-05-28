@@ -21,7 +21,7 @@ const stockField = () =>
   z.number().int('Stock must be a whole number.').min(0, 'Stock cannot be negative.').max(999999);
 
 // ─── Create Product ───────────────────────────────────────────────────────────
-exports.createProductSchema = z.object({
+const productObjectSchema = z.object({
   name: z
     .string({ required_error: 'Product name is required.' })
     .min(3, 'Name must be at least 3 characters.')
@@ -81,13 +81,14 @@ exports.createProductSchema = z.object({
 
   metaTitle:       z.string().max(70).optional().nullable(),
   metaDescription: z.string().max(160).optional().nullable(),
-})
-.refine(
+});
+
+exports.createProductSchema = productObjectSchema.refine(
   (d) => !d.comparePrice || d.comparePrice >= d.basePrice,
   { message: 'Compare price must be greater than or equal to the selling price.', path: ['comparePrice'] }
 );
 
-exports.updateProductSchema = exports.createProductSchema
+exports.updateProductSchema = productObjectSchema
   .partial()
   .refine(
     (d) => !d.comparePrice || !d.basePrice || d.comparePrice >= d.basePrice,
