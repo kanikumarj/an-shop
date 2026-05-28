@@ -985,7 +985,11 @@ function initDynamicProduct() {
 }
 
 // Run init
-initDynamicProduct();
+if (window.productsPromise) {
+  window.productsPromise.then(initDynamicProduct).catch(initDynamicProduct);
+} else {
+  initDynamicProduct();
+}
 </script>
 </body>
 </html>

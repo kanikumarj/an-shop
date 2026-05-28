@@ -636,7 +636,11 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 
 /* ── Init ──────────────────────────────── */
-renderCart();
+if (window.productsPromise) {
+  window.productsPromise.then(renderCart).catch(renderCart);
+} else {
+  renderCart();
+}
 </script>
 </body>
 </html>

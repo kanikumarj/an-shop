@@ -805,7 +805,11 @@ if (catParam) {
 }
 
 // Init
-renderGrid();
+if (window.productsPromise) {
+  window.productsPromise.then(renderGrid).catch(renderGrid);
+} else {
+  renderGrid();
+}
 </script>
 </body>
 </html>

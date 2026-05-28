@@ -1,7 +1,9 @@
 "use strict";
 
 // ─── Backend API URL ──────────────────────────────────────────────────────────
-window.BACKEND_URL = "https://an-shop.onrender.com";
+// Detect backend URL dynamically
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+window.BACKEND_URL = isLocal ? 'http://localhost:5000' : 'https://an-shop.onrender.com';
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 window.API = {
@@ -34,7 +36,7 @@ window.API = {
 // ─── Google OAuth Configuration ───────────────────────────────────────────────
 window.GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
-window.PRODUCTS = [
+const STATIC_PRODUCTS = [
   {id:1,name:'Homemade Murukku',cat:'snacks',price:149,orig:199,rating:4.9,count:128,emoji:'🌀',tags:['bestseller'],badge:'🔥 Hot',bt:'hot',desc:'Crispy spiral snack with sesame & cumin',color:'rgba(200,100,0,0.14)'},
   {id:2,name:'Kerala Banana Chips',cat:'snacks',price:129,orig:169,rating:4.8,count:94,emoji:'🍌',tags:['bestseller'],badge:'⭐ Top',bt:'best',desc:'Thin-sliced coconut oil fried chips',color:'rgba(255,200,0,0.1)'},
   {id:3,name:'Sambar Powder',cat:'spices',price:99,orig:139,rating:4.9,count:203,emoji:'🌶️',tags:['bestseller'],badge:'🏆 Best',bt:'best',desc:'Chettinad-style aromatic blend',color:'rgba(180,30,0,0.13)'},
@@ -50,6 +52,96 @@ window.PRODUCTS = [
   {id:13,name:'Spice Collection',cat:'combos',price:449,orig:649,rating:4.9,count:38,emoji:'🌶️',tags:['bestseller'],badge:'⭐ Value',bt:'best',desc:'6 Premium spice powders for the authentic home cook',color:'rgba(200,80,0,0.1)'},
   {id:14,name:'Family Combo Pack',cat:'combos',price:899,orig:1299,rating:4.9,count:52,emoji:'👨‍👩‍👧‍👦',tags:['bestseller'],badge:'⭐ Value',bt:'best',desc:'Everything your family needs — snacks + spices, all in one',color:'rgba(245,166,35,0.08)'}
 ];
+
+window.PRODUCTS = [...STATIC_PRODUCTS];
+
+window.productsPromise = (async () => {
+  try {
+    const res = await fetch(`${window.BACKEND_URL}/api/v1/products?limit=100`);
+    const data = await res.json();
+    if (data && data.success && Array.isArray(data.data)) {
+      const slugToOriginalId = {
+        'homemade-murukku': 1,
+        'kerala-banana-chips': 2,
+        'sambar-powder': 3,
+        'homemade-cookies': 4,
+        'rasam-powder': 5,
+        'garam-masala': 6,
+        'spicy-mixture': 7,
+        'idli-dosa-mix': 8,
+        'chakli': 9,
+        'coconut-chutney-pwd': 10,
+        'festival-bundle': 11,
+        'tamarind-rice-mix': 12,
+        'spice-collection': 13,
+        'family-combo-pack': 14
+      };
+
+      const catMap = {
+        'snacks': 'snacks',
+        'spices': 'spices',
+        'powders': 'powders',
+        'combos': 'combos',
+        'namkeens-chaklis': 'snacks',
+        'sweets-laddoos': 'snacks',
+        'cookies-biscuits': 'snacks',
+        'chutneys-pickles': 'spices',
+        'dry-fruits-nuts': 'snacks',
+        'festival-specials': 'combos'
+      };
+
+      const colorMap = {
+        'snacks': 'rgba(200,100,0,0.14)',
+        'spices': 'rgba(180,30,0,0.13)',
+        'powders': 'rgba(220,180,0,0.08)',
+        'combos': 'rgba(150,50,200,0.08)'
+      };
+
+      let nextNumericId = 15;
+
+      window.PRODUCTS = data.data.map(p => {
+        const cat = catMap[p.category?.slug] || p.category?.slug || 'snacks';
+        const color = colorMap[cat] || 'rgba(200,100,0,0.14)';
+        
+        let id = slugToOriginalId[p.slug];
+        if (!id) {
+          id = nextNumericId++;
+        }
+
+        const price = parseFloat(p.basePrice) || 149;
+        const orig = p.comparePrice ? parseFloat(p.comparePrice) : Math.round(price * 1.35);
+        const rating = parseFloat(p.avgRating) || 4.8;
+        const count = p.totalReviews || 120;
+        const emoji = p.searchKeywords || '🌀';
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        
+        const badge = p.isBestseller ? '🏆 Best' : p.isFeatured ? '🔥 Hot' : p.isNewArrival ? '✨ New' : '';
+        const bt = p.isBestseller ? 'best' : p.isFeatured ? 'hot' : p.isNewArrival ? 'new' : '';
+        const desc = p.description || p.shortDescription || '';
+
+        return {
+          id,
+          dbId: p.id,
+          name: p.name,
+          cat,
+          price,
+          orig,
+          rating,
+          count,
+          emoji,
+          tags,
+          badge,
+          bt,
+          desc,
+          color
+        };
+      });
+      console.log('Successfully loaded and mapped products from NeonDB:', window.PRODUCTS);
+    }
+  } catch (err) {
+    console.error('Failed to fetch real products from NeonDB, using offline fallback:', err);
+  }
+})();
 
 window.Cart = {
   getCart() {
