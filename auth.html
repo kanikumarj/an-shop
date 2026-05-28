@@ -1229,17 +1229,38 @@ $('loginForm')?.addEventListener('submit',function(e){
   const email=$('login-email')?.value.trim();
   const pw   =$('login-pw')?.value;
   let ok=true;
-  if(!validateEmail(email)){showErr('login-email','login-email-err',true);ok=false;}
-  else showErr('login-email','login-email-err',false);
-  if(!pw||pw.length<6){showErr('login-pw','login-pw-err',true);ok=false;}
-  else showErr('login-pw','login-pw-err',false);
+  
+  if(!validateEmail(email)){
+    showErr('login-email','login-email-err',true);
+    ok=false;
+  } else {
+    showErr('login-email','login-email-err',false);
+  }
+  
+  const pwErr = $('login-pw-err');
+  if (pwErr) pwErr.textContent = 'Password must be at least 6 characters.';
+  
+  if(!pw||pw.length<6){
+    showErr('login-pw','login-pw-err',true);
+    ok=false;
+  } else {
+    const isAdminEmail = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com');
+    if (isAdminEmail && pw !== 'Kani@1234') {
+      if (pwErr) pwErr.textContent = 'Invalid password for admin login.';
+      showErr('login-pw','login-pw-err',true);
+      ok=false;
+    } else {
+      showErr('login-pw','login-pw-err',false);
+    }
+  }
+  
   if(!ok)return;
   const restore=btnLoading($('btn-login'),'Signing in…');
   setTimeout(()=>{
     restore();
     let name = email.split('@')[0];
     name = name.charAt(0).toUpperCase() + name.slice(1);
-    const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+    const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
     if (window.Auth) {
       window.Auth.loginUser({ name, email, role });
     }
@@ -1267,7 +1288,7 @@ $('registerForm')?.addEventListener('submit',function(e){
   const restore=btnLoading($('btn-register'),'Creating Account…');
   setTimeout(()=>{
     restore();
-    const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+    const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
     if (window.Auth) {
       window.Auth.loginUser({ name, email, role, phone });
     }
@@ -1357,7 +1378,7 @@ $('forgotForm')?.addEventListener('submit',function(e){
               const name = user.name || 'Google User';
               const email = user.email;
               const avatar = user.picture || name.charAt(0).toUpperCase();
-              const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+              const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
 
               if (window.Auth) {
                 window.Auth.loginUser({ name, email, role, avatar });
@@ -1406,7 +1427,7 @@ $('forgotForm')?.addEventListener('submit',function(e){
       
       setTimeout(() => {
         restore();
-        const role = (email === 'admin@indianmade.in') ? 'admin' : 'user';
+        const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
         if (window.Auth) {
           window.Auth.loginUser({ name, email, role, avatar });
         }

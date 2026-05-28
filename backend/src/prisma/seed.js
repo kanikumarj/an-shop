@@ -34,6 +34,22 @@ async function main() {
   });
   console.log('✅ Admin user created:', admin.email);
 
+  // ─── Create Kani Admin ────────────────────────────────────────────────────
+  const kaniPassword = await bcrypt.hash('Kani@1234', 12);
+  const kaniAdmin = await prisma.user.upsert({
+    where: { email: 'Kanichiyaan@gmail.com' },
+    update: {},
+    create: {
+      name: 'Kani',
+      email: 'Kanichiyaan@gmail.com',
+      password: kaniPassword,
+      role: 'SUPERADMIN',
+      isActive: true,
+      isEmailVerified: true,
+    },
+  });
+  console.log('✅ Admin user created:', kaniAdmin.email);
+
   // ─── Create Categories ─────────────────────────────────────────────────────
   const categoriesData = [
     { name: 'Namkeens & Chaklis', icon: '🥨', description: 'Crispy and crunchy traditional Indian snacks' },
@@ -196,6 +212,8 @@ async function main() {
   console.log('Admin credentials:');
   console.log('  Email: admin@anshop.com');
   console.log('  Password: Admin@123456');
+  console.log('  Email: Kanichiyaan@gmail.com');
+  console.log('  Password: Kani@1234');
   console.log('  ⚠️ Change these credentials immediately in production!');
 }
 
