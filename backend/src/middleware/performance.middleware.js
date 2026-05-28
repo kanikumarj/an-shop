@@ -46,11 +46,15 @@ const MAX_BODY_SIZE_BYTES        = parseInt(process.env.MAX_BODY_SIZE_BYTES)    
 const responseTime = (req, res, next) => {
   const start = process.hrtime.bigint();
 
-  res.on('finish', () => {
+  // Patch res.json and res.end to inject the header BEFORE headers are sent
+  const _end = res.end.bind(res);
+  res.end = function (...args) {
     const durationNs = Number(process.hrtime.bigint() - start);
     const durationMs = Math.round(durationNs / 1_000_000);
 
-    res.setHeader('X-Response-Time', `${durationMs}ms`);
+    if (!res.headersSent) {
+      res.setHeader('X-Response-Time', `${durationMs}ms`);
+    }
 
     const logData = {
       method:     req.method,
@@ -69,7 +73,9 @@ const responseTime = (req, res, next) => {
     } else {
       logger.perfEvent(`${req.method} ${req.path}`, durationMs, { status: res.statusCode });
     }
-  });
+
+    return _end(...args);
+  };
 
   next();
 };

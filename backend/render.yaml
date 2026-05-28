@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: an-shop-backend
+    runtime: node
+    region: singapore  # Closest to India
+    plan: free
+
+    # Build command: generate Prisma client + run migrations
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+
+    # Start command
+    startCommand: node server.js
+
+    # Health check
+    healthCheckPath: /api/v1/health
+
+    # Environment variables (set via Render dashboard or here with sync: false for secrets)
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 10000  # Render injects $PORT automatically; this is just a fallback
+
+      - key: DATABASE_URL
+        sync: false  # Set this in Render dashboard → NeonDB connection string
+
+      - key: JWT_SECRET
+        sync: false
+
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+      - key: REDIS_URL
+        sync: false  # Use Render Redis add-on URL or Upstash
+
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+
+      - key: CLOUDINARY_API_KEY
+        sync: false
+
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      - key: SMTP_USER
+        sync: false
+
+      - key: SMTP_PASS
+        sync: false
+
+      - key: ALLOWED_ORIGINS
+        sync: false  # Your frontend URL e.g. https://an-shop.vercel.app

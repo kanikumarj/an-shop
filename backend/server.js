@@ -77,25 +77,41 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const startServer = async () => {
   try {
-    // 1. Connect to PostgreSQL via Prisma
+    // 1. Connect to PostgreSQL via Prisma (required)
     await connectDatabase();
     logger.info('✅ PostgreSQL connected via Prisma');
 
-    // 2. Connect to Redis
-    await connectRedis();
-    logger.info('✅ Redis connected');
+    // 2. Connect to Redis (optional — app works without it)
+    try {
+      await connectRedis();
+      logger.info('✅ Redis connected');
+    } catch (err) {
+      logger.warn('⚠️ Redis unavailable — running without cache:', { error: err.message });
+    }
 
-    // 3. Initialize WebSocket
-    initializeWebSocket(server);
-    logger.info('✅ WebSocket server initialized');
+    // 3. Initialize WebSocket (optional)
+    try {
+      initializeWebSocket(server);
+      logger.info('✅ WebSocket server initialized');
+    } catch (err) {
+      logger.warn('⚠️ WebSocket init failed:', { error: err.message });
+    }
 
     // 4. Start background cron jobs
-    startCronJobs();
-    logger.info('✅ Cron jobs started');
+    try {
+      startCronJobs();
+      logger.info('✅ Cron jobs started');
+    } catch (err) {
+      logger.warn('⚠️ Cron jobs failed to start:', { error: err.message });
+    }
 
-    // 5. Start WhatsApp notification jobs
-    initWhatsAppJobs();
-    logger.info('✅ WhatsApp notification jobs started');
+    // 5. Start WhatsApp notification jobs (optional)
+    try {
+      initWhatsAppJobs();
+      logger.info('✅ WhatsApp notification jobs started');
+    } catch (err) {
+      logger.warn('⚠️ WhatsApp jobs failed to start:', { error: err.message });
+    }
 
     // 6. Start HTTP server
     server.listen(PORT, () => {
