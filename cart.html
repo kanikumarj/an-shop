@@ -442,17 +442,26 @@ function renderCart(){
     const product = window.PRODUCTS.find(p => p.id === item.id);
     const color = product ? product.color : 'rgba(245,166,35,0.08)';
     const cleanWeight = (item.weight || '250g').replace(/\s+/g, '');
+    const isOutOfStock = product ? (product.stock === 0) : false;
+    const isOverStock = product ? (item.qty > product.stock) : false;
+    const stockMsg = isOutOfStock 
+      ? `<div style="color:#ff7a7a; font-weight:700; font-size:0.75rem; margin-top:4px;">⚠️ Out of Stock</div>`
+      : (isOverStock 
+        ? `<div style="color:#ff7a7a; font-weight:600; font-size:0.75rem; margin-top:4px;">⚠️ Max Available: ${product.stock}</div>`
+        : '');
+
     return `
     <div class="cart-item" id="ci-${item.id}-${cleanWeight}" data-id="${item.id}" data-weight="${item.weight || '250g'}">
-      <div class="item-img" style="background:${color}">${item.emoji}</div>
-      <div class="item-info">
+      <div class="item-img" style="background:${color}; ${isOutOfStock ? 'filter: grayscale(0.85); opacity: 0.6;' : ''}">${item.emoji}</div>
+      <div class="item-info" style="${isOutOfStock ? 'opacity: 0.65;' : ''}">
         <div class="item-cat">${item.cat === 'snacks' ? 'Authentic Snacks' : item.cat === 'spices' ? 'Spice Blends' : item.cat === 'powders' ? 'Cooking Powders' : 'Combo Pack'}</div>
         <div class="item-name">${item.name}</div>
         <div class="item-variant">${item.weight || '250g'}</div>
         <div class="item-unit-price">Unit price: <strong>₹${item.price}</strong></div>
+        ${stockMsg}
       </div>
       <div class="item-controls">
-        <div class="qty-wrap">
+        <div class="qty-wrap" style="${isOutOfStock ? 'opacity: 0.5; pointer-events: none;' : ''}">
           <button class="qty-btn" data-action="dec" data-id="${item.id}" data-weight="${item.weight || '250g'}" aria-label="Decrease quantity">−</button>
           <div class="qty-num" id="qn-${item.id}-${cleanWeight}">${item.qty}</div>
           <button class="qty-btn" data-action="inc" data-id="${item.id}" data-weight="${item.weight || '250g'}" aria-label="Increase quantity">+</button>
@@ -532,6 +541,15 @@ function bindItemEvents(){
       const action=this.dataset.action;
       const item=cart.find(c=>c.id===id && c.weight===weight);
       if(!item)return;
+
+      const product = window.PRODUCTS.find(p => p.id === id);
+      if (action === 'inc' && product) {
+        if (item.qty >= product.stock) {
+          alert(`Sorry, only ${product.stock} units of "${product.name}" are currently available in stock.`);
+          return;
+        }
+      }
+      
       const delta = action === 'inc' ? 1 : -1;
       
       if (action === 'dec' && item.qty === 1) {
@@ -616,6 +634,19 @@ document.getElementById('applyCoupon')?.addEventListener('click',()=>{
 });
 // Checkout Button Listener to save checkout cart snapshot
 document.getElementById('checkoutBtn')?.addEventListener('click', () => {
+  // Defensive validation: check if any item is out of stock or exceeds stock!
+  for (const item of cart) {
+    const product = window.PRODUCTS.find(p => p.id === item.id);
+    if (!product || product.stock === 0) {
+      alert(`Please remove out-of-stock item "${item.name}" from your cart before proceeding.`);
+      return;
+    }
+    if (item.qty > product.stock) {
+      alert(`The quantity of "${item.name}" exceeds the available stock (${product.stock} units). Please adjust your quantity before proceeding.`);
+      return;
+    }
+  }
+
   const summary = calcTotal();
   const checkoutData = {
     items: cart,

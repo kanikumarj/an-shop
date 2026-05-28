@@ -329,6 +329,19 @@ $('#scrollTopBtn')?.addEventListener('click', () => {
 $$('.btn-add-cart').forEach(btn => {
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
+    
+    // Check stock first
+    try {
+      const prodId = parseInt(this.id.split('-')[1], 10);
+      const product = window.PRODUCTS.find(p => p.id === prodId);
+      if (product && product.stock === 0) {
+        alert(`Sorry, "${product.name}" is currently out of stock!`);
+        return;
+      }
+    } catch (err) {
+      console.error("Stock check error:", err);
+    }
+
     const original = this.textContent;
 
     // Ripple effect
@@ -381,9 +394,15 @@ $$('.btn-combo').forEach(btn => {
     if (this.id === 'btn-combo-3') comboId = 14;
 
     const product = window.PRODUCTS.find(p => p.id === comboId);
-    if (product && window.Cart) {
-      window.Cart.addItem(product, 1, '1 Pack');
-      window.location.href = 'cart.html';
+    if (product) {
+      if (product.stock === 0) {
+        alert(`Sorry, "${product.name}" is currently out of stock!`);
+        return;
+      }
+      if (window.Cart) {
+        window.Cart.addItem(product, 1, '1 Pack');
+        window.location.href = 'cart.html';
+      }
     }
   });
 });
@@ -600,3 +619,39 @@ $$('.btn-combo, .btn-primary').forEach(btn => {
 // ════════════════════════════════════════════════════════════════════════
 console.log('%c🍛 Indianmade — Premium Homemade Snacks', 'font-size:16px;font-weight:bold;color:#f5a623;');
 console.log('%cPowered by cinematic web design ✨', 'color:#b8a890;font-size:12px;');
+
+// Disable out-of-stock products on the home page dynamically once database products are loaded
+if (window.productsPromise) {
+  window.productsPromise.then(() => {
+    $$('.btn-add-cart').forEach(btn => {
+      const prodId = parseInt(btn.id.split('-')[1], 10);
+      const product = window.PRODUCTS.find(p => p.id === prodId);
+      if (product && product.stock === 0) {
+        btn.disabled = true;
+        btn.textContent = '✕ Out of Stock';
+        btn.style.cssText = 'background:#2e2618 !important; border-color:var(--border) !important; color:var(--muted) !important; cursor:not-allowed !important; pointer-events:none;';
+        
+        // Also dim the product card or emoji
+        const card = btn.closest('.p-card') || btn.closest('.product-card') || btn.parentElement;
+        if (card) {
+          card.style.opacity = '0.8';
+          const img = card.querySelector('.p-img') || card.querySelector('.product-img');
+          if (img) img.style.filter = 'grayscale(0.85)';
+        }
+      }
+    });
+
+    // Also disable combo buttons if they are out of stock
+    $$('.btn-combo').forEach(btn => {
+      let comboId = 11;
+      if (btn.id === 'btn-combo-2') comboId = 13;
+      if (btn.id === 'btn-combo-3') comboId = 14;
+      const product = window.PRODUCTS.find(p => p.id === comboId);
+      if (product && product.stock === 0) {
+        btn.disabled = true;
+        btn.textContent = '✕ Out of Stock';
+        btn.style.cssText = 'background:#2e2618 !important; border-color:var(--border) !important; color:var(--muted) !important; cursor:not-allowed !important; pointer-events:none;';
+      }
+    });
+  }).catch(console.error);
+}

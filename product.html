@@ -870,18 +870,24 @@ document.getElementById('qtyPlus')?.addEventListener('click',()=>{if(qty<10)qty+
 
 /* ── Cart ─────────────────────────────────────────── */
 function addToCart(){
+  if (currentProduct && currentProduct.stock === 0) {
+    alert(`Sorry, "${currentProduct.name}" is currently out of stock!`);
+    return false;
+  }
   if (currentProduct && window.Cart) {
     window.Cart.addItem(currentProduct, qty, currentWeight);
+    return true;
   }
+  return false;
 }
 document.getElementById('addCartBtn')?.addEventListener('click',function(){
-  addToCart();
+  if (!addToCart()) return;
   const o=this.innerHTML;
   this.innerHTML='✓ Added to Cart!';this.style.background='linear-gradient(135deg,#2e7d32,#43a047)';this.style.color='#fff';
   setTimeout(()=>{this.innerHTML=o;this.style.background='';this.style.color='';},2200);
 });
 document.getElementById('buyNowBtn')?.addEventListener('click',()=>{
-  addToCart();
+  if (!addToCart()) return;
   window.location.href='cart.html';
 });
 document.querySelectorAll('.btn-rel-cart').forEach(b=>{
@@ -890,6 +896,10 @@ document.querySelectorAll('.btn-rel-cart').forEach(b=>{
     const card = this.closest('.rel-card');
     const name = card.querySelector('.rel-name')?.textContent.trim();
     const product = window.PRODUCTS.find(p => p.name === name);
+    if (product && product.stock === 0) {
+      alert(`Sorry, "${product.name}" is currently out of stock!`);
+      return;
+    }
     if (product && window.Cart) {
       window.Cart.addItem(product, 1, '250g');
     }
@@ -982,6 +992,50 @@ function initDynamicProduct() {
 
   // Update initial price view
   updatePriceDisplay(currentProduct.price, currentProduct.orig);
+
+  // Stock and Action Buttons
+  const isOutOfStock = currentProduct.stock === 0;
+  const addCartBtn = document.getElementById('addCartBtn');
+  const buyNowBtn = document.getElementById('buyNowBtn');
+  if (addCartBtn && buyNowBtn) {
+    if (isOutOfStock) {
+      addCartBtn.disabled = true;
+      addCartBtn.textContent = '✕ Out of Stock';
+      addCartBtn.style.cssText = 'background:#2e2618 !important; border-color:var(--border) !important; color:var(--muted) !important; cursor:not-allowed !important; pointer-events:none;';
+      
+      buyNowBtn.disabled = true;
+      buyNowBtn.textContent = '✕ Out of Stock';
+      buyNowBtn.style.cssText = 'background:#2e2618 !important; border-color:var(--border) !important; color:var(--muted) !important; cursor:not-allowed !important; pointer-events:none;';
+    } else {
+      addCartBtn.disabled = false;
+      addCartBtn.textContent = '🛒 Add to Cart';
+      addCartBtn.style.cssText = '';
+      
+      buyNowBtn.disabled = false;
+      buyNowBtn.textContent = '⚡ Buy Now';
+      buyNowBtn.style.cssText = '';
+    }
+  }
+
+  // Update freshness/out of stock label
+  const freshLabel = document.querySelector('.fresh-label');
+  if (freshLabel) {
+    if (isOutOfStock) {
+      freshLabel.innerHTML = `<span>Shelf Life: 30 days from packing</span><span style="color:#ff7a7a">🔴 Out of Stock</span>`;
+      const freshBar = document.querySelector('.fresh-fill');
+      if (freshBar) {
+        freshBar.style.width = '0%';
+        freshBar.style.background = '#ff7a7a';
+      }
+    } else {
+      freshLabel.innerHTML = `<span>Shelf Life: 30 days from packing</span><span style="color:var(--gold)">🟢 Fresh</span>`;
+      const freshBar = document.querySelector('.fresh-fill');
+      if (freshBar) {
+        freshBar.style.width = '100%';
+        freshBar.style.background = '';
+      }
+    }
+  }
 }
 
 // Run init

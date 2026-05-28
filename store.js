@@ -53,7 +53,7 @@ const STATIC_PRODUCTS = [
   {id:14,name:'Family Combo Pack',cat:'combos',price:899,orig:1299,rating:4.9,count:52,emoji:'👨‍👩‍👧‍👦',tags:['bestseller'],badge:'⭐ Value',bt:'best',desc:'Everything your family needs — snacks + spices, all in one',color:'rgba(245,166,35,0.08)'}
 ];
 
-window.PRODUCTS = [...STATIC_PRODUCTS];
+window.PRODUCTS = STATIC_PRODUCTS.map(p => ({ ...p, stock: 100 }));
 
 window.productsPromise = (async () => {
   try {
@@ -114,6 +114,7 @@ window.productsPromise = (async () => {
         const count = p.totalReviews || 120;
         const emoji = p.searchKeywords || '🌀';
         const tags = Array.isArray(p.tags) ? p.tags : [];
+        const stock = typeof p.stock === 'number' ? p.stock : 0;
         
         const badge = p.isBestseller ? '🏆 Best' : p.isFeatured ? '🔥 Hot' : p.isNewArrival ? '✨ New' : '';
         const bt = p.isBestseller ? 'best' : p.isFeatured ? 'hot' : p.isNewArrival ? 'new' : '';
@@ -133,7 +134,8 @@ window.productsPromise = (async () => {
           badge,
           bt,
           desc,
-          color
+          color,
+          stock
         };
       });
       console.log('Successfully loaded and mapped products from NeonDB:', window.PRODUCTS);

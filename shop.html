@@ -569,15 +569,16 @@ function renderGrid(){
   grid.innerHTML=data.map(p=>{
     const disc=discount(p.price,p.orig);
     const isWished=wishlist.has(p.id);
+    const isOutOfStock=p.stock===0;
     return `
-    <div class="p-card" data-id="${p.id}" data-cat="${p.cat}" data-price="${p.price}" data-rating="${p.rating}" data-tags="${p.tags.join(',')}">
-      ${p.badge?`<span class="p-badge ${p.bt}">${p.badge}</span>`:''}
+    <div class="p-card${isOutOfStock ? ' out-of-stock' : ''}" data-id="${p.id}" data-cat="${p.cat}" data-price="${p.price}" data-rating="${p.rating}" data-tags="${p.tags.join(',')}" style="${isOutOfStock ? 'opacity: 0.82;' : ''}">
+      ${isOutOfStock ? `<span class="p-badge" style="background:rgba(255,122,122,0.18); border:1px solid rgba(255,122,122,0.35); color:#ff7a7a;">⚠️ Out of Stock</span>` : (p.badge?`<span class="p-badge ${p.bt}">${p.badge}</span>`:'')}
       <button class="p-wish${isWished?' liked':''}" aria-label="Wishlist">${isWished?'♥':'♡'}</button>
-      <div class="p-img" style="background:${p.color};">
+      <div class="p-img" style="background:${p.color}; ${isOutOfStock ? 'filter: grayscale(0.85) contrast(0.85);' : ''}">
         <a href="product.html?id=${p.id}" aria-label="${p.name}">
           <span class="p-emoji">${p.emoji}</span>
         </a>
-        <div class="p-steam"><div class="ps"></div><div class="ps"></div><div class="ps"></div></div>
+        ${isOutOfStock ? '' : '<div class="p-steam"><div class="ps"></div><div class="ps"></div><div class="ps"></div></div>'}
       </div>
       <div class="p-body">
         <div class="p-cat">${p.cat==='snacks'?'Authentic Snacks':p.cat==='spices'?'Spice Blends':p.cat==='powders'?'Cooking Powders':'Combo Pack'}</div>
@@ -592,7 +593,10 @@ function renderGrid(){
           <span class="p-orig">₹${p.orig}</span>
           <span class="p-disc">${disc}% OFF</span>
         </div>
-        <button class="btn-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}">🛒 Add to Cart</button>
+        ${isOutOfStock ?
+          `<button class="btn-cart disabled" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" disabled style="background:#2e2618; border-color:var(--border); color:var(--muted); cursor:not-allowed;">✕ Out of Stock</button>` :
+          `<button class="btn-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}">🛒 Add to Cart</button>`
+        }
       </div>
       <div class="p-card-glow"></div>
     </div>`;
@@ -652,6 +656,10 @@ function renderGrid(){
 
 function addToCart(id,name,price){
   const product = window.PRODUCTS.find(p => p.id === id);
+  if (product && product.stock === 0) {
+    alert(`Sorry, "${name}" is currently out of stock!`);
+    return;
+  }
   if (product && window.Cart) {
     window.Cart.addItem(product, 1, '250g');
   }
