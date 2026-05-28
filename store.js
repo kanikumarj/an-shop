@@ -7,7 +7,10 @@ window.BACKEND_URL = "https://an-shop.onrender.com";
 window.API = {
   async request(path, options = {}) {
     const token = window.Auth.getToken();
-    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    const headers = { ...options.headers };
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
