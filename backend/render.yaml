@@ -2,28 +2,35 @@ services:
   - type: web
     name: an-shop-backend
     runtime: node
-    region: singapore  # Closest to India
+    region: singapore
     plan: free
 
-    # Build command: generate Prisma client + run migrations
-    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+    # Build: install deps, generate Prisma client, push schema to NeonDB
+    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss
 
     # Start command
     startCommand: node server.js
 
-    # Health check
+    # Health check path
     healthCheckPath: /api/v1/health
 
-    # Environment variables (set via Render dashboard or here with sync: false for secrets)
     envVars:
       - key: NODE_ENV
         value: production
 
-      - key: PORT
-        value: 10000  # Render injects $PORT automatically; this is just a fallback
+      # Render automatically provides $PORT — no need to set manually
+      - key: APP_URL
+        value: https://an-shop.onrender.com
 
+      - key: FRONTEND_URL
+        value: https://an-shop.onrender.com
+
+      - key: ALLOWED_ORIGINS
+        value: https://an-shop.onrender.com
+
+      # ─── Secrets (set in Render Dashboard → Environment) ─────────────
       - key: DATABASE_URL
-        sync: false  # Set this in Render dashboard → NeonDB connection string
+        sync: false  # postgresql://neondb_owner:...@neon.tech/neondb?sslmode=require
 
       - key: JWT_SECRET
         sync: false
@@ -32,7 +39,7 @@ services:
         sync: false
 
       - key: REDIS_URL
-        sync: false  # Use Render Redis add-on URL or Upstash
+        sync: false  # Optional — leave blank to run without cache
 
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -48,6 +55,3 @@ services:
 
       - key: SMTP_PASS
         sync: false
-
-      - key: ALLOWED_ORIGINS
-        sync: false  # Your frontend URL e.g. https://an-shop.vercel.app
