@@ -1254,7 +1254,10 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
       }
 
       grid.innerHTML = REAL_PRODUCTS.map(item => {
-        const imgUrl = (item.images && item.images.length > 0) ? item.images[0].url : '';
+        let imgUrl = (item.images && item.images.length > 0) ? item.images[0].url : '';
+        if (imgUrl && imgUrl.startsWith('/')) {
+          imgUrl = `${window.BACKEND_URL}${imgUrl}`;
+        }
         const fallbackIcon = item.searchKeywords || '🌀';
         const pct = Math.min(100, Math.max(0, (item.stock / 100) * 100)); // normalized against 100
         const cls = item.stock === 0 ? 'out' : item.stock <= item.lowStockThreshold ? 'low' : '';

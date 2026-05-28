@@ -26,17 +26,26 @@ const multer = require('multer');
 const path = require('path');
 const logger = require('../utils/logger');
 
-// ─── Configure Cloudinary ─────────────────────────────────────────────────────
-if (!process.env.CLOUDINARY_CLOUD_NAME) {
-  logger.warn('⚠️ Cloudinary credentials not configured. Image uploads will fail.');
-}
+const fs = require('fs');
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+// ─── Configure Cloudinary ─────────────────────────────────────────────────────
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_CLOUD_NAME !== 'your_cloud_name' &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_KEY !== 'your_api_key' &&
+  process.env.CLOUDINARY_API_SECRET &&
+  process.env.CLOUDINARY_API_SECRET !== 'your_api_secret';
+
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+} else {
+  logger.warn('⚠️ Cloudinary is not configured or using placeholders. Falling back to local disk storage in development.');
+}
 
 // ─── Allowed MIME Types ─────────────────────────────────────────────────────────
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
@@ -64,100 +73,131 @@ const makePublicId = (prefix) => {
   return `${prefix}_${ts}_${rand}`;
 };
 
-// ─── 1. Product Main Images ───────────────────────────────────────────────────
-const productStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/products`,
-    format: 'webp',
-    public_id: makePublicId('prod'),
-    transformation: [
-      // Main image: 800×800, padded to square
-      {
-        width: 800,
-        height: 800,
-        crop: 'pad',
-        background: 'white',
-        quality: 'auto:good',
-        fetch_format: 'webp',
-      },
-    ],
-    tags: ['product', req.body?.categoryId || 'uncategorized'],
-  }),
-});
+// ─── Local Storage Helper ─────────────────────────────────────────────────────
+const makeLocalStorage = (prefix) => {
+  const uploadDir = path.join(__dirname, '../uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 
-// ─── 2. Product Thumbnails (separate small version) ───────────────────────────
-const thumbnailStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/products/thumbnails`,
-    format: 'webp',
-    public_id: makePublicId('thumb'),
-    transformation: [
-      {
-        width: 300,
-        height: 300,
-        crop: 'fill',
-        gravity: 'center',
-        quality: 'auto:low',
-        fetch_format: 'webp',
-      },
-    ],
-  }),
-});
+  return multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.webp';
+      const name = makePublicId(prefix) + ext;
+      cb(null, name);
+    },
+  });
+};
 
-// ─── 3. Category Banners ──────────────────────────────────────────────────────
-const categoryStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/categories`,
-    format: 'webp',
-    public_id: makePublicId('cat'),
-    transformation: [
-      { width: 1200, height: 400, crop: 'fill', gravity: 'auto', quality: 'auto:good' },
-    ],
-  }),
-});
+// ─── Storage Configurations ───────────────────────────────────────────────────
+let productStorage, categoryStorage, avatarStorage, screenshotStorage, reviewStorage;
 
-// ─── 4. User Avatars ──────────────────────────────────────────────────────────
-const avatarStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/avatars`,
-    format: 'webp',
-    public_id: makePublicId(`avatar_${req.user?.id || 'u'}`),
-    transformation: [
-      { width: 200, height: 200, crop: 'fill', gravity: 'face', quality: 'auto:good' },
-    ],
-  }),
-});
+if (isCloudinaryConfigured) {
+  // ─── 1. Product Main Images ───────────────────────────────────────────────────
+  productStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/products`,
+      format: 'webp',
+      public_id: makePublicId('prod'),
+      transformation: [
+        // Main image: 800×800, padded to square
+        {
+          width: 800,
+          height: 800,
+          crop: 'pad',
+          background: 'white',
+          quality: 'auto:good',
+          fetch_format: 'webp',
+        },
+      ],
+      tags: ['product', req.body?.categoryId || 'uncategorized'],
+    }),
+  });
 
-// ─── 5. Payment Screenshots (preserve quality) ───────────────────────────────
-const screenshotStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/payment-screenshots`,
-    public_id: makePublicId('ss'),
-    // No format conversion — preserve original for verification
-    transformation: [
-      { quality: 'auto:best', fetch_format: 'auto' },
-    ],
-    tags: ['payment_proof', req.params?.orderId || 'unknown_order'],
-  }),
-});
+  // ─── 2. Product Thumbnails (separate small version) ───────────────────────────
+  const thumbnailStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/products/thumbnails`,
+      format: 'webp',
+      public_id: makePublicId('thumb'),
+      transformation: [
+        {
+          width: 300,
+          height: 300,
+          crop: 'fill',
+          gravity: 'center',
+          quality: 'auto:low',
+          fetch_format: 'webp',
+        },
+      ],
+    }),
+  });
 
-// ─── 6. Review Images ─────────────────────────────────────────────────────────
-const reviewStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/reviews`,
-    format: 'webp',
-    public_id: makePublicId('rev'),
-    transformation: [
-      { width: 600, height: 600, crop: 'limit', quality: 'auto:good' },
-    ],
-  }),
-});
+  // ─── 3. Category Banners ──────────────────────────────────────────────────────
+  categoryStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/categories`,
+      format: 'webp',
+      public_id: makePublicId('cat'),
+      transformation: [
+        { width: 1200, height: 400, crop: 'fill', gravity: 'auto', quality: 'auto:good' },
+      ],
+    }),
+  });
+
+  // ─── 4. User Avatars ──────────────────────────────────────────────────────────
+  avatarStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/avatars`,
+      format: 'webp',
+      public_id: makePublicId(`avatar_${req.user?.id || 'u'}`),
+      transformation: [
+        { width: 200, height: 200, crop: 'fill', gravity: 'face', quality: 'auto:good' },
+      ],
+    }),
+  });
+
+  // ─── 5. Payment Screenshots (preserve quality) ───────────────────────────────
+  screenshotStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/payment-screenshots`,
+      public_id: makePublicId('ss'),
+      // No format conversion — preserve original for verification
+      transformation: [
+        { quality: 'auto:best', fetch_format: 'auto' },
+      ],
+      tags: ['payment_proof', req.params?.orderId || 'unknown_order'],
+    }),
+  });
+
+  // ─── 6. Review Images ─────────────────────────────────────────────────────────
+  reviewStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/reviews`,
+      format: 'webp',
+      public_id: makePublicId('rev'),
+      transformation: [
+        { width: 600, height: 600, crop: 'limit', quality: 'auto:good' },
+      ],
+    }),
+  });
+} else {
+  // Use local disk storage fallback
+  productStorage = makeLocalStorage('prod');
+  categoryStorage = makeLocalStorage('cat');
+  avatarStorage = makeLocalStorage('avatar');
+  screenshotStorage = makeLocalStorage('ss');
+  reviewStorage = makeLocalStorage('rev');
+}
 
 // ─── Multer Upload Instances ───────────────────────────────────────────────────
 const MAX_PRODUCT_SIZE   = parseInt(process.env.MAX_FILE_SIZE)     || 5 * 1024 * 1024;  // 5MB
@@ -236,6 +276,22 @@ const uploadReviewImages = multer({
  */
 const uploadToCloudinary = async (fileSource, folder = 'an-shop/misc', options = {}) => {
   try {
+    if (!isCloudinaryConfigured) {
+      logger.info('💾 Direct upload simulating local storage fallback:', { fileSource });
+      const filename = `misc_${Date.now()}_${path.basename(fileSource)}`;
+      const destPath = path.join(__dirname, '../uploads', filename);
+      fs.copyFileSync(fileSource, destPath);
+      return {
+        url: `/uploads/${filename}`,
+        publicId: filename,
+        thumbnailUrl: `/uploads/${filename}`,
+        width: 800,
+        height: 800,
+        format: path.extname(fileSource).replace('.', '') || 'webp',
+        bytes: fs.statSync(destPath).size,
+      };
+    }
+
     const result = await cloudinary.uploader.upload(fileSource, {
       folder,
       resource_type: 'auto',

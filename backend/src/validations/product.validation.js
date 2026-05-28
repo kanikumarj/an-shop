@@ -9,16 +9,30 @@
 const { z } = require('zod');
 
 // ─── Shared fields ────────────────────────────────────────────────────────────
+// Helpers to safely parse string numbers/booleans from forms/multipart
+const parseNumber = (val) => {
+  if (val === '' || val === null || val === undefined || val === 'null' || val === 'undefined') return undefined;
+  const num = Number(val);
+  return isNaN(num) ? val : num;
+};
+
+const parseBoolean = (val) => {
+  if (val === 'true' || val === true) return true;
+  if (val === 'false' || val === false) return false;
+  if (val === '' || val === null || val === undefined || val === 'null' || val === 'undefined') return undefined;
+  return val;
+};
+
 const priceField = (label = 'Price') =>
-  z.number({ required_error: `${label} is required.`, invalid_type_error: `${label} must be a number.` })
+  z.preprocess(parseNumber, z.number({ required_error: `${label} is required.`, invalid_type_error: `${label} must be a number.` })
     .min(0, `${label} cannot be negative.`)
-    .max(99999.99, `${label} is too high.`);
+    .max(99999.99, `${label} is too high.`));
 
 const optionalPriceField = () =>
-  z.number().min(0).max(99999.99).optional().nullable();
+  z.preprocess(parseNumber, z.number().min(0).max(99999.99).optional().nullable());
 
 const stockField = () =>
-  z.number().int('Stock must be a whole number.').min(0, 'Stock cannot be negative.').max(999999);
+  z.preprocess(parseNumber, z.number().int('Stock must be a whole number.').min(0, 'Stock cannot be negative.').max(999999));
 
 // ─── Create Product ───────────────────────────────────────────────────────────
 const productObjectSchema = z.object({
@@ -47,19 +61,19 @@ const productObjectSchema = z.object({
   basePrice:    priceField('Price'),
   comparePrice: optionalPriceField(),
   costPrice:    optionalPriceField(),
-  taxPercent:   z.number().min(0).max(100).default(18),
-  taxInclusive: z.boolean().default(true),
+  taxPercent:   z.preprocess(parseNumber, z.number().min(0).max(100).default(18)),
+  taxInclusive: z.preprocess(parseBoolean, z.boolean().default(true)),
 
   stock:             stockField().default(0),
-  lowStockThreshold: z.number().int().min(0).default(10),
-  trackInventory:    z.boolean().default(true),
-  allowBackorder:    z.boolean().default(false),
+  lowStockThreshold: z.preprocess(parseNumber, z.number().int().min(0).default(10)),
+  trackInventory:    z.preprocess(parseBoolean, z.boolean().default(true)),
+  allowBackorder:    z.preprocess(parseBoolean, z.boolean().default(false)),
 
-  weight:     z.number().min(0).max(50000).optional().nullable(),
+  weight:     z.preprocess(parseNumber, z.number().min(0).max(50000).optional().nullable()),
   dimensions: z.object({
-    length: z.number().min(0).optional(),
-    width:  z.number().min(0).optional(),
-    height: z.number().min(0).optional(),
+    length: z.preprocess(parseNumber, z.number().min(0).optional()),
+    width:  z.preprocess(parseNumber, z.number().min(0).optional()),
+    height: z.preprocess(parseNumber, z.number().min(0).optional()),
   }).optional().nullable(),
 
   ingredients:    z.string().optional().nullable(),
@@ -73,11 +87,11 @@ const productObjectSchema = z.object({
   tags:           z.array(z.string().trim().toLowerCase()).optional().default([]),
   searchKeywords: z.string().optional().nullable(),
 
-  isActive:    z.boolean().default(true),
-  isFeatured:  z.boolean().default(false),
-  isBestseller:z.boolean().default(false),
-  isNewArrival:z.boolean().default(false),
-  isOnSale:    z.boolean().default(false),
+  isActive:    z.preprocess(parseBoolean, z.boolean().default(true)),
+  isFeatured:  z.preprocess(parseBoolean, z.boolean().default(false)),
+  isBestseller:z.preprocess(parseBoolean, z.boolean().default(false)),
+  isNewArrival:z.preprocess(parseBoolean, z.boolean().default(false)),
+  isOnSale:    z.preprocess(parseBoolean, z.boolean().default(false)),
 
   metaTitle:       z.string().max(70).optional().nullable(),
   metaDescription: z.string().max(160).optional().nullable(),

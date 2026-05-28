@@ -168,10 +168,21 @@ exports.createProduct = async (req, res) => {
   });
   if (!category) throw AppError.notFound('Category');
 
-  // Validate SKU uniqueness
+  // Validate or generate SKU
   if (data.sku) {
     const skuExists = await prisma.product.findFirst({ where: { sku: data.sku } });
     if (skuExists) throw AppError.conflict(`SKU "${data.sku}" is already in use.`);
+  } else {
+    // Generate clean unique SKU from product name and random suffix
+    const namePrefix = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    const randSuffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    data.sku = `${namePrefix}-${randSuffix}`;
+    
+    // Check if the generated SKU exists (extremely rare conflict)
+    const skuExists = await prisma.product.findFirst({ where: { sku: data.sku } });
+    if (skuExists) {
+      data.sku = `${namePrefix}-${Date.now().toString().slice(-4)}`;
+    }
   }
 
   // Generate unique slug from name
@@ -181,7 +192,6 @@ exports.createProduct = async (req, res) => {
     data: {
       ...data,
       slug,
-      createdBy: req.user.id,
     },
     include: ADMIN_PRODUCT_INCLUDE,
   });
@@ -235,7 +245,7 @@ exports.updateProduct = async (req, res) => {
 
   const updated = await prisma.product.update({
     where: { id },
-    data: { ...data, updatedBy: req.user.id },
+    data: { ...data },
     include: ADMIN_PRODUCT_INCLUDE,
   });
 

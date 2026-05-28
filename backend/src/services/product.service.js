@@ -376,17 +376,23 @@ const attachProductImages = async (productId, files, setFirstAsPrimary = true) =
   const existingCount = await prisma.productImage.count({ where: { productId } });
   const hasPrimary = existingCount === 0;
 
-  const imageData = files.map((file, index) => ({
-    productId,
-    url: file.path,
-    publicId: file.filename,
-    thumbnailUrl: generateResponsiveUrls(file.filename)?.thumbnail || file.path,
-    alt: file.originalname?.split('.')[0] || `Product image ${index + 1}`,
-    type: 'image',
-    fileSizeBytes: file.size || null,
-    isPrimary: setFirstAsPrimary && hasPrimary && index === 0,
-    sortOrder: existingCount + index,
-  }));
+  const imageData = files.map((file, index) => {
+    const isLocal = file.path && !file.path.startsWith('http');
+    const url = isLocal ? `/uploads/${file.filename}` : file.path;
+    const thumbnailUrl = isLocal ? `/uploads/${file.filename}` : (generateResponsiveUrls(file.filename)?.thumbnail || file.path);
+
+    return {
+      productId,
+      url,
+      publicId: file.filename,
+      thumbnailUrl,
+      alt: file.originalname?.split('.')[0] || `Product image ${index + 1}`,
+      type: 'image',
+      fileSizeBytes: file.size || null,
+      isPrimary: setFirstAsPrimary && hasPrimary && index === 0,
+      sortOrder: existingCount + index,
+    };
+  });
 
   const created = await prisma.productImage.createMany({
     data: imageData,
