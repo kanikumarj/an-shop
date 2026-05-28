@@ -6,11 +6,11 @@ services:
     plan: free
     rootDir: backend
 
-    # Build: install ALL deps (prisma is in dependencies), generate client, push schema
-    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss
+    # Build: install ALL deps (prisma is in dependencies), generate client
+    buildCommand: npm install && npx prisma generate
 
     # Start command
-    startCommand: node server.js
+    startCommand: npx prisma db push --accept-data-loss && node server.js
 
     # Health check
     healthCheckPath: /api/v1/health

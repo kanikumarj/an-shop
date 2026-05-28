@@ -7,9 +7,9 @@ services:
     rootDir: backend
 
     # prisma is in dependencies (not devDependencies) — npm install installs it
-    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss
+    buildCommand: npm install && npx prisma generate
 
-    startCommand: node server.js
+    startCommand: npx prisma db push --accept-data-loss && node server.js
 
     healthCheckPath: /api/v1/health
 
