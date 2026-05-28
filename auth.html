@@ -1224,160 +1224,104 @@ function btnLoading(btn,msg='Processing…'){
 }
 
 /* ── Login Form ── */
-$('loginForm')?.addEventListener('submit',function(e){
+$('loginForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
-  const email=$('login-email')?.value.trim();
-  const pw   =$('login-pw')?.value;
-  let ok=true;
-  
-  if(!validateEmail(email)){
-    showErr('login-email','login-email-err',true);
-    ok=false;
-  } else {
-    showErr('login-email','login-email-err',false);
-  }
-  
+  const email = $('login-email')?.value.trim();
+  const pw    = $('login-pw')?.value;
+  let ok = true;
+
+  if (!validateEmail(email)) { showErr('login-email','login-email-err',true); ok=false; }
+  else showErr('login-email','login-email-err',false);
+
   const pwErr = $('login-pw-err');
   if (pwErr) pwErr.textContent = 'Password must be at least 6 characters.';
-  
-  if(!pw||pw.length<6){
-    showErr('login-pw','login-pw-err',true);
-    ok=false;
-  } else {
-    const isAdminEmail = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com');
-    if (isAdminEmail && pw !== 'Kani@1234') {
-      if (pwErr) pwErr.textContent = 'Invalid password for admin login.';
-      showErr('login-pw','login-pw-err',true);
-      ok=false;
-    } else {
-      showErr('login-pw','login-pw-err',false);
-    }
-  }
-  
-  if(!ok)return;
-  const restore=btnLoading($('btn-login'),'Signing in…');
-  const isAdminEmail = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com');
-  const loginUrl = isAdminEmail ? 'http://localhost:5000/api/v1/auth/admin/login' : 'http://localhost:5000/api/v1/auth/login';
-  
-  fetch(loginUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: pw })
-  })
-  .then(res => {
-    if (!res.ok) {
-      return res.json().then(err => { throw new Error(err.message || 'Login failed.'); });
-    }
-    return res.json();
-  })
-  .then(response => {
+  if (!pw || pw.length < 6) { showErr('login-pw','login-pw-err',true); ok=false; }
+  else showErr('login-pw','login-pw-err',false);
+
+  if (!ok) return;
+
+  const restore = btnLoading($('btn-login'), 'Signing in…');
+  const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+  const isAdminEmail = email.toLowerCase() === 'kanichiyaan@gmail.com' || email.toLowerCase() === 'admin@anshop.com';
+  const loginUrl = isAdminEmail
+    ? `${BACKEND}/api/v1/auth/admin/login`
+    : `${BACKEND}/api/v1/auth/login`;
+
+  try {
+    const res = await fetch(loginUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password: pw }),
+    });
+    const response = await res.json();
+    if (!res.ok) throw new Error(response.message || 'Login failed.');
+
     restore();
     if (response.success && response.data) {
-      const user = response.data.user;
-      const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? 'admin' : 'user';
-      if (window.Auth) {
-        window.Auth.loginUser({ name: user.name, email: user.email, role: role, token: response.data.accessToken });
-      }
-      handleAuthRedirect(role);
+      const user  = response.data.user;
+      const token = response.data.accessToken || response.data.token;
+      // DB role: CUSTOMER, ADMIN, SUPERADMIN
+      const role  = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? user.role : 'CUSTOMER';
+      window.Auth.loginUser(
+        { name: user.name, email: user.email, role, id: user.id, phone: user.phone },
+        token
+      );
+      handleAuthRedirect(role === 'CUSTOMER' ? 'user' : 'admin');
     }
-  })
-  .catch(err => {
-    if (err instanceof TypeError || err.message.includes('Failed to fetch')) {
-      console.warn('Backend server offline. Falling back to frontend simulated auth.');
-      setTimeout(()=>{
-        restore();
-        let name = email.split('@')[0];
-        name = name.charAt(0).toUpperCase() + name.slice(1);
-        const role = isAdminEmail ? 'admin' : 'user';
-        if (window.Auth) {
-          window.Auth.loginUser({ name, email, role });
-        }
-        handleAuthRedirect(role);
-      },1000);
+  } catch (err) {
+    restore();
+    const errEl = $('login-pw-err');
+    if (errEl) {
+      errEl.textContent = err.message || 'Invalid email or password.';
+      showErr('login-pw', 'login-pw-err', true);
     } else {
-      restore();
-      const pwErr = $('login-pw-err');
-      if (pwErr) {
-        pwErr.textContent = err.message || 'Invalid email or password.';
-        showErr('login-pw', 'login-pw-err', true);
-      } else {
-        alert(err.message);
-      }
+      alert(err.message);
     }
-  });
+  }
 });
 
 /* ── Register Form ── */
-$('registerForm')?.addEventListener('submit',function(e){
+$('registerForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
-  const name  =$('reg-name')?.value.trim();
-  const email =$('reg-email')?.value.trim();
-  const phone =$('reg-phone')?.value.trim();
-  const pw    =$('reg-pw')?.value;
-  let ok=true;
-  if(!name){showErr('reg-name','reg-name-err',true);ok=false;}
-  else showErr('reg-name','reg-name-err',false);
-  if(!validateEmail(email)){showErr('reg-email','reg-email-err',true);ok=false;}
-  else showErr('reg-email','reg-email-err',false);
-  if(!/^\d{10}$/.test(phone)){showErr('reg-phone','reg-phone-err',true);ok=false;}
-  else showErr('reg-phone','reg-phone-err',false);
-  if(!pw||pw.length<8){showErr('reg-pw','reg-pw-err',true);ok=false;}
-  else showErr('reg-pw','reg-pw-err',false);
-  
-  if(!ok)return;
-  const restore=btnLoading($('btn-register'),'Creating Account…');
-  
-  fetch('http://localhost:5000/api/v1/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      email,
-      phone,
-      password: pw,
-      confirmPassword: pw,
-      agreeToTerms: true
-    })
-  })
-  .then(res => {
-    if (!res.ok) {
-      return res.json().then(err => { throw new Error(err.message || 'Registration failed.'); });
-    }
-    return res.json();
-  })
-  .then(response => {
+  const name  = $('reg-name')?.value.trim();
+  const email = $('reg-email')?.value.trim();
+  const phone = $('reg-phone')?.value.trim();
+  const pw    = $('reg-pw')?.value;
+  let ok = true;
+  if (!name)  { showErr('reg-name','reg-name-err',true); ok=false; } else showErr('reg-name','reg-name-err',false);
+  if (!validateEmail(email)) { showErr('reg-email','reg-email-err',true); ok=false; } else showErr('reg-email','reg-email-err',false);
+  if (!/^\d{10}$/.test(phone)) { showErr('reg-phone','reg-phone-err',true); ok=false; } else showErr('reg-phone','reg-phone-err',false);
+  if (!pw || pw.length < 8) { showErr('reg-pw','reg-pw-err',true); ok=false; } else showErr('reg-pw','reg-pw-err',false);
+  if (!ok) return;
+
+  const restore = btnLoading($('btn-register'), 'Creating Account…');
+  const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, email, phone, password: pw, confirmPassword: pw, agreeToTerms: true }),
+    });
+    const response = await res.json();
+    if (!res.ok) throw new Error(response.message || 'Registration failed.');
+
     restore();
     if (response.success && response.data) {
-      const user = response.data.user;
-      const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? 'admin' : 'user';
-      if (window.Auth) {
-        window.Auth.loginUser({
-          name: user.name,
-          email: user.email,
-          role: role,
-          phone: user.phone,
-          token: response.data.accessToken
-        });
-      }
-      handleAuthRedirect(role);
+      const user  = response.data.user;
+      const token = response.data.accessToken || response.data.token;
+      window.Auth.loginUser(
+        { name: user.name, email: user.email, role: user.role || 'CUSTOMER', id: user.id, phone: user.phone },
+        token
+      );
+      handleAuthRedirect('user');
     }
-  })
-  .catch(err => {
-    if (err instanceof TypeError || err.message.includes('Failed to fetch')) {
-      console.warn('Backend server offline. Falling back to frontend simulated registration.');
-      setTimeout(()=>{
-        restore();
-        const role = (email === 'admin@indianmade.in' || email === 'Kanichiyaan@gmail.com') ? 'admin' : 'user';
-        if (window.Auth) {
-          window.Auth.loginUser({ name, email, role, phone });
-        }
-        handleAuthRedirect(role);
-      },1000);
-    } else {
-      restore();
-      alert(err.message);
-    }
-  });
+  } catch (err) {
+    restore();
+    alert(err.message || 'Registration failed. Please try again.');
+  }
 });
 
 /* ── OTP verify ── */

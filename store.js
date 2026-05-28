@@ -1,6 +1,34 @@
 "use strict";
 
-// ─── Google OAuth Configuration ──────────────────────────────────────────────
+// ─── Backend API URL ──────────────────────────────────────────────────────────
+window.BACKEND_URL = "https://an-shop.onrender.com";
+
+// ─── API Helper ───────────────────────────────────────────────────────────────
+window.API = {
+  async request(path, options = {}) {
+    const token = window.Auth.getToken();
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || `Request failed (${res.status})`);
+    return data;
+  },
+
+  get(path, opts = {})    { return this.request(path, { ...opts, method: 'GET' }); },
+  post(path, body, opts)  { return this.request(path, { ...opts, method: 'POST',  body: JSON.stringify(body) }); },
+  patch(path, body, opts) { return this.request(path, { ...opts, method: 'PATCH', body: JSON.stringify(body) }); },
+  put(path, body, opts)   { return this.request(path, { ...opts, method: 'PUT',   body: JSON.stringify(body) }); },
+  del(path, opts = {})    { return this.request(path, { ...opts, method: 'DELETE' }); },
+};
+
+// ─── Google OAuth Configuration ───────────────────────────────────────────────
 window.GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
 window.PRODUCTS = [
@@ -25,18 +53,13 @@ window.Cart = {
     try {
       const data = localStorage.getItem('im_cart');
       return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
+    } catch (e) { return []; }
   },
   saveCart(cart) {
     try {
       localStorage.setItem('im_cart', JSON.stringify(cart));
       window.dispatchEvent(new CustomEvent('cartUpdated'));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   },
   addItem(product, qty = 1, weight = '250g') {
     const cart = this.getCart();
@@ -44,16 +67,8 @@ window.Cart = {
     if (existingIndex > -1) {
       cart[existingIndex].qty += qty;
     } else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        emoji: product.emoji,
-        price: product.price,
-        orig: product.orig,
-        cat: product.cat,
-        weight: weight,
-        qty: qty
-      });
+      cart.push({ id: product.id, name: product.name, emoji: product.emoji,
+        price: product.price, orig: product.orig, cat: product.cat, weight, qty });
     }
     this.saveCart(cart);
   },
@@ -62,58 +77,66 @@ window.Cart = {
     const idx = cart.findIndex(item => item.id === id && item.weight === weight);
     if (idx > -1) {
       cart[idx].qty += delta;
-      if (cart[idx].qty <= 0) {
-        cart.splice(idx, 1);
-      }
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
       this.saveCart(cart);
     }
   },
   removeItem(id, weight) {
-    let cart = this.getCart();
-    cart = cart.filter(item => !(item.id === id && item.weight === weight));
-    this.saveCart(cart);
+    this.saveCart(this.getCart().filter(item => !(item.id === id && item.weight === weight)));
   },
-  getCartCount() {
-    const cart = this.getCart();
-    return cart.reduce((sum, item) => sum + item.qty, 0);
-  },
-  clearCart() {
-    this.saveCart([]);
-  },
-  // Convenience alias
-  updateBadge() { window.CartUI && window.CartUI.updateNavBadge && window.CartUI.updateNavBadge(); }
+  getCartCount() { return this.getCart().reduce((sum, item) => sum + item.qty, 0); },
+  clearCart()    { this.saveCart([]); },
+  updateBadge()  { window.CartUI && window.CartUI.updateNavBadge && window.CartUI.updateNavBadge(); }
 };
 
 window.Auth = {
+  USER_KEY:  'im_user',
+  TOKEN_KEY: 'im_token',
+
   getUser() {
-    try {
-      const data = localStorage.getItem('im_user');
-      return data ? JSON.parse(data) : null;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
+    try { return JSON.parse(localStorage.getItem(this.USER_KEY) || 'null'); } catch { return null; }
   },
-  loginUser(userData) {
+
+  getToken() {
+    try { return localStorage.getItem(this.TOKEN_KEY) || null; } catch { return null; }
+  },
+
+  loginUser(userData, token) {
     try {
-      localStorage.setItem('im_user', JSON.stringify({ joinedAt: new Date().toISOString(), ...userData }));
+      localStorage.setItem(this.USER_KEY, JSON.stringify({ joinedAt: new Date().toISOString(), ...userData }));
+      if (token) localStorage.setItem(this.TOKEN_KEY, token);
       window.dispatchEvent(new CustomEvent('authUpdated'));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   },
+
   logoutUser() {
     try {
-      localStorage.removeItem('im_user');
+      const token = this.getToken();
+      if (token) {
+        fetch(`${window.BACKEND_URL}/api/v1/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          credentials: 'include',
+        }).catch(() => {});
+      }
+      localStorage.removeItem(this.USER_KEY);
+      localStorage.removeItem(this.TOKEN_KEY);
       window.dispatchEvent(new CustomEvent('authUpdated'));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   },
-  // Convenience aliases used by pages
-  login(userData) { this.loginUser(userData); },
-  logout()        { this.logoutUser(); },
-  isAdmin()       { const u = this.getUser(); return u && u.role === 'admin'; }
+
+  // DB returns: CUSTOMER, ADMIN, SUPERADMIN
+  isAdmin() {
+    const u = this.getUser();
+    return u && (u.role === 'ADMIN' || u.role === 'SUPERADMIN');
+  },
+  isSuperAdmin() {
+    const u = this.getUser();
+    return u && u.role === 'SUPERADMIN';
+  },
+
+  login(userData, token) { this.loginUser(userData, token); },
+  logout()               { this.logoutUser(); },
 };
 
 window.CartUI = {
@@ -125,7 +148,7 @@ window.CartUI = {
       if (count > 0) {
         badge.classList.add('show');
         badge.classList.remove('bump');
-        void badge.offsetWidth; // Trigger reflow
+        void badge.offsetWidth;
         badge.classList.add('bump');
       } else {
         badge.classList.remove('show');
@@ -133,7 +156,10 @@ window.CartUI = {
     }
   },
   updateAuthNavBar() {
-    const loginBtn = document.getElementById('nav-login-btn') || document.querySelector('.btn-nav-login') || document.querySelector('.btn-login-nav') || document.querySelector('.btn-nav-cta');
+    const loginBtn = document.getElementById('nav-login-btn') ||
+      document.querySelector('.btn-nav-login') ||
+      document.querySelector('.btn-login-nav') ||
+      document.querySelector('.btn-nav-cta');
     const user = window.Auth.getUser();
     if (loginBtn) {
       if (user) {
@@ -153,24 +179,13 @@ window.CartUI = {
   }
 };
 
-// Auto run UI updates on DOM content loaded
 document.addEventListener('DOMContentLoaded', () => {
   window.CartUI.updateNavBadge();
   window.CartUI.updateAuthNavBar();
 });
-
-// Update UI when storage/custom events fire
-window.addEventListener('cartUpdated', () => {
-  window.CartUI.updateNavBadge();
-});
-window.addEventListener('authUpdated', () => {
-  window.CartUI.updateAuthNavBar();
-});
+window.addEventListener('cartUpdated', () => window.CartUI.updateNavBadge());
+window.addEventListener('authUpdated', () => window.CartUI.updateAuthNavBar());
 window.addEventListener('storage', (e) => {
-  if (e.key === 'im_cart') {
-    window.dispatchEvent(new CustomEvent('cartUpdated'));
-  }
-  if (e.key === 'im_user') {
-    window.dispatchEvent(new CustomEvent('authUpdated'));
-  }
+  if (e.key === 'im_cart') window.dispatchEvent(new CustomEvent('cartUpdated'));
+  if (e.key === 'im_user' || e.key === 'im_token') window.dispatchEvent(new CustomEvent('authUpdated'));
 });

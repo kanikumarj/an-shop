@@ -825,69 +825,325 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
 
 /* ══ STORE.JS INTEGRATION ══ */
 (function(){
-  /* 1. Admin auth guard */
+  /* 1. Admin auth guard — DB roles: ADMIN, SUPERADMIN */
   const user = Auth.getUser();
-  if(!user || user.role !== 'admin'){
-    // Redirect non-admins
+  const token = Auth.getToken();
+  const isAdmin = user && (user.role === 'ADMIN' || user.role === 'SUPERADMIN');
+  if (!isAdmin) {
     location.href = user ? 'index.html' : 'auth.html?redirect=admin';
     return;
   }
 
   /* 2. Populate admin profile */
-  const initial = (user.name||'Admin').charAt(0).toUpperCase();
+  const initial = (user.name || 'Admin').charAt(0).toUpperCase();
   const adminAvatar = document.getElementById('adminAvatar');
   const adminName   = document.getElementById('adminName');
-  if(adminAvatar) adminAvatar.textContent = initial;
-  if(adminName)   adminName.textContent   = user.name || 'Admin';
+  if (adminAvatar) adminAvatar.textContent = initial;
+  if (adminName)   adminName.textContent   = user.name || 'Admin';
   const tbAvatar = document.querySelector('.topbar-actions .sb-avatar');
-  if(tbAvatar) tbAvatar.textContent = initial;
+  if (tbAvatar) tbAvatar.textContent = initial;
 
-  /* 3. Logout */
-  document.getElementById('adminLogout')?.addEventListener('click',()=>{
+  /* 3. Show role badge */
+  const roleEl = document.getElementById('adminRole');
+  if (roleEl) roleEl.textContent = user.role === 'SUPERADMIN' ? 'Super Admin' : 'Admin';
+
+  /* 4. Logout */
+  document.getElementById('adminLogout')?.addEventListener('click', () => {
     Auth.logout();
     location.href = 'auth.html';
   });
 
-  /* 4. Merge any real order from localStorage into the ORDERS & PAYMENTS tables */
+  /* 5. Merge any real order from localStorage */
   let realOrder = null;
-  try{ realOrder = JSON.parse(localStorage.getItem('im_last_order')||'null'); } catch(e){}
-  if(!realOrder){
-    try{ realOrder = JSON.parse(localStorage.getItem('im_checkout_cart')||'null'); } catch(e){}
+  try { realOrder = JSON.parse(localStorage.getItem('im_last_order') || 'null'); } catch(e) {}
+  if (!realOrder) {
+    try { realOrder = JSON.parse(localStorage.getItem('im_checkout_cart') || 'null'); } catch(e) {}
   }
-  if(realOrder && realOrder.orderId){
+  if (realOrder && realOrder.orderId) {
     const alreadyIn = ORDERS.some(o => o.id === realOrder.orderId);
-    if(!alreadyIn){
+    if (!alreadyIn) {
       const buyer = realOrder.buyer || {};
       ORDERS.unshift({
         id: realOrder.orderId,
         name: buyer.name || 'Customer',
         city: buyer.city || '—',
-        items: (realOrder.items||[]).reduce((s,i)=>s+(i.qty||1),0),
+        items: (realOrder.items || []).reduce((s, i) => s + (i.qty || 1), 0),
         total: Math.round(realOrder.total || realOrder.grandTotal || 0),
         payment: 'Pending',
         status: 'pending',
-        date: realOrder.placedAt ? new Date(realOrder.placedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : 'Today'
+        date: realOrder.placedAt ? new Date(realOrder.placedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today'
       });
       PAYMENTS.unshift({
         id: realOrder.orderId,
         name: buyer.name || 'Customer',
         phone: buyer.phone || '',
         amount: Math.round(realOrder.total || realOrder.grandTotal || 0),
-        date: realOrder.placedAt ? new Date(realOrder.placedAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : 'Today',
+        date: realOrder.placedAt ? new Date(realOrder.placedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Today',
         utr: realOrder.utr || '',
         status: 'pending'
       });
-      // Re-render tables to include the new row
       renderDashOrders();
       renderDashPending();
       renderPayments();
       renderOrders();
-      // Update pending stat badge in sidebar
       const pendingBadge = document.querySelector('[data-panel="payments"] .sb-badge.red');
-      if(pendingBadge) pendingBadge.textContent = PAYMENTS.filter(p=>p.status==='pending').length;
+      if (pendingBadge) pendingBadge.textContent = PAYMENTS.filter(p => p.status === 'pending').length;
     }
   }
+
+  /* ═══════════════════════════════════════════════════
+     USERS MANAGEMENT — Live from NeonDB via Render API
+     ═══════════════════════════════════════════════════ */
+
+  const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+  const isSuperAdmin = user.role === 'SUPERADMIN';
+
+  // Inject Users panel into the page if it doesn't exist
+  if (!document.getElementById('panel-users')) {
+    // Add sidebar nav item
+    const sbNav = document.querySelector('.sb-nav');
+    if (sbNav) {
+      const usersItem = document.createElement('div');
+      usersItem.className = 'sb-item';
+      usersItem.dataset.panel = 'users';
+      usersItem.innerHTML = `<span class="sb-icon">👥</span> Users <span class="sb-badge gold" id="usersBadge">—</span>`;
+      sbNav.appendChild(usersItem);
+    }
+
+    // Create users panel HTML
+    const usersPanel = document.createElement('div');
+    usersPanel.id = 'panel-users';
+    usersPanel.className = 'panel';
+    usersPanel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-family:var(--fd,serif);font-size:1.4rem;color:var(--text,#f5f0e8);">👥 User Management</h2>
+          <p style="color:var(--muted,#7a6a54);font-size:.82rem;margin-top:4px;">View, filter, block, and manage user roles. All changes sync to NeonDB.</p>
+        </div>
+        <button id="refreshUsers" style="padding:8px 18px;border-radius:10px;background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);color:var(--gold,#f5a623);font-size:.82rem;cursor:pointer;">↻ Refresh</button>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <input id="userSearch" placeholder="🔍  Search name / email / phone…" style="flex:1;min-width:200px;padding:9px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(245,166,35,.12);border-radius:10px;color:var(--text,#f5f0e8);font-size:.83rem;outline:none;" />
+        <select id="userRoleFilter" style="padding:9px 14px;background:#0d0b07;border:1px solid rgba(245,166,35,.12);border-radius:10px;color:var(--text,#f5f0e8);font-size:.83rem;outline:none;">
+          <option value="">All Roles</option>
+          <option value="CUSTOMER">Customers</option>
+          <option value="ADMIN">Admins</option>
+          <option value="SUPERADMIN">Super Admins</option>
+        </select>
+        <select id="userStatusFilter" style="padding:9px 14px;background:#0d0b07;border:1px solid rgba(245,166,35,.12);border-radius:10px;color:var(--text,#f5f0e8);font-size:.83rem;outline:none;">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div style="background:rgba(19,16,9,.9);border:1px solid rgba(245,166,35,.1);border-radius:16px;overflow:hidden;">
+        <table class="data-table" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:rgba(245,166,35,.04);">
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">User</th>
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Contact</th>
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Role</th>
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Status</th>
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Orders</th>
+              <th style="padding:13px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Joined</th>
+              <th style="padding:13px 16px;text-align:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#7a6a54);">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--muted,#7a6a54);">Loading users…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="usersPagination" style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <span id="usersPageInfo" style="font-size:.8rem;color:var(--muted,#7a6a54);">—</span>
+        <div style="display:flex;gap:6px;">
+          <button id="usersPrev" style="padding:6px 14px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(245,166,35,.12);color:var(--text,#f5f0e8);font-size:.8rem;cursor:pointer;" disabled>← Prev</button>
+          <button id="usersNext" style="padding:6px 14px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(245,166,35,.12);color:var(--text,#f5f0e8);font-size:.8rem;cursor:pointer;" disabled>Next →</button>
+        </div>
+      </div>
+    `;
+    document.querySelector('.content')?.appendChild(usersPanel);
+  }
+
+  // ── Users State ──────────────────────────────────────────────
+  let usersPage = 1;
+  let usersTotal = 0;
+  const USERS_LIMIT = 15;
+
+  async function fetchUsers() {
+    const search   = document.getElementById('userSearch')?.value.trim() || '';
+    const role     = document.getElementById('userRoleFilter')?.value || '';
+    const isActive = document.getElementById('userStatusFilter')?.value;
+
+    const body = document.getElementById('usersTableBody');
+    if (body) body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--muted,#7a6a54);">⏳ Loading…</td></tr>`;
+
+    let url = `${BACKEND}/api/v1/admin/users?page=${usersPage}&limit=${USERS_LIMIT}`;
+    if (search)   url += `&search=${encodeURIComponent(search)}`;
+    if (role)     url += `&role=${role}`;
+    if (isActive !== '') url += `&isActive=${isActive}`;
+
+    try {
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to load users.');
+
+      const users = data.data || [];
+      usersTotal = data.meta?.total || data.total || users.length;
+
+      // Update sidebar badge
+      const badge = document.getElementById('usersBadge');
+      if (badge) badge.textContent = usersTotal;
+
+      // Render table
+      if (!users.length) {
+        if (body) body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--muted,#7a6a54);">No users found.</td></tr>`;
+        return;
+      }
+
+      if (body) body.innerHTML = users.map(u => {
+        const roleColor = u.role === 'SUPERADMIN' ? '#b794f4' : u.role === 'ADMIN' ? '#f5a623' : '#4de0ff';
+        const statusDot = u.isActive
+          ? `<span style="display:inline-flex;align-items:center;gap:5px;color:#5de88d;font-size:.78rem;"><span style="width:7px;height:7px;border-radius:50%;background:#5de88d;display:inline-block;"></span>Active</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:5px;color:#ff7a7a;font-size:.78rem;"><span style="width:7px;height:7px;border-radius:50%;background:#ff7a7a;display:inline-block;"></span>Inactive</span>`;
+
+        const initials = (u.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+        const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Never';
+
+        const isSelf = u.id === user.id;
+        const canModify = !isSelf && u.role !== 'SUPERADMIN';
+
+        const roleOptions = isSuperAdmin && canModify ? `
+          <select onchange="changeUserRole('${u.id}', this.value, this)" style="padding:4px 8px;background:#0d0b07;border:1px solid rgba(245,166,35,.2);border-radius:6px;color:${roleColor};font-size:.75rem;outline:none;">
+            <option value="CUSTOMER" ${u.role==='CUSTOMER'?'selected':''}>Customer</option>
+            <option value="ADMIN"    ${u.role==='ADMIN'?'selected':''}>Admin</option>
+          </select>` : `<span style="color:${roleColor};font-size:.78rem;font-weight:600;">${u.role}</span>`;
+
+        const toggleBtn = canModify ? `
+          <button onclick="toggleUserStatus('${u.id}', ${u.isActive})"
+            style="padding:5px 10px;border-radius:7px;border:1px solid ${u.isActive?'rgba(255,122,122,.3)':'rgba(93,232,141,.3)'};
+            background:${u.isActive?'rgba(255,122,122,.08)':'rgba(93,232,141,.08)'};
+            color:${u.isActive?'#ff7a7a':'#5de88d'};font-size:.73rem;cursor:pointer;">
+            ${u.isActive ? '🔒 Block' : '✅ Unblock'}
+          </button>` : `<span style="color:var(--muted,#7a6a54);font-size:.72rem;">${isSelf?'(You)':'—'}</span>`;
+
+        return `<tr style="border-top:1px solid rgba(245,166,35,.05);transition:background .2s;" onmouseover="this.style.background='rgba(245,166,35,.03)'" onmouseout="this.style.background=''">
+          <td style="padding:13px 16px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8690a,#f5a623);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0a0804;font-size:.8rem;flex-shrink:0;">${initials}</div>
+              <div>
+                <div style="font-size:.85rem;font-weight:600;color:var(--text,#f5f0e8);">${u.name}</div>
+                <div style="font-size:.72rem;color:var(--muted,#7a6a54);">Last: ${lastLogin}</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding:13px 16px;">
+            <div style="font-size:.82rem;color:var(--text,#f5f0e8);">${u.email}</div>
+            <div style="font-size:.72rem;color:var(--muted,#7a6a54);">${u.phone || '—'}</div>
+          </td>
+          <td style="padding:13px 16px;">${roleOptions}</td>
+          <td style="padding:13px 16px;">${statusDot}</td>
+          <td style="padding:13px 16px;font-size:.85rem;color:var(--text,#f5f0e8);">${u._count?.orders ?? 0}</td>
+          <td style="padding:13px 16px;font-size:.8rem;color:var(--muted,#7a6a54);">${joined}</td>
+          <td style="padding:13px 16px;text-align:center;">${toggleBtn}</td>
+        </tr>`;
+      }).join('');
+
+      // Pagination
+      const totalPages = Math.ceil(usersTotal / USERS_LIMIT);
+      const from = (usersPage - 1) * USERS_LIMIT + 1;
+      const to   = Math.min(usersPage * USERS_LIMIT, usersTotal);
+      const info = document.getElementById('usersPageInfo');
+      const prev = document.getElementById('usersPrev');
+      const next = document.getElementById('usersNext');
+      if (info) info.textContent = `Showing ${from}–${to} of ${usersTotal} users`;
+      if (prev) prev.disabled = usersPage <= 1;
+      if (next) next.disabled = usersPage >= totalPages;
+
+    } catch (err) {
+      if (body) body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:#ff7a7a;">❌ ${err.message}</td></tr>`;
+      console.error('Users fetch error:', err);
+    }
+  }
+
+  // ── Actions ──────────────────────────────────────────────────
+  window.toggleUserStatus = async function(userId, currentStatus) {
+    try {
+      const res = await fetch(`${BACKEND}/api/v1/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      showToast(`✅ User ${data.data?.isActive ? 'activated' : 'deactivated'}.`, 'success');
+      fetchUsers();
+    } catch (err) {
+      showToast(`❌ ${err.message}`, 'error');
+    }
+  };
+
+  window.changeUserRole = async function(userId, newRole, selectEl) {
+    if (!isSuperAdmin) { showToast('❌ Only Super Admins can change roles.', 'error'); return; }
+    try {
+      const res = await fetch(`${BACKEND}/api/v1/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      showToast(`✅ Role updated to ${newRole}.`, 'success');
+      fetchUsers();
+    } catch (err) {
+      showToast(`❌ ${err.message}`, 'error');
+      fetchUsers(); // Reset dropdown
+    }
+  };
+
+  // ── Event Listeners ──────────────────────────────────────────
+  document.getElementById('refreshUsers')?.addEventListener('click', () => { usersPage = 1; fetchUsers(); });
+  document.getElementById('usersPrev')?.addEventListener('click', () => { if (usersPage > 1) { usersPage--; fetchUsers(); } });
+  document.getElementById('usersNext')?.addEventListener('click', () => { usersPage++; fetchUsers(); });
+
+  let searchTimeout;
+  document.getElementById('userSearch')?.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { usersPage = 1; fetchUsers(); }, 400);
+  });
+  document.getElementById('userRoleFilter')?.addEventListener('change', () => { usersPage = 1; fetchUsers(); });
+  document.getElementById('userStatusFilter')?.addEventListener('change', () => { usersPage = 1; fetchUsers(); });
+
+  // Hook users panel into nav
+  document.querySelectorAll('.sb-item[data-panel="users"]').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-users');
+      if (panel) panel.classList.add('active');
+      if (!panel?.dataset.loaded) {
+        panel.dataset.loaded = '1';
+        fetchUsers();
+      }
+      const title = document.querySelector('.topbar-title');
+      if (title) title.textContent = 'User Management';
+    });
+  });
+
 })();
 </script>
 </body>
 </html>
+
