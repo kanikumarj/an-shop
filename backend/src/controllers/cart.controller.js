@@ -177,7 +177,7 @@ exports.addToCart = async (req, res) => {
       product: {
         select: {
           id: true, name: true, slug: true, basePrice: true,
-          images: { where: { isPrimary: true }, select: { url: true, thumbnailUrl: true }, take: 1 },
+          images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
         },
       },
       variant: { select: { id: true, name: true, price: true, attributes: true } },
@@ -278,7 +278,7 @@ exports.updateCartItem = async (req, res) => {
       product: {
         select: {
           id: true, name: true, basePrice: true,
-          images: { where: { isPrimary: true }, select: { url: true, thumbnailUrl: true }, take: 1 },
+          images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
         },
       },
       variant: { select: { id: true, name: true, price: true } },
@@ -448,7 +448,7 @@ exports.getSavedItems = async (req, res) => {
         select: {
           id: true, name: true, slug: true, basePrice: true, comparePrice: true,
           stock: true, isActive: true,
-          images: { where: { isPrimary: true }, select: { url: true, thumbnailUrl: true }, take: 1 },
+          images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
         },
       },
       variant: { select: { id: true, name: true, price: true, stock: true } },

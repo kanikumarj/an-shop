@@ -121,7 +121,7 @@ exports.listProducts = async (req, res) => {
         category: { select: { id: true, name: true, slug: true } },
         images: {
           where: { isPrimary: true },
-          select: { url: true, thumbnailUrl: true, alt: true },
+          select: { url: true, alt: true },
           take: 1,
         },
         _count: { select: { orderItems: true, reviews: true } },
@@ -635,7 +635,7 @@ exports.getProductAnalytics = async (req, res) => {
     prisma.product.findMany({
       where: { isActive: true, deletedAt: null },
       select: { id: true, name: true, totalSold: true, basePrice: true, stock: true,
-        images: { where: { isPrimary: true }, select: { thumbnailUrl: true }, take: 1 },
+        images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
       },
       orderBy: { totalSold: 'desc' },
       take: 5,
@@ -645,7 +645,7 @@ exports.getProductAnalytics = async (req, res) => {
     prisma.product.findMany({
       where: { isActive: true, deletedAt: null, totalReviews: { gt: 0 } },
       select: { id: true, name: true, avgRating: true, totalReviews: true,
-        images: { where: { isPrimary: true }, select: { thumbnailUrl: true }, take: 1 },
+        images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
       },
       orderBy: { avgRating: 'desc' },
       take: 5,

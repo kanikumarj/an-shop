@@ -66,7 +66,7 @@ const CARD_SELECT = {
   category: { select: { id: true, name: true, slug: true, icon: true } },
   images: {
     where: { isPrimary: true },
-    select: { url: true, thumbnailUrl: true, alt: true, publicId: true },
+    select: { url: true, alt: true, publicId: true },
     take: 1,
   },
   createdAt: true,

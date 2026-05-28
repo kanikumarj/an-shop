@@ -50,7 +50,7 @@ const CART_PRODUCT_SELECT = {
   weight: true,
   images: {
     where: { isPrimary: true },
-    select: { url: true, thumbnailUrl: true, alt: true },
+    select: { url: true, alt: true },
     take: 1,
   },
   category: { select: { id: true, name: true, slug: true } },
