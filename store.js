@@ -135,9 +135,12 @@ window.productsPromise = (async () => {
           bt,
           desc,
           color,
-          stock
+          stock,
+          isActive: p.isActive !== false, // default true if not set
+          images: p.images || [],
         };
-      });
+      // Filter to only show active products with stock info retained
+      }).filter(p => p.isActive !== false);
       console.log('Successfully loaded and mapped products from NeonDB:', window.PRODUCTS);
     }
   } catch (err) {
@@ -159,9 +162,19 @@ window.Cart = {
     } catch (e) { console.error(e); }
   },
   addItem(product, qty = 1, weight = '250g') {
+    // Prevent adding out-of-stock items
+    if (product.stock === 0) {
+      alert(`"${product.name}" is currently out of stock.`);
+      return;
+    }
     const cart = this.getCart();
     const existingIndex = cart.findIndex(item => item.id === product.id && item.weight === weight);
     if (existingIndex > -1) {
+      // Check if adding more would exceed stock
+      if (product.stock > 0 && cart[existingIndex].qty + qty > product.stock) {
+        alert(`Only ${product.stock} units available for "${product.name}".`);
+        return;
+      }
       cart[existingIndex].qty += qty;
     } else {
       cart.push({ id: product.id, name: product.name, emoji: product.emoji,

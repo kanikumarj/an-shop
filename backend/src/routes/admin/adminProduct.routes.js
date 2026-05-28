@@ -67,9 +67,11 @@ router.patch('/bulk/delete',
 router.get('/', adminProductController.listProducts);
 
 // POST /admin/products  (with optional image upload)
+// Note: validate() is intentionally omitted here — multer runs first,
+// then the controller calls createProductSchema.parse(req.body) after
+// multipart fields are available.
 router.post('/',
   uploadProductImages,
-  validate(createProductSchema),
   adminProductController.createProduct
 );
 
@@ -77,8 +79,9 @@ router.post('/',
 router.get('/:id', adminProductController.getProduct);
 
 // PUT /admin/products/:id  (all fields)
+// Note: validate() is intentionally omitted here — the controller
+// calls updateProductSchema.parse(req.body) directly.
 router.put('/:id',
-  validate(updateProductSchema),
   adminProductController.updateProduct
 );
 

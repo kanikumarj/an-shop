@@ -467,6 +467,8 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
         <button class="btn-modal-approve" onclick="approvePayment()">✅ Approve Payment</button>
         <button class="btn-modal-reject" onclick="rejectPayment()">❌ Reject</button>
       </div>
+    </div>
+  </div>
 </div>
 
 <!-- PRODUCT ADD/EDIT MODAL -->
@@ -517,13 +519,23 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
           </div>
         </div>
 
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Handmade Emoji Icon (for premium catalog look)</label>
-          <input type="text" id="prodEmoji" placeholder="e.g. 🌀, 🍌, 🌶️" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Emoji Icon</label>
+            <input type="text" id="prodEmoji" placeholder="e.g. 🌀, 🍌, 🌶️" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Status</label>
+            <select id="prodIsActive" style="width: 100%; padding: 10px; background: #0d0b07; border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;">
+              <option value="true">✅ Active (visible to users)</option>
+              <option value="false">🚫 Inactive (hidden)</option>
+            </select>
+          </div>
         </div>
 
         <div style="margin-bottom: 12px;">
-          <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Product Images (Select file to upload to Cloudinary)</label>
+          <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Product Images</label>
+          <div id="existingImagesContainer" style="margin-bottom: 8px;"></div>
           <input type="file" id="prodImages" accept="image/*" multiple style="width: 100%; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
           <div id="imagePreviewContainer" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
         </div>
@@ -1241,49 +1253,59 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
 
     try {
       // Query admin products endpoint
-      const res = await window.API.get('/admin/products?limit=100');
+      const res = await window.API.get('/admin/products?limit=200&sort=newest');
       REAL_PRODUCTS = res.data || res;
+      if (!Array.isArray(REAL_PRODUCTS)) REAL_PRODUCTS = [];
 
       // Update count label
       const countLabel = document.getElementById('invCountLabel');
       if (countLabel) countLabel.textContent = `${REAL_PRODUCTS.length} products`;
 
       if (REAL_PRODUCTS.length === 0) {
-        grid.innerHTML = `<div style="grid-column: span 3; text-align: center; color: var(--muted); padding: 40px;">No products found in NeonDB. Click "+ Add Product" to create one.</div>`;
+        grid.innerHTML = `<div style="grid-column: span 3; text-align: center; color: var(--muted); padding: 40px;">No products found. Click "+ Add Product" to create one.</div>`;
         return;
       }
 
       grid.innerHTML = REAL_PRODUCTS.map(item => {
         let imgUrl = (item.images && item.images.length > 0) ? item.images[0].url : '';
-        if (imgUrl && imgUrl.startsWith('/')) {
-          imgUrl = `${window.BACKEND_URL}${imgUrl}`;
-        }
+        if (imgUrl && imgUrl.startsWith('/')) imgUrl = `${window.BACKEND_URL}${imgUrl}`;
         const fallbackIcon = item.searchKeywords || '🌀';
-        const pct = Math.min(100, Math.max(0, (item.stock / 100) * 100)); // normalized against 100
-        const cls = item.stock === 0 ? 'out' : item.stock <= item.lowStockThreshold ? 'low' : '';
-        const barCls = item.stock === 0 ? 'low-c' : item.stock <= item.lowStockThreshold ? 'low-c' : pct < 40 ? 'medium' : 'good';
+        const stock = typeof item.stock === 'number' ? item.stock : 0;
+        const threshold = item.lowStockThreshold || 10;
+        const maxRef = Math.max(stock * 2, 100);
+        const pct = Math.min(100, Math.max(0, (stock / maxRef) * 100));
+        const cls = stock === 0 ? 'out' : stock <= threshold ? 'low' : '';
+        const barCls = stock === 0 ? 'low-c' : stock <= threshold ? 'low-c' : pct < 40 ? 'medium' : 'good';
+        const statusLabel = item.isActive
+          ? `<span style="font-size:.65rem;color:var(--green);font-weight:700;">● Active</span>`
+          : `<span style="font-size:.65rem;color:var(--red);font-weight:700;">● Inactive</span>`;
+        const safeName = item.name.replace(/'/g, "\\'");
 
         return `
-          <div class="inv-card ${cls}">
+          <div class="inv-card ${cls}" style="${!item.isActive ? 'opacity:0.6;' : ''}">
             <div class="inv-top">
-              ${imgUrl ? `<img src="${imgUrl}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:1px solid var(--border);" />` : `<div class="inv-emoji">${fallbackIcon}</div>`}
-              <div style="margin-left: 10px; flex: 1;">
-                <div class="inv-name" style="font-weight:600; font-size:0.9rem;">${item.name}</div>
-                <div class="inv-cat" style="font-size:0.72rem; color:var(--muted);">${item.category?.name || 'Snacks'}</div>
+              ${imgUrl ? `<img src="${imgUrl}" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none'" />` : `<div class="inv-emoji" style="flex-shrink:0;">${fallbackIcon}</div>`}
+              <div style="margin-left:10px;flex:1;min-width:0;">
+                <div class="inv-name" style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                  <div class="inv-cat" style="font-size:0.7rem;color:var(--muted);">${item.category?.name || '—'}</div>
+                  ${statusLabel}
+                </div>
               </div>
-              <div class="inv-price" style="font-weight:700; color:var(--gold);">₹${item.basePrice}</div>
+              <div class="inv-price" style="font-weight:700;color:var(--gold);flex-shrink:0;">₹${item.basePrice}</div>
             </div>
             <div class="stock-label">
               <span>Stock</span>
-              <span style="color:${item.stock === 0 ? 'var(--red)' : item.stock <= item.lowStockThreshold ? 'var(--gold)' : 'var(--green)'}">${item.stock} / 100</span>
+              <span style="color:${stock === 0 ? 'var(--red)' : stock <= threshold ? 'var(--gold)' : 'var(--green)'}">${stock} units</span>
             </div>
             <div class="stock-bar"><div class="stock-fill ${barCls}" style="width:${pct}%"></div></div>
-            ${item.stock === 0 ? '<span class="stock-alert">⚠ Out of Stock</span>' : item.stock <= item.lowStockThreshold ? '<span class="stock-alert">⚠ Low Stock</span>' : ''}
-            <div class="inv-actions" style="margin-top: 12px; display: flex; gap: 6px;">
-              <button class="inv-edit" onclick="editStockReal('${item.id}', ${item.stock}, '${item.name.replace(/'/g, "\\'")}')">Edit Stock</button>
-              <button class="inv-edit" onclick="editProductReal('${item.id}')" style="color:var(--blue); border-color:rgba(77,224,255,.25);">Edit Info</button>
-              <button class="inv-edit" onclick="deleteProductReal('${item.id}', '${item.name.replace(/'/g, "\\'")}')" style="color:var(--red); border-color:rgba(255,122,122,.25);">Archive</button>
-            </div>
+            ${stock === 0 ? '<span class="stock-alert">⚠ Out of Stock</span>' : stock <= threshold ? '<span class="stock-alert">⚠ Low Stock</span>' : ''}
+            <div class="inv-actions" style="margin-top:12px;display:flex;gap:5px;flex-wrap:wrap;">
+              <button class="inv-edit" onclick="editStockReal('${item.id}', ${stock}, '${safeName}')">Stock</button>
+              <button class="inv-edit" onclick="editProductReal('${item.id}')" style="color:var(--blue);border-color:rgba(77,224,255,.25);">Edit</button>
+              <button class="inv-edit" onclick="toggleProductActive('${item.id}', ${item.isActive}, '${safeName}')" style="color:${item.isActive ? 'var(--gold)' : 'var(--green)'};border-color:${item.isActive ? 'rgba(245,166,35,.25)' : 'rgba(93,232,141,.25)'}">${item.isActive ? 'Deactivate' : 'Activate'}</button>
+              <button class="inv-edit" onclick="deleteProductReal('${item.id}', '${safeName}')" style="color:var(--red);border-color:rgba(255,122,122,.25);">Delete</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -1329,6 +1351,10 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
     document.getElementById('prodId').value = '';
     document.getElementById('productForm').reset();
     document.getElementById('imagePreviewContainer').innerHTML = '';
+    const ec = document.getElementById('existingImagesContainer');
+    if (ec) ec.innerHTML = '';
+    const isActiveEl = document.getElementById('prodIsActive');
+    if (isActiveEl) isActiveEl.value = 'true';
     document.getElementById('productModalTitle').textContent = 'Add New Product';
     loadCategoriesForSelect();
     document.getElementById('productModal').classList.add('open');
@@ -1341,21 +1367,50 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
   // Edit info handler
   window.editProductReal = async function(id) {
     try {
+      showToast('⏳ Loading product...', 'success');
       const res = await window.API.get(`/admin/products/${id}`);
       const product = res.data || res;
 
       document.getElementById('prodId').value = product.id;
-      document.getElementById('prodName').value = product.name;
-      document.getElementById('prodPrice').value = product.basePrice;
+      document.getElementById('prodName').value = product.name || '';
+      document.getElementById('prodPrice').value = product.basePrice || '';
       document.getElementById('prodComparePrice').value = product.comparePrice || '';
-      document.getElementById('prodStock').value = product.stock;
+      document.getElementById('prodStock').value = typeof product.stock === 'number' ? product.stock : 0;
       document.getElementById('prodSku').value = product.sku || '';
       document.getElementById('prodShelfLife').value = product.shelfLife || '';
       document.getElementById('prodEmoji').value = product.searchKeywords || '';
       document.getElementById('prodDesc').value = product.description || '';
+      const isActiveEl = document.getElementById('prodIsActive');
+      if (isActiveEl) isActiveEl.value = product.isActive ? 'true' : 'false';
+
+      // Clear new image input & preview
+      document.getElementById('prodImages').value = '';
+      document.getElementById('imagePreviewContainer').innerHTML = '';
+
+      // Show existing images with delete buttons
+      const ec = document.getElementById('existingImagesContainer');
+      if (ec) {
+        if (product.images && product.images.length > 0) {
+          ec.innerHTML = `<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;font-weight:700;">Current Images</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">`
+            + product.images.map(img => {
+              const src = img.url.startsWith('/') ? `${window.BACKEND_URL}${img.url}` : img.url;
+              return `<div style="position:relative;">
+                <img src="${src}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid ${img.isPrimary ? 'var(--gold)' : 'var(--border)'};"
+                  onerror="this.style.opacity='0.3'" />
+                ${img.isPrimary ? '<div style="position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(245,166,35,.8);color:#000;font-size:.55rem;font-weight:700;border-radius:0 0 8px 8px;">MAIN</div>' : ''}
+                <button onclick="window.deleteProductImage('${product.id}','${img.id}')"
+                  style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:.65rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+              </div>`;
+            }).join('')
+            + `</div>`;
+        } else {
+          ec.innerHTML = '<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px;">No images yet. Upload below.</div>';
+        }
+      }
 
       await loadCategoriesForSelect();
-      document.getElementById('prodCategory').value = product.categoryId;
+      document.getElementById('prodCategory').value = product.categoryId || '';
 
       document.getElementById('productModalTitle').textContent = 'Edit Product';
       document.getElementById('productModal').classList.add('open');
@@ -1364,93 +1419,124 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
     }
   };
 
-  // Form Save Handler (Multipart & JSON combined)
+  // Delete a single product image inline
+  window.deleteProductImage = async function(productId, imageId) {
+    if (!confirm('Remove this image?')) return;
+    try {
+      await window.API.del(`/admin/products/${productId}/images/${imageId}`);
+      showToast('🗑️ Image removed.', 'success');
+      editProductReal(productId); // refresh modal
+    } catch (err) {
+      showToast('❌ ' + err.message, 'error');
+    }
+  };
+
+  // File input preview
+  document.getElementById('prodImages')?.addEventListener('change', function() {
+    const container = document.getElementById('imagePreviewContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    Array.from(this.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.title = file.name;
+        img.style.cssText = 'width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--border);';
+        container.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // Form Save Handler
   window.saveProduct = async function(event) {
     event.preventDefault();
-    const id = document.getElementById('prodId').value;
+    const id = document.getElementById('prodId').value.trim();
     const btn = document.getElementById('prodSaveBtn');
     btn.disabled = true;
     btn.textContent = '⏳ Saving...';
 
-    const name = document.getElementById('prodName').value;
-    const categoryId = document.getElementById('prodCategory').value;
-    const basePrice = parseFloat(document.getElementById('prodPrice').value);
-    const comparePriceVal = document.getElementById('prodComparePrice').value;
-    const comparePrice = comparePriceVal ? parseFloat(comparePriceVal) : null;
-    const stock = parseInt(document.getElementById('prodStock').value);
-    const sku = document.getElementById('prodSku').value.trim();
-    const shelfLife = document.getElementById('prodShelfLife').value;
-    const emoji = document.getElementById('prodEmoji').value;
-    const description = document.getElementById('prodDesc').value;
-    const filesInput = document.getElementById('prodImages');
+    const name        = document.getElementById('prodName').value.trim();
+    const categoryId  = document.getElementById('prodCategory').value;
+    const basePrice   = parseFloat(document.getElementById('prodPrice').value);
+    const cpVal       = document.getElementById('prodComparePrice').value.trim();
+    const comparePrice = cpVal ? parseFloat(cpVal) : null;
+    const stock       = parseInt(document.getElementById('prodStock').value, 10);
+    const sku         = document.getElementById('prodSku').value.trim().toUpperCase();
+    const shelfLife   = document.getElementById('prodShelfLife').value.trim();
+    const emoji       = document.getElementById('prodEmoji').value.trim();
+    const description = document.getElementById('prodDesc').value.trim();
+    const isActiveEl  = document.getElementById('prodIsActive');
+    const isActive    = isActiveEl ? isActiveEl.value === 'true' : true;
+    const filesInput  = document.getElementById('prodImages');
 
-    if (description.length < 20) {
-      showToast('❌ Description must be at least 20 characters.', 'error');
-      btn.disabled = false;
-      btn.textContent = '💾 Save Product';
-      return;
-    }
+    // Client-side validation
+    if (!name || name.length < 3)        { showToast('❌ Product name must be at least 3 characters.', 'error'); btn.disabled=false; btn.textContent='💾 Save Product'; return; }
+    if (!categoryId)                      { showToast('❌ Please select a category.', 'error');                  btn.disabled=false; btn.textContent='💾 Save Product'; return; }
+    if (isNaN(basePrice) || basePrice < 0){ showToast('❌ Enter a valid price.',             'error');                  btn.disabled=false; btn.textContent='💾 Save Product'; return; }
+    if (isNaN(stock)     || stock < 0)    { showToast('❌ Enter a valid stock count.',        'error');                  btn.disabled=false; btn.textContent='💾 Save Product'; return; }
+    if (description.length < 20)          { showToast('❌ Description must be at least 20 characters.', 'error'); btn.disabled=false; btn.textContent='💾 Save Product'; return; }
 
     try {
       if (id) {
-        // Edit existing product via PUT
-        await window.API.put(`/admin/products/${id}`, {
-          name, categoryId, basePrice, comparePrice, stock, sku, shelfLife,
-          searchKeywords: emoji, description
-        });
+        // — UPDATE: JSON PUT for metadata, then multipart POST for new images
+        const payload = {
+          name, categoryId, basePrice, stock, description, isActive,
+          ...(comparePrice !== null ? { comparePrice } : {}),
+          ...(sku        ? { sku }               : {}),
+          ...(shelfLife  ? { shelfLife }          : {}),
+          ...(emoji      ? { searchKeywords: emoji } : {}),
+        };
+        await window.API.put(`/admin/products/${id}`, payload);
 
-        // If new images selected, upload them via POST
         if (filesInput.files.length > 0) {
           const imgData = new FormData();
-          for (let i = 0; i < filesInput.files.length; i++) {
-            imgData.append('images', filesInput.files[i]);
-          }
+          for (let i = 0; i < filesInput.files.length; i++) imgData.append('images', filesInput.files[i]);
           const uploadRes = await fetch(`${window.BACKEND_URL}/api/v1/admin/products/${id}/images`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${window.Auth.getToken()}` },
             body: imgData,
-            credentials: 'include'
+            credentials: 'include',
           });
           const uploadData = await uploadRes.json().catch(() => ({}));
-          if (!uploadRes.ok) throw new Error(uploadData.message || 'Product updated but image upload failed');
+          if (!uploadRes.ok) throw new Error(uploadData.message || 'Images failed to upload');
         }
-
-        showToast('✅ Product updated successfully!', 'success');
+        showToast('✅ Product updated!', 'success');
       } else {
-        // Create new product via POST (multipart FormData)
+        // — CREATE: multipart FormData so images + fields go in one request
         const formData = new FormData();
-        formData.append('name', name);
-        formData.append('categoryId', categoryId);
-        formData.append('basePrice', basePrice);
-        if (comparePrice !== null) formData.append('comparePrice', comparePrice);
-        formData.append('stock', stock);
-        if (sku) formData.append('sku', sku);
-        if (shelfLife) formData.append('shelfLife', shelfLife);
-        if (emoji) formData.append('searchKeywords', emoji);
+        formData.append('name',        name);
+        formData.append('categoryId',  categoryId);
+        formData.append('basePrice',   String(basePrice));
+        formData.append('stock',       String(stock));
         formData.append('description', description);
-
-        if (filesInput.files.length > 0) {
-          for (let i = 0; i < filesInput.files.length; i++) {
-            formData.append('images', filesInput.files[i]);
-          }
-        }
+        formData.append('isActive',    isActive ? 'true' : 'false');
+        if (comparePrice !== null) formData.append('comparePrice', String(comparePrice));
+        if (sku)       formData.append('sku',          sku);
+        if (shelfLife) formData.append('shelfLife',    shelfLife);
+        if (emoji)     formData.append('searchKeywords', emoji);
+        for (let i = 0; i < filesInput.files.length; i++) formData.append('images', filesInput.files[i]);
 
         const res = await fetch(`${window.BACKEND_URL}/api/v1/admin/products`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${window.Auth.getToken()}` },
           body: formData,
-          credentials: 'include'
+          credentials: 'include',
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || 'Failed to create product');
-
-        showToast('✅ Product created successfully!', 'success');
+        if (!res.ok) {
+          const detail = data.errors ? data.errors.map(e => e.message).join('; ') : (data.message || 'Failed to create product');
+          throw new Error(detail);
+        }
+        showToast('✅ Product created!', 'success');
       }
 
       closeProductModal();
       fetchRealInventory();
     } catch (err) {
-      showToast('❌ Error: ' + err.message, 'error');
+      console.error('saveProduct error:', err);
+      showToast('❌ ' + err.message, 'error');
     } finally {
       btn.disabled = false;
       btn.textContent = '💾 Save Product';
@@ -1463,6 +1549,23 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
       fetchRealInventory();
     });
   });
+
+  // Toggle product active/inactive (isActive controls user visibility)
+  window.toggleProductActive = async function(id, currentlyActive, name) {
+    const verb = currentlyActive ? 'Deactivate' : 'Activate';
+    if (!confirm(`${verb} "${name}"?\n${currentlyActive ? 'It will be hidden from users.' : 'It will become visible to users.'}`)) return;
+    try {
+      await window.API.put(`/admin/products/${id}`, { isActive: !currentlyActive });
+      showToast(`✅ Product ${verb.toLowerCase()}d!`, 'success');
+      fetchRealInventory();
+    } catch (err) {
+      showToast('❌ Failed: ' + err.message, 'error');
+    }
+  };
+
+  // Auto-load on page start (so admin sees real data immediately)
+  fetchRealInventory();
+  loadCategoriesForSelect();
 
 })();
 </script>
