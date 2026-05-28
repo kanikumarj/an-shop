@@ -11,6 +11,7 @@ const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
 
 const authController = require('../controllers/auth.controller');
+const googleController = require('../controllers/auth.google.controller');
 const { protect, restrictTo } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const {
@@ -45,8 +46,15 @@ const otpRequestLimiter   = makeRateLimiter(5, 10,  'Too many OTP requests. Try 
 const forgotPassLimiter   = makeRateLimiter(3, 60,  'Too many password reset requests. Try again in 1 hour.');
 const refreshLimiter      = makeRateLimiter(30, 15, 'Too many token refresh requests.');
 const adminLoginLimiter   = makeRateLimiter(5, 30,  'Too many admin login attempts. Try again in 30 minutes.');
+const googleLimiter       = makeRateLimiter(20, 15, 'Too many Google sign-in attempts. Try again in 15 minutes.');
 
 // ─── Public Routes ─────────────────────────────────────────────────────────────
+
+// POST /auth/google — Google OAuth ID Token login/register
+router.post('/google',
+  googleLimiter,
+  googleController.googleLogin
+);
 
 // POST /auth/register
 router.post('/register',
