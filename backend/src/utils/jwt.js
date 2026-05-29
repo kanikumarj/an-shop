@@ -140,7 +140,7 @@ const decodeToken = (token) => {
 const getAccessCookieOptions = () => ({
   httpOnly: true,
   secure: CONFIG.isProd,
-  sameSite: CONFIG.isProd ? 'strict' : 'lax',
+  sameSite: CONFIG.isProd ? 'none' : 'lax',
   maxAge: parseDurationToMs(CONFIG.access.expiresIn),
   ...(CONFIG.cookieDomain && { domain: CONFIG.cookieDomain }),
 });
@@ -151,7 +151,7 @@ const getAccessCookieOptions = () => ({
 const getRefreshCookieOptions = () => ({
   httpOnly: true,
   secure: CONFIG.isProd,
-  sameSite: CONFIG.isProd ? 'strict' : 'lax',
+  sameSite: CONFIG.isProd ? 'none' : 'lax',
   maxAge: parseDurationToMs(CONFIG.refresh.expiresIn),
   path: '/api/v1/auth',           // Restrict to auth routes only
   ...(CONFIG.cookieDomain && { domain: CONFIG.cookieDomain }),

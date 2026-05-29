@@ -2520,7 +2520,8 @@ document.getElementById('globalSearch')?.addEventListener('input', function() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const detail = data.errors ? data.errors.map(e => e.message).join('; ') : (data.message || 'Failed to create product');
+          const errs = data.details || data.errors;
+          const detail = errs ? errs.map(e => e.message).join('; ') : (data.message || 'Failed to create product');
           throw new Error(detail);
         }
         showToast('✅ Product created!', 'success');

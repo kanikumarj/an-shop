@@ -75,10 +75,7 @@ const protect = async (req, res, next) => {
     try {
       decoded = verifyAccessToken(token);
     } catch (err) {
-      const msg = err.name === 'TokenExpiredError'
-        ? 'Session expired. Please log in again.'
-        : 'Invalid token. Please log in again.';
-      return next(AppError.unauthorized(msg, err.name));
+      return next(err);
     }
 
     // 3. Check JWT blacklist (logout invalidation)

@@ -608,7 +608,7 @@ exports.logout = async (req, res) => {
   }
 
   // Clear cookies
-  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 0 };
+  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', maxAge: 0 };
   res.clearCookie('accessToken', cookieOpts);
   res.clearCookie('refreshToken', cookieOpts);
 
@@ -627,7 +627,7 @@ exports.logoutAll = async (req, res) => {
 
   await authService.revokeAllUserTokens(req.user.id, 'logout_all');
 
-  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 0 };
+  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', maxAge: 0 };
   res.clearCookie('accessToken', cookieOpts);
   res.clearCookie('refreshToken', cookieOpts);
 

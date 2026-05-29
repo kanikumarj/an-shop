@@ -7,21 +7,104 @@ window.BACKEND_URL = isLocal ? 'http://localhost:5000' : 'https://an-shop.onrend
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 window.API = {
+  isRefreshing: false,
+  refreshSubscribers: [],
+
+  subscribeTokenRefresh(cb) {
+    this.refreshSubscribers.push(cb);
+  },
+
+  onRefreshed(token) {
+    this.refreshSubscribers.map(cb => cb(token));
+    this.refreshSubscribers = [];
+  },
+
   async request(path, options = {}) {
-    const token = window.Auth.getToken();
+    let token = window.Auth.getToken();
     const headers = { ...options.headers };
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
+    let res = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
       ...options,
       headers,
       credentials: 'include',
     });
 
-    const data = await res.json().catch(() => ({}));
+    let data = await res.json().catch(() => ({}));
+
+    // If 401 Unauthorized and it's not a login/refresh request, try silent refresh
+    if (res.status === 401 && path !== '/auth/login' && path !== '/auth/refresh') {
+      // Check if we are already refreshing the token
+      if (!this.isRefreshing) {
+        this.isRefreshing = true;
+        try {
+          console.log('🔄 Access token expired or invalid. Silently refreshing...');
+          const refreshRes = await fetch(`${window.BACKEND_URL}/api/v1/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
+
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            if (refreshData.success && refreshData.data?.accessToken) {
+              const newAccessToken = refreshData.data.accessToken;
+              window.Auth.loginUser(refreshData.data.user || window.Auth.getUser(), newAccessToken);
+              this.isRefreshing = false;
+              this.onRefreshed(newAccessToken);
+            } else {
+              this.isRefreshing = false;
+              window.Auth.logoutUser();
+              window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+          } else {
+            this.isRefreshing = false;
+            window.Auth.logoutUser();
+            window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.pathname);
+          }
+        } catch (err) {
+          this.isRefreshing = false;
+          console.error('Silent refresh failed:', err);
+        }
+      }
+
+      // If already refreshing, wait for the token to refresh and retry the request
+      if (this.isRefreshing) {
+        return new Promise((resolve, reject) => {
+          this.subscribeTokenRefresh(async (newToken) => {
+            try {
+              headers['Authorization'] = `Bearer ${newToken}`;
+              const retryRes = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
+                ...options,
+                headers,
+                credentials: 'include',
+              });
+              const retryData = await retryRes.json().catch(() => ({}));
+              if (!retryRes.ok) throw new Error(retryData.message || `Request failed (${retryRes.status})`);
+              resolve(retryData);
+            } catch (err) {
+              reject(err);
+            }
+          });
+        });
+      }
+
+      // If refresh succeeded immediately (non-concurrent path)
+      const newToken = window.Auth.getToken();
+      if (newToken) {
+        headers['Authorization'] = `Bearer ${newToken}`;
+        res = await fetch(`${window.BACKEND_URL}/api/v1${path}`, {
+          ...options,
+          headers,
+          credentials: 'include',
+        });
+        data = await res.json().catch(() => ({}));
+      }
+    }
+
     if (!res.ok) throw new Error(data.message || `Request failed (${res.status})`);
     return data;
   },

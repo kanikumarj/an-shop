@@ -1250,12 +1250,13 @@ $('loginForm')?.addEventListener('submit', async function(e){
     });
     const response = await res.json();
     if (!res.ok) {
-      if (response.errors && Array.isArray(response.errors)) {
+      const errs = response.details || response.errors;
+      if (errs && Array.isArray(errs)) {
         const mapping = {
           'email': { input: 'login-email', error: 'login-email-err' },
           'password': { input: 'login-pw', error: 'login-pw-err' }
         };
-        response.errors.forEach(err => {
+        errs.forEach(err => {
           const fieldKey = err.field.replace('body.', '');
           const map = mapping[fieldKey];
           if (map) {
@@ -1349,14 +1350,15 @@ $('registerForm')?.addEventListener('submit', async function(e){
     });
     const response = await res.json();
     if (!res.ok) {
-      if (response.errors && Array.isArray(response.errors)) {
+      const errs = response.details || response.errors;
+      if (errs && Array.isArray(errs)) {
         const mapping = {
           'name': { input: 'reg-name', error: 'reg-name-err' },
           'email': { input: 'reg-email', error: 'reg-email-err' },
           'phone': { input: 'reg-phone', error: 'reg-phone-err' },
           'password': { input: 'reg-pw', error: 'reg-pw-err' }
         };
-        response.errors.forEach(err => {
+        errs.forEach(err => {
           const fieldKey = err.field.replace('body.', '');
           const map = mapping[fieldKey];
           if (map) {
