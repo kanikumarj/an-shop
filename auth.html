@@ -632,7 +632,7 @@ body{
                 </svg>
               </button>
             </div>
-            <span class="field-error" id="login-pw-err">Password must be at least 6 characters.</span>
+            <span class="field-error" id="login-pw-err">Password is required.</span>
           </div>
 
           <div class="link-row">
@@ -666,7 +666,7 @@ body{
             <label class="form-label" for="reg-name">Full Name</label>
             <input class="form-input" type="text" id="reg-name"
               placeholder="Your full name" autocomplete="name" />
-            <span class="field-error" id="reg-name-err">Please enter your name.</span>
+            <span class="field-error" id="reg-name-err">Name must be 2-50 letters without special characters.</span>
           </div>
 
           <div class="form-group">
@@ -683,7 +683,7 @@ body{
               <input class="form-input" type="tel" id="reg-phone"
                 placeholder="10-digit mobile number" maxlength="10" autocomplete="tel" />
             </div>
-            <span class="field-error" id="reg-phone-err">Enter a valid 10-digit mobile number.</span>
+            <span class="field-error" id="reg-phone-err">Enter a valid 10-digit mobile number starting with 6-9.</span>
           </div>
 
           <div class="form-group">
@@ -703,7 +703,7 @@ body{
               <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
               <span class="strength-label" id="strengthLabel"></span>
             </div>
-            <span class="field-error" id="reg-pw-err">Password must be at least 8 characters.</span>
+            <span class="field-error" id="reg-pw-err">Password must contain at least 8 characters, an uppercase letter, lowercase letter, number, and special character.</span>
           </div>
 
           <button type="submit" class="btn-primary" id="btn-register" style="margin-bottom:12px;">
@@ -1139,71 +1139,65 @@ function startOTPTimer(seconds=30){
 /* ════════════════════════════════════════════════════════════
    10. SEND OTP BUTTON
    ════════════════════════════════════════════════════════════ */
-$('btn-send-otp')?.addEventListener('click',function(){
-  const phone=$('otp-phone');
-  const err=$('otp-phone-err');
-  const val=phone?.value.trim()??'';
-  if(!/^\d{10}$/.test(val)){
+async function sendOtpBackend(val, btn) {
+  const origText = btn.textContent;
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  try {
+    const res = await window.API.post('/auth/otp/send', {
+      identifier: val,
+      type: 'login',
+      channel: 'whatsapp'
+    });
+    
+    sessionStorage.setItem('im_auth_phone', val);
+    
+    $('otp-step1').style.display = 'none';
+    $('otp-step2').style.display = 'block';
+    const msg = $('otp-sent-msg');
+    if (msg) msg.textContent = `Code sent to +91 ${val.slice(0, 4)}XXXXXX`;
+    startOTPTimer(30);
+    $('otp-d1')?.focus();
+  } catch (err) {
+    console.error('OTP Send Error:', err);
+    alert(err.message || 'Failed to send OTP.');
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+$('btn-send-otp')?.addEventListener('click', function(){
+  const phone = $('otp-phone');
+  const err = $('otp-phone-err');
+  const val = phone?.value.trim() ?? '';
+  if (!/^[6-9]\d{9}$/.test(val)) {
     phone?.classList.add('error');
-    if(err)err.style.display='block';
+    if (err) {
+      err.textContent = 'Enter a valid 10-digit Indian mobile number starting with 6-9.';
+      err.style.display = 'block';
+    }
     return;
   }
   phone?.classList.remove('error');
-  if(err)err.style.display='none';
+  if (err) err.style.display = 'none';
 
-  // Generate a random 6-digit OTP
-  const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  sessionStorage.setItem('im_auth_otp', generatedOtp);
-  sessionStorage.setItem('im_auth_phone', val);
-
-  // Send real OTP via DBuddyZ!
-  const formData = new FormData();
-  formData.append('token', 'be68c87331ffe75b3636420f61aa8e6d');
-  formData.append('tonumber', '+91' + val);
-  formData.append('otp', generatedOtp);
-
-  this.textContent='Sending…';
-  this.disabled=true;
-
-  fetch('https://dbuddyz.prismswift.com/send/', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.json())
-  .then(data => {
-    console.log('DBuddyZ Response:', data);
-    if (data.success === '1' || data.status === 'success') {
-      $('otp-step1').style.display='none';
-      $('otp-step2').style.display='block';
-      const msg=$('otp-sent-msg');
-      if(msg)msg.textContent=`Code sent to +91 ${val.slice(0,4)}XXXXXX`;
-      startOTPTimer(30);
-      $('otp-d1')?.focus();
-    } else {
-      alert('Failed to send WhatsApp OTP: ' + (data.message || 'Unknown error'));
-    }
-  })
-  .catch(err => {
-    console.error('API Error:', err);
-    alert('Failed to send OTP. Please check your internet connection or DBuddyZ status.');
-  })
-  .finally(() => {
-    this.textContent='Send OTP';
-    this.disabled=false;
-  });
+  sendOtpBackend(val, this);
 });
 
-$('btn-back-otp')?.addEventListener('click',()=>{
+$('btn-back-otp')?.addEventListener('click', () => {
   clearInterval(otpTimerInterval);
-  $('otp-step1').style.display='block';
-  $('otp-step2').style.display='none';
-  $$('.otp-digit').forEach(d=>d.value='');
+  $('otp-step1').style.display = 'block';
+  $('otp-step2').style.display = 'none';
+  $$('.otp-digit').forEach(d => d.value = '');
 });
 
-$('btn-resend')?.addEventListener('click',function(){
-  $$('.otp-digit').forEach(d=>d.value='');
-  startOTPTimer(30);
-  $('otp-d1')?.focus();
+$('btn-resend')?.addEventListener('click', function(){
+  const phoneVal = sessionStorage.getItem('im_auth_phone');
+  if (!phoneVal) return;
+  $$('.otp-digit').forEach(d => d.value = '');
+  sendOtpBackend(phoneVal, this);
 });
 
 /* ════════════════════════════════════════════════════════════
@@ -1234,8 +1228,8 @@ $('loginForm')?.addEventListener('submit', async function(e){
   else showErr('login-email','login-email-err',false);
 
   const pwErr = $('login-pw-err');
-  if (pwErr) pwErr.textContent = 'Password must be at least 6 characters.';
-  if (!pw || pw.length < 6) { showErr('login-pw','login-pw-err',true); ok=false; }
+  if (pwErr) pwErr.textContent = 'Password is required.';
+  if (!pw || pw.length < 1) { showErr('login-pw','login-pw-err',true); ok=false; }
   else showErr('login-pw','login-pw-err',false);
 
   if (!ok) return;
@@ -1255,13 +1249,37 @@ $('loginForm')?.addEventListener('submit', async function(e){
       body: JSON.stringify({ email, password: pw }),
     });
     const response = await res.json();
-    if (!res.ok) throw new Error(response.message || 'Login failed.');
+    if (!res.ok) {
+      if (response.errors && Array.isArray(response.errors)) {
+        const mapping = {
+          'email': { input: 'login-email', error: 'login-email-err' },
+          'password': { input: 'login-pw', error: 'login-pw-err' }
+        };
+        response.errors.forEach(err => {
+          const fieldKey = err.field.replace('body.', '');
+          const map = mapping[fieldKey];
+          if (map) {
+            const errEl = $(map.error);
+            if (errEl) errEl.textContent = err.message;
+            showErr(map.input, map.error, true);
+          }
+        });
+      } else if (response.message) {
+        const errEl = $('login-pw-err');
+        if (errEl) {
+          errEl.textContent = response.message;
+          showErr('login-pw', 'login-pw-err', true);
+        } else {
+          alert(response.message);
+        }
+      }
+      throw new Error(response.message || 'Login failed.');
+    }
 
     restore();
     if (response.success && response.data) {
       const user  = response.data.user;
       const token = response.data.accessToken || response.data.token;
-      // DB role: CUSTOMER, ADMIN, SUPERADMIN
       const role  = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? user.role : 'CUSTOMER';
       window.Auth.loginUser(
         { name: user.name, email: user.email, role, id: user.id, phone: user.phone },
@@ -1271,13 +1289,7 @@ $('loginForm')?.addEventListener('submit', async function(e){
     }
   } catch (err) {
     restore();
-    const errEl = $('login-pw-err');
-    if (errEl) {
-      errEl.textContent = err.message || 'Invalid email or password.';
-      showErr('login-pw', 'login-pw-err', true);
-    } else {
-      alert(err.message);
-    }
+    console.error('Login Error:', err);
   }
 });
 
@@ -1289,10 +1301,40 @@ $('registerForm')?.addEventListener('submit', async function(e){
   const phone = $('reg-phone')?.value.trim();
   const pw    = $('reg-pw')?.value;
   let ok = true;
-  if (!name)  { showErr('reg-name','reg-name-err',true); ok=false; } else showErr('reg-name','reg-name-err',false);
-  if (!validateEmail(email)) { showErr('reg-email','reg-email-err',true); ok=false; } else showErr('reg-email','reg-email-err',false);
-  if (!/^\d{10}$/.test(phone)) { showErr('reg-phone','reg-phone-err',true); ok=false; } else showErr('reg-phone','reg-phone-err',false);
-  if (!pw || pw.length < 8) { showErr('reg-pw','reg-pw-err',true); ok=false; } else showErr('reg-pw','reg-pw-err',false);
+
+  const nameRegex = /^[a-zA-Z\s.'-]+$/;
+  if (!name || name.length < 2 || name.length > 50 || !nameRegex.test(name)) {
+    showErr('reg-name','reg-name-err',true);
+    ok = false;
+  } else {
+    showErr('reg-name','reg-name-err',false);
+  }
+
+  if (!validateEmail(email)) {
+    showErr('reg-email','reg-email-err',true);
+    ok = false;
+  } else {
+    showErr('reg-email','reg-email-err',false);
+  }
+
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    showErr('reg-phone','reg-phone-err',true);
+    ok = false;
+  } else {
+    showErr('reg-phone','reg-phone-err',false);
+  }
+
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
+  const hasDigit = /\d/.test(pw);
+  const hasSpecial = /[^A-Za-z0-9]/.test(pw);
+  if (!pw || pw.length < 8 || !hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+    showErr('reg-pw','reg-pw-err',true);
+    ok = false;
+  } else {
+    showErr('reg-pw','reg-pw-err',false);
+  }
+
   if (!ok) return;
 
   const restore = btnLoading($('btn-register'), 'Creating Account…');
@@ -1306,7 +1348,38 @@ $('registerForm')?.addEventListener('submit', async function(e){
       body: JSON.stringify({ name, email, phone, password: pw, confirmPassword: pw, agreeToTerms: true }),
     });
     const response = await res.json();
-    if (!res.ok) throw new Error(response.message || 'Registration failed.');
+    if (!res.ok) {
+      if (response.errors && Array.isArray(response.errors)) {
+        const mapping = {
+          'name': { input: 'reg-name', error: 'reg-name-err' },
+          'email': { input: 'reg-email', error: 'reg-email-err' },
+          'phone': { input: 'reg-phone', error: 'reg-phone-err' },
+          'password': { input: 'reg-pw', error: 'reg-pw-err' }
+        };
+        response.errors.forEach(err => {
+          const fieldKey = err.field.replace('body.', '');
+          const map = mapping[fieldKey];
+          if (map) {
+            const errEl = $(map.error);
+            if (errEl) errEl.textContent = err.message;
+            showErr(map.input, map.error, true);
+          }
+        });
+      } else if (response.message) {
+        if (response.message.toLowerCase().includes('phone')) {
+          const errEl = $('reg-phone-err');
+          if (errEl) errEl.textContent = response.message;
+          showErr('reg-phone', 'reg-phone-err', true);
+        } else if (response.message.toLowerCase().includes('email')) {
+          const errEl = $('reg-email-err');
+          if (errEl) errEl.textContent = response.message;
+          showErr('reg-email', 'reg-email-err', true);
+        } else {
+          alert(response.message);
+        }
+      }
+      throw new Error(response.message || 'Registration failed.');
+    }
 
     restore();
     if (response.success && response.data) {
@@ -1320,12 +1393,12 @@ $('registerForm')?.addEventListener('submit', async function(e){
     }
   } catch (err) {
     restore();
-    alert(err.message || 'Registration failed. Please try again.');
+    console.error('Registration Error:', err);
   }
 });
 
 /* ── OTP verify ── */
-$('otpForm')?.addEventListener('submit',function(e){
+$('otpForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
   const otp=$$('.otp-digit').map(d=>d.value).join('');
   const errEl=$('otp-code-err');
@@ -1335,35 +1408,81 @@ $('otpForm')?.addEventListener('submit',function(e){
   }
   if(errEl)errEl.style.display='none';
 
-  const correctOtp = sessionStorage.getItem('im_auth_otp');
-  if (otp !== correctOtp && otp !== '123456') { // Allow 123456 fallback for manual testing
-    if(errEl){errEl.textContent='Invalid verification code. Please try again.';errEl.style.display='block';}
-    return;
-  }
-
+  const phone = sessionStorage.getItem('im_auth_phone') || '';
   const restore=btnLoading($('btn-verify-otp'),'Verifying…');
-  setTimeout(()=>{
+  const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/auth/otp/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ identifier: phone, otp: otp }),
+    });
+    const response = await res.json();
+    if (!res.ok) throw new Error(response.message || 'Verification failed.');
+
     restore();
-    if (window.Auth) {
-      const phone = sessionStorage.getItem('im_auth_phone') || '9876543210';
-      window.Auth.loginUser({ name: 'Priya Sharma', email: 'priya@gmail.com', role: 'user', phone: phone });
+    if (response.success && response.data) {
+      const user = response.data.user;
+      const token = response.data.accessToken || response.data.token;
+      const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? user.role : 'CUSTOMER';
+      window.Auth.loginUser(
+        { name: user.name, email: user.email, role, id: user.id, phone: user.phone },
+        token
+      );
+      handleAuthRedirect(role === 'CUSTOMER' ? 'user' : 'admin');
     }
-    handleAuthRedirect('user');
-  },1000);
+  } catch (err) {
+    restore();
+    if (errEl) {
+      errEl.textContent = err.message || 'Invalid verification code. Please try again.';
+      errEl.style.display = 'block';
+    } else {
+      alert(err.message);
+    }
+  }
 });
 
 /* ── Forgot form ── */
-$('forgotForm')?.addEventListener('submit',function(e){
+$('forgotForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
   const email=$('forgot-email')?.value.trim();
   if(!validateEmail(email)){showErr('forgot-email','forgot-email-err',true);return;}
   showErr('forgot-email','forgot-email-err',false);
+
   const restore=btnLoading($('btn-forgot'),'Sending…');
-  setTimeout(()=>{
+  const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
+    });
+    const response = await res.json();
+    if (!res.ok) {
+      const errEl = $('forgot-email-err');
+      if (errEl) {
+        errEl.textContent = response.message || 'Failed to send reset link.';
+        showErr('forgot-email', 'forgot-email-err', true);
+      } else {
+        alert(response.message);
+      }
+      throw new Error(response.message || 'Failed to send reset link.');
+    }
+
     restore();
     const suc=$('forgot-success');
-    if(suc)suc.style.display='block';
-  },1200);
+    if(suc) {
+      suc.textContent = '✅ Reset link sent! Check your inbox.';
+      suc.style.display='block';
+    }
+  } catch (err) {
+    restore();
+    console.error('Forgot Password Error:', err);
+  }
 });
 
 /* ════════════════════════════════════════════════════════════

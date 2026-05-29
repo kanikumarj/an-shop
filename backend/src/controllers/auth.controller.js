@@ -133,6 +133,8 @@ exports.register = async (req, res) => {
       phone: formattedPhone,
       referredById,
       isActive: true,
+      isEmailVerified: true,
+      isPhoneVerified: true,
     },
   });
 
