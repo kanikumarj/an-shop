@@ -459,7 +459,7 @@ function updateStepper(step){
 window.goToStep=updateStepper;
 
 /* Step 1 validation */
-document.getElementById('btnStep1')?.addEventListener('click',()=>{
+document.getElementById('btnStep1')?.addEventListener('click', async () => {
   const req=['fname','fmobile','faddr1','fcity','fstate','fpincode'];
   let valid=true;
   req.forEach(id=>{
@@ -468,15 +468,141 @@ document.getElementById('btnStep1')?.addEventListener('click',()=>{
     else el.style.borderColor='';
   });
   if(!valid){const first=document.querySelector('.f-input[style*="rgba(255"]');first?.focus();return;}
-  const name=document.getElementById('fname').value.split(' ')[0];
-  document.getElementById('confName').textContent=name;
-  updateStepper(2);
+  
+  // 1. Auth check
+  const user = window.Auth.getUser();
+  if (!user) {
+    alert('Please log in to complete your checkout.');
+    window.location.href = 'auth.html?redirect=checkout.html';
+    return;
+  }
+  
+  const btn = document.getElementById('btnStep1');
+  btn.disabled = true;
+  const origText = btn.innerHTML;
+  btn.innerHTML = '⏳ Processing...';
+  
+  try {
+    // 2. Sync cart to DB
+    const cart = window.Cart.getCart();
+    await window.productsPromise; // Wait for PRODUCTS to be loaded
+    const syncItems = cart.map(item => {
+      const prod = window.PRODUCTS.find(p => p.id === item.id);
+      return {
+        productId: prod ? (prod.dbId || prod.id) : item.id,
+        quantity: item.qty
+      };
+    });
+    await window.API.post('/cart/sync', { items: syncItems });
+    
+    // 3. Save shipping address
+    const fname   = document.getElementById('fname').value.trim();
+    const fmobile = document.getElementById('fmobile').value.trim();
+    const faddr1  = document.getElementById('faddr1').value.trim();
+    const fcity   = document.getElementById('fcity').value.trim();
+    const fstate  = document.getElementById('fstate').value.trim();
+    const fpin    = document.getElementById('fpincode').value.trim();
+    
+    const addressRes = await window.API.post('/users/addresses', {
+      fullName: fname,
+      phone: fmobile,
+      line1: faddr1,
+      city: fcity,
+      state: fstate,
+      pincode: fpin,
+      type: 'HOME',
+    });
+    const addressId = addressRes.data?.id || addressRes.id;
+    
+    // 4. Create pending order
+    const orderRes = await window.API.post('/orders', {
+      addressId: addressId,
+      paymentMethod: 'UPI',
+    });
+    const order = orderRes.data || orderRes;
+    window.currentOrderId = order.id;
+    window.currentOrderNumber = order.orderNumber;
+    
+    // 5. Initiate UPI payment to get deep links
+    const payRes = await window.API.post(`/payments/initiate/${order.id}`);
+    const payData = payRes.data || payRes;
+    
+    // 6. Populate Step 2 Details
+    document.getElementById('generatedOrderId').textContent = order.orderNumber;
+    document.getElementById('generatedRef').textContent = `Reference: ${payData.payment?.reference || 'N/A'}`;
+    document.getElementById('confOrderId').textContent = order.orderNumber;
+    document.getElementById('confName').textContent = fname.split(' ')[0];
+    
+    // Update payment instructions and amount
+    document.querySelectorAll('.pay-amount').forEach(el => el.textContent = '₹' + parseFloat(order.total).toFixed(2));
+    document.querySelectorAll('.qr-label').forEach(el => el.textContent = `Scan to Pay ₹${parseFloat(order.total).toFixed(2)}`);
+    
+    // Update Merchant UPI ID display
+    const upiDetails = payData.upiDetails || {};
+    document.querySelector('.upi-id-val').textContent = upiDetails.merchantUpiId || 'yourshop@upi';
+    
+    // Generate dynamic QR code
+    const upiUri = payData.deepLinks?.upi;
+    const qrInner = document.querySelector('.qr-inner');
+    if (qrInner) {
+      if (upiDetails.qrCodeUrl) {
+        // Display admin custom QR image
+        const src = upiDetails.qrCodeUrl.startsWith('/') ? `${window.BACKEND_URL}${upiDetails.qrCodeUrl}` : upiDetails.qrCodeUrl;
+        qrInner.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:contain;background:#fff;padding:4px;" />`;
+      } else if (upiUri) {
+        // Dynamically generate QR code
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}`;
+        qrInner.innerHTML = `<img src="${qrUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;padding:4px;" />`;
+      } else {
+        qrInner.innerHTML = `<div class="qr-center">🏠</div>`;
+      }
+    }
+    
+    // Copy UPI ID button setup
+    window.activeMerchantUpiId = upiDetails.merchantUpiId || 'yourshop@upi';
+    
+    // App redirection links
+    window.deepLinks = payData.deepLinks || {};
+    
+    // Advance to payment step
+    window.goToStep(2);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to place order: ' + (err.message || 'Unknown error'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
 });
 
 /* UPI copy */
-document.getElementById('copyUpiBtn')?.addEventListener('click',function(){
-  navigator.clipboard.writeText('indianmade@ybl');
+document.getElementById('copyUpiBtn')?.addEventListener('click', function(){
+  const upiId = window.activeMerchantUpiId || 'indianmade@ybl';
+  navigator.clipboard.writeText(upiId);
   this.textContent='✓ Copied!';setTimeout(()=>this.textContent='📋 Copy UPI ID',2000);
+});
+
+/* Pay App Handlers */
+document.querySelector('.pa-gpay')?.addEventListener('click', () => {
+  if (window.deepLinks?.gpay) {
+    window.location.href = window.deepLinks.gpay;
+  } else {
+    alert('Google Pay redirection is not available on this device.');
+  }
+});
+document.querySelector('.pa-phonepe')?.addEventListener('click', () => {
+  if (window.deepLinks?.phonePe) {
+    window.location.href = window.deepLinks.phonePe;
+  } else {
+    alert('PhonePe redirection is not available on this device.');
+  }
+});
+document.querySelector('.pa-paytm')?.addEventListener('click', () => {
+  if (window.deepLinks?.paytm) {
+    window.location.href = window.deepLinks.paytm;
+  } else {
+    alert('Paytm redirection is not available on this device.');
+  }
 });
 
 /* File upload */
@@ -501,13 +627,44 @@ if(uz){
 }
 
 /* Confirm order */
-window.confirmOrder=function(){
+window.confirmOrder=async function(){
   const utr=document.getElementById('utrInput').value.trim();
   if(!utr){document.getElementById('utrInput').style.borderColor='rgba(255,122,122,.5)';document.getElementById('utrInput').focus();return;}
   document.getElementById('utrInput').style.borderColor='';
 
-  // Save order details to localStorage
+  const fileInput = document.getElementById('screenFile');
+  if (!fileInput.files[0]) {
+    alert('Please upload your payment screenshot.');
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirm');
+  btn.disabled = true;
+  const origText = btn.innerHTML;
+  btn.innerHTML = '⏳ Confirming Payment...';
+
   try {
+    const formData = new FormData();
+    formData.append('screenshot', fileInput.files[0]);
+    formData.append('utrNumber', utr);
+    formData.append('paidAmount', checkoutData.total);
+
+    const res = await fetch(`${window.BACKEND_URL}/api/v1/payments/${window.currentOrderId}/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${window.Auth.getToken()}` },
+      body: formData,
+      credentials: 'include',
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Failed to upload screenshot');
+
+    // Clear cart and checkout cache
+    if (window.Cart) {
+      window.Cart.clearCart();
+    }
+    
+    // Save details to localStorage for track page fallback
     const fname  = document.getElementById('fname')?.value  || '';
     const fmobile= document.getElementById('fmobile')?.value|| '';
     const faddr1 = document.getElementById('faddr1')?.value || '';
@@ -515,8 +672,9 @@ window.confirmOrder=function(){
     const fstate = document.getElementById('fstate')?.value || '';
     const fpin   = document.getElementById('fpincode')?.value|| '';
     const orderDetails = {
-      orderId: orderId,
-      refCode: refCode,
+      orderId: window.currentOrderId,
+      orderNumber: window.currentOrderNumber,
+      refCode: window.currentOrderNumber,
       items: checkoutData.items,
       total: checkoutData.total,
       grandTotal: checkoutData.total,
@@ -524,24 +682,21 @@ window.confirmOrder=function(){
       placedAt: new Date().toISOString(),
       date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       utr: utr,
-      status: 'Pending Verification',
+      status: 'SCREENSHOT_UPLOADED',
       buyer: {
         name:    fname,
         phone:   fmobile,
         address: [faddr1, fcity, fstate, fpin].filter(Boolean).join(', '),
-        city:    fcity,
-        state:   fstate,
-        pincode: fpin
       }
     };
     localStorage.setItem('im_last_order', JSON.stringify(orderDetails));
 
-    // Send real WhatsApp notification via DBuddyZ!
+    // Send WhatsApp notification
     if (fmobile) {
       const itemsCount = (checkoutData.items || []).reduce((sum, item) => sum + item.qty, 0);
       const textMessage = `🎉 *Order Placed Successfully! — Indianmade* 🛍️\n\n` +
                           `Hi ${fname}! Your order has been received and is pending payment verification.\n\n` +
-                          `📋 *Order ID:* ${orderId}\n` +
+                          `📋 *Order ID:* ${window.currentOrderNumber || window.currentOrderId}\n` +
                           `🛍️ *Total Items:* ${itemsCount}\n` +
                           `💰 *Total Paid:* ₹${checkoutData.total}\n` +
                           `🔑 *UTR Number:* ${utr}\n\n` +
@@ -553,38 +708,26 @@ window.confirmOrder=function(){
       waForm.append('body', textMessage);
       waForm.append('fullmessage', '1');
 
-      fetch('https://dbuddyz.prismswift.com/send/', {
-        method: 'POST',
-        body: waForm
-      })
-      .then(res => res.json())
-      .then(data => console.log('WhatsApp Order Notification Response:', data))
-      .catch(err => console.error('WhatsApp Notification Error:', err));
+      fetch('https://dbuddyz.prismswift.com/send/', { method: 'POST', body: waForm })
+        .catch(err => console.error('WhatsApp Notification Error:', err));
     }
 
-    // Clear cart and checkout cache
-    if (window.Cart) {
-      window.Cart.clearCart();
+    updateStepper(4);
+    // Confetti effect
+    for(let i=0;i<20;i++){
+      setTimeout(()=>{
+        const el=document.createElement('div');
+        el.style.cssText=`position:fixed;top:${Math.random()*60}%;left:${Math.random()*100}%;font-size:${1+Math.random()*1.5}rem;pointer-events:none;z-index:9999;animation:confDrop 2s forwards;`;
+        el.textContent=['🌀','🌶️','🍌','🎉','⭐','✨','🎊'][Math.floor(Math.random()*7)];
+        document.body.appendChild(el);
+        setTimeout(()=>el.remove(),2100);
+      },i*100);
     }
   } catch (err) {
-    console.error("Order completion error:", err);
-  }
-
-  updateStepper(4);
-  // Confetti-like effect
-  for(let i=0;i<20;i++){
-    setTimeout(()=>{
-      const el=document.createElement('div');
-      el.style.cssText=`position:fixed;top:${Math.random()*60}%;left:${Math.random()*100}%;font-size:${1+Math.random()*1.5}rem;pointer-events:none;z-index:9999;animation:confDrop 2s forwards;`;
-      el.textContent=['🌀','🌶️','🍌','🎉','⭐','✨','🎊'][Math.floor(Math.random()*7)];
-      document.body.appendChild(el);
-      setTimeout(()=>el.remove(),2100);
-    },i*100);
-  }
-  if(!document.getElementById('confDropStyle')){
-    const s=document.createElement('style');s.id='confDropStyle';
-    s.textContent='@keyframes confDrop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(80px) rotate(360deg);opacity:0}}';
-    document.head.appendChild(s);
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
   }
 };
 
@@ -596,6 +739,13 @@ window.addEventListener('scroll',()=>{
 // Initialize Checkout Data
 let checkoutData = null;
 function initCheckout() {
+  const user = window.Auth.getUser();
+  if (!user) {
+    alert('Please log in to complete your checkout.');
+    window.location.href = 'auth.html?redirect=checkout.html';
+    return;
+  }
+
   try {
     const raw = localStorage.getItem('im_checkout_cart');
     if (!raw) {

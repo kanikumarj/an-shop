@@ -59,6 +59,7 @@ const rateLimit    = require('express-rate-limit');
 const { protect, adminOnly, restrictTo } = require('../middleware/auth');
 const { validate }  = require('../middleware/validate');
 const { z }         = require('zod');
+const { uploadQrCode } = require('../config/cloudinary');
 
 // ─── Controllers ───────────────────────────────────────────────────────────────
 const dashboard = require('../controllers/admin/adminDashboard.controller');
@@ -236,6 +237,7 @@ router.delete('/coupons/:id', coupons.deleteCoupon);
 
 router.get('/settings',                 settings.getSettings);
 router.put('/settings', restrictTo('SUPERADMIN'), settings.updateSettings);
+router.post('/settings/upload-qr', restrictTo('SUPERADMIN'), uploadQrCode, settings.uploadQrCode);
 
 // ─────────────────────────────────────────────────────────────────────────────
 //   SUB-ROUTER MOUNTS

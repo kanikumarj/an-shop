@@ -77,9 +77,35 @@ const generatePaymentReference = async () => {
  *
  * Format: upi://pay?pa=<UPI_ID>&pn=<NAME>&am=<AMOUNT>&tn=<NOTE>&cu=INR
  */
-const buildUpiDeepLink = (amount, referenceCode, orderId) => {
-  const upiId      = process.env.MERCHANT_UPI_ID   || 'yourshop@upi';
-  const merchantName = process.env.MERCHANT_NAME   || 'An Shop';
+const buildUpiDeepLink = async (amount, referenceCode, orderId) => {
+  let upiId      = process.env.MERCHANT_UPI_ID   || 'yourshop@upi';
+  let merchantName = process.env.MERCHANT_NAME   || 'An Shop';
+  let qrCodeUrl   = null;
+
+  try {
+    const cached = await cache.get('settings:global');
+    let settings = cached;
+    if (!settings) {
+      const dbSettings = await prisma.setting.findMany();
+      settings = dbSettings.reduce((acc, s) => {
+        acc[s.key] = s.value;
+        return acc;
+      }, {});
+      await cache.set('settings:global', settings, 24 * 60 * 60);
+    }
+    if (settings.merchant_upi_id?.text) {
+      upiId = settings.merchant_upi_id.text;
+    }
+    if (settings.merchant_name?.text) {
+      merchantName = settings.merchant_name.text;
+    }
+    if (settings.merchant_qr_code?.url) {
+      qrCodeUrl = settings.merchant_qr_code.url;
+    }
+  } catch (err) {
+    logger.error('Failed to load merchant settings from DB, using env fallback:', err);
+  }
+
   const note       = `${referenceCode} Order#${orderId.slice(-6)}`;
 
   const params = new URLSearchParams({
@@ -98,6 +124,7 @@ const buildUpiDeepLink = (amount, referenceCode, orderId) => {
     displayNote: note,
     merchantUpiId: upiId,
     merchantName,
+    qrCodeUrl,
   };
 };
 

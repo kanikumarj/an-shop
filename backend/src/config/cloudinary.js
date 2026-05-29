@@ -93,7 +93,7 @@ const makeLocalStorage = (prefix) => {
 };
 
 // ─── Storage Configurations ───────────────────────────────────────────────────
-let productStorage, categoryStorage, avatarStorage, screenshotStorage, reviewStorage;
+let productStorage, categoryStorage, avatarStorage, screenshotStorage, reviewStorage, qrStorage;
 
 if (isCloudinaryConfigured) {
   // ─── 1. Product Main Images ───────────────────────────────────────────────────
@@ -190,6 +190,18 @@ if (isCloudinaryConfigured) {
       ],
     }),
   });
+  // ─── 7. QR Codes ─────────────────────────────────────────────────────────────
+  qrStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+      folder: `${process.env.CLOUDINARY_FOLDER || 'an-shop'}/qr-codes`,
+      format: 'png',
+      public_id: makePublicId('qr'),
+      transformation: [
+        { width: 400, height: 400, crop: 'limit', quality: 'auto:good' },
+      ],
+    }),
+  });
 } else {
   // Use local disk storage fallback
   productStorage = makeLocalStorage('prod');
@@ -197,6 +209,7 @@ if (isCloudinaryConfigured) {
   avatarStorage = makeLocalStorage('avatar');
   screenshotStorage = makeLocalStorage('ss');
   reviewStorage = makeLocalStorage('rev');
+  qrStorage = makeLocalStorage('qr');
 }
 
 // ─── Multer Upload Instances ───────────────────────────────────────────────────
@@ -268,6 +281,16 @@ const uploadReviewImages = multer({
   fileFilter: imageFilter,
   limits: { fileSize: MAX_REVIEW_SIZE, files: 5 },
 }).array('images', 5);
+
+/**
+ * Upload QR code
+ * Field name: "qrCode"
+ */
+const uploadQrCode = multer({
+  storage: qrStorage,
+  fileFilter: imageFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+}).single('qrCode');
 
 // ─── Direct Upload Helpers ────────────────────────────────────────────────────
 
@@ -434,6 +457,7 @@ module.exports = {
   uploadAvatar,
   uploadPaymentScreenshot,
   uploadReviewImages,
+  uploadQrCode,
   // Direct helpers
   uploadToCloudinary,
   deleteFromCloudinary,

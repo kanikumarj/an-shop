@@ -33,6 +33,26 @@ exports.generateTrackingId = generateTrackingId;
 
 // ─── Courier Catalog ───────────────────────────────────────────────────────────
 const COURIERS = {
+  ST_COURIER: {
+    name:        'ST Courier',
+    trackingUrl: (id) => `https://www.stcourier.com/tracking?awb=${id}`,
+    slaDay:      { metro: 2, tier2: 3, tier3: 5 },
+  },
+  DTDC: {
+    name:        'DTDC',
+    trackingUrl: (id) => `https://www.dtdc.in/tracking/tracking_results_v2.asp?TType=T&Ttxt=${id}`,
+    slaDay:      { metro: 3, tier2: 4, tier3: 7 },
+  },
+  INDIA_POST: {
+    name:        'India Post',
+    trackingUrl: (id) => `https://www.indiapost.gov.in/track-consignment?trackId=${id}`,
+    slaDay:      { metro: 4, tier2: 6, tier3: 10 },
+  },
+  DHL: {
+    name:        'DHL',
+    trackingUrl: (id) => `https://www.dhl.com/in-en/home/tracking.html?tracking-id=${id}`,
+    slaDay:      { metro: 2, tier2: 3, tier3: 5 },
+  },
   BLUEDART: {
     name:        'Blue Dart',
     trackingUrl: (id) => `https://www.bluedart.com/tracking?trackid=${id}`,
@@ -43,11 +63,6 @@ const COURIERS = {
     trackingUrl: (id) => `https://www.delhivery.com/track/package/${id}`,
     slaDay:      { metro: 2, tier2: 3, tier3: 5 },
   },
-  DTDC: {
-    name:        'DTDC',
-    trackingUrl: (id) => `https://www.dtdc.in/tracking/tracking_results_v2.asp?TType=T&Ttxt=${id}`,
-    slaDay:      { metro: 3, tier2: 4, tier3: 7 },
-  },
   EKART: {
     name:        'Ekart Logistics',
     trackingUrl: (id) => `https://ekartlogistics.com/track/${id}`,
@@ -57,11 +72,6 @@ const COURIERS = {
     name:        'Xpressbees',
     trackingUrl: (id) => `https://www.xpressbees.com/track?awb=${id}`,
     slaDay:      { metro: 2, tier2: 3, tier3: 6 },
-  },
-  INDIA_POST: {
-    name:        'India Post',
-    trackingUrl: (id) => `https://www.indiapost.gov.in/track-consignment?trackId=${id}`,
-    slaDay:      { metro: 4, tier2: 6, tier3: 10 },
   },
   SHADOWFAX: {
     name:        'Shadowfax',

@@ -118,6 +118,8 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 .os-transit{background:rgba(77,224,255,.1);border:1px solid rgba(77,224,255,.2);color:var(--blue);}
 .os-delivered{background:rgba(93,232,141,.08);border:1px solid rgba(93,232,141,.18);color:var(--green);}
 .os-pending{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);color:var(--gold);}
+.os-confirmed{background:rgba(77,224,255,.08);border:1px solid rgba(77,224,255,.18);color:var(--blue);}
+.os-cancelled{background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.18);color:var(--red);}
 .mini-table a{color:var(--gold);font-family:var(--mono);font-size:.78rem;}
 .mini-table a:hover{text-decoration:underline;}
 
@@ -805,7 +807,7 @@ document.getElementById('saveProfileBtn')?.addEventListener('click',function(){
   setTimeout(()=>{this.textContent=orig;this.style.background='';},2500);
 });
 
-/* ══ STORE.JS INTEGRATION ══ */
+/* ══ LIVE API INTEGRATION ══ */
 (function(){
   /* 1. Auth guard — must be logged in */
   const user = Auth.getUser();
@@ -849,39 +851,204 @@ document.getElementById('saveProfileBtn')?.addEventListener('click',function(){
   if(editEmail) editEmail.value = user.email || '';
   if(editPhone) editPhone.value = user.phone || '';
 
-  /* 3. Pull real last order from localStorage */
-  let lastOrder = null;
-  try{ lastOrder = JSON.parse(localStorage.getItem('im_last_order')||'null'); } catch(e){}
-  // Also try im_checkout_cart as a fallback (set by checkout.html)
-  if(!lastOrder){
-    try{ lastOrder = JSON.parse(localStorage.getItem('im_checkout_cart')||'null'); } catch(e){}
+  /* ── Status badge helper ── */
+  const STATUS_CLASSES = {
+    PENDING:            { cls: 'os-pending',   label: '⏳ Pending' },
+    SCREENSHOT_UPLOADED:{ cls: 'os-pending',   label: '💳 Payment Submitted' },
+    PAYMENT_VERIFIED:   { cls: 'os-confirmed', label: '✅ Verified' },
+    PROCESSING:         { cls: 'os-confirmed', label: '👩‍🍳 Preparing' },
+    CONFIRMED:          { cls: 'os-confirmed', label: '✅ Confirmed' },
+    PACKED:             { cls: 'os-confirmed', label: '📦 Packed' },
+    SHIPPED:            { cls: 'os-transit',   label: '🚚 Shipped' },
+    IN_TRANSIT:         { cls: 'os-transit',   label: '🚚 In Transit' },
+    OUT_FOR_DELIVERY:   { cls: 'os-transit',   label: '🏍️ Out for Delivery' },
+    DELIVERED:          { cls: 'os-delivered',  label: '✓ Delivered' },
+    CANCELLED:          { cls: 'os-cancelled',  label: '❌ Cancelled' },
+    REFUNDED:           { cls: 'os-cancelled',  label: '💸 Refunded' },
+    PAYMENT_REJECTED:   { cls: 'os-cancelled',  label: '❌ Payment Rejected' },
+  };
+
+  function getStatusBadge(status){
+    const s = STATUS_CLASSES[status] || { cls: 'os-pending', label: status };
+    return `<span class="order-status ${s.cls}">${s.label}</span>`;
   }
 
-  if(lastOrder && lastOrder.orderId){
-    const tbody = document.querySelector('#section-overview .mini-table tbody');
-    if(tbody){
-      const itemCount = (lastOrder.items||[]).reduce((s,i)=>s+(i.qty||1),0);
-      const total     = lastOrder.total || lastOrder.grandTotal || lastOrder.subtotal || 0;
-      const date      = lastOrder.placedAt ? new Date(lastOrder.placedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
-      const trackUrl  = `track.html?order=${encodeURIComponent(lastOrder.orderId)}`;
-      // Prepend a real row
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td><a href="${trackUrl}">${lastOrder.orderId}</a></td>
-        <td>${itemCount} item${itemCount!==1?'s':''}</td>
-        <td>${date}</td>
-        <td style="color:var(--gold);font-weight:700;">₹${Number(total).toFixed(0)}</td>
-        <td><span class="order-status os-pending">Confirmed</span></td>
-        <td><button class="btn-sm" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">Track</button></td>`;
-      tbody.prepend(newRow);
+  function getActionBtn(order){
+    const s = order.status;
+    const trackUrl = `track.html?orderId=${order.id}`;
+    if(['SHIPPED','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(s)){
+      return `<button class="btn-sm" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">🚚 Track</button>`;
     }
-    // Update stats — total orders
-    const statVal = document.querySelector('.stat-card:first-child .stat-val');
-    if(statVal && !isNaN(+statVal.textContent)){
-      const cur = +statVal.textContent || 0;
-      statVal.textContent = cur + 1;
+    if(s === 'DELIVERED'){
+      return `<button class="btn-sm green-btn" style="padding:5px 12px;">⭐ Review</button>
+              <button class="btn-sm ghost" onclick="location.href='shop.html'" style="padding:5px 12px;">Reorder</button>`;
+    }
+    if(['PENDING','SCREENSHOT_UPLOADED','PAYMENT_VERIFIED','PROCESSING','CONFIRMED','PACKED'].includes(s)){
+      return `<button class="btn-sm" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">View</button>`;
+    }
+    return `<button class="btn-sm ghost" style="padding:5px 12px;">View</button>`;
+  }
+
+  /* ── 3. Fetch real orders from API ── */
+  async function loadOrders(){
+    try {
+      const [ordersRes, summaryRes] = await Promise.allSettled([
+        API.get('/orders?limit=20&sortBy=createdAt&sortDir=desc'),
+        API.get('/orders/summary'),
+      ]);
+
+      const orders  = ordersRes.status === 'fulfilled' ? (ordersRes.value?.data || []) : [];
+      const summary = summaryRes.status === 'fulfilled' ? (summaryRes.value?.data || {}) : {};
+
+      // Update stats
+      updateStats(summary, orders);
+
+      // Update recent orders table (overview)
+      updateRecentOrdersTable(orders.slice(0, 4));
+
+      // Update full orders panel
+      updateOrderCards(orders);
+
+    } catch(err){
+      console.warn('Failed to load orders from API, falling back to localStorage:', err.message);
+      fallbackToLocal();
     }
   }
+
+  function updateStats(summary, orders){
+    const statCards = document.querySelectorAll('.stat-card');
+    if(statCards.length >= 1){
+      const totalOrders = summary.totalOrders || orders.length || 0;
+      const valEl = statCards[0].querySelector('.stat-val');
+      if(valEl){ valEl.textContent = totalOrders; valEl.dataset.count = totalOrders; }
+    }
+    if(statCards.length >= 3){
+      const totalSpent = summary.totalSpent || orders.reduce((s,o) => s + parseFloat(o.total||0), 0);
+      const valEl = statCards[2].querySelector('.stat-val');
+      if(valEl) valEl.textContent = '₹' + Number(totalSpent).toLocaleString('en-IN',{maximumFractionDigits:0});
+    }
+    if(statCards.length >= 4 && summary.rewardPoints){
+      const valEl = statCards[3].querySelector('.stat-val');
+      if(valEl) valEl.textContent = summary.rewardPoints;
+    }
+    // Update orders count in sidebar badge
+    const orderBadge = document.querySelector('[data-section="orders"] .sni-badge');
+    if(orderBadge && orders.length > 0) orderBadge.textContent = orders.length;
+  }
+
+  function updateRecentOrdersTable(orders){
+    const tbody = document.querySelector('#section-overview .mini-table tbody');
+    if(!tbody || orders.length === 0) return;
+
+    tbody.innerHTML = orders.map(order => {
+      const itemCount = order._count?.items || order.items?.length || 0;
+      const date = new Date(order.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+      const total = Number(order.total||0).toFixed(0);
+      const trackUrl = `track.html?orderId=${order.id}`;
+      const orderNum = order.orderNumber || order.id.slice(0,12);
+      const isTrackable = ['SHIPPED','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(order.status);
+
+      return `<tr>
+        <td><a href="${trackUrl}">${orderNum}</a></td>
+        <td>${itemCount} item${itemCount!==1?'s':''}</td>
+        <td>${date}</td>
+        <td style="color:var(--gold);font-weight:700;">₹${total}</td>
+        <td>${getStatusBadge(order.status)}</td>
+        <td>${isTrackable
+          ? `<button class="btn-sm" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">Track</button>`
+          : order.status === 'DELIVERED'
+            ? `<button class="btn-sm ghost" style="padding:5px 12px;">Invoice</button>`
+            : `<button class="btn-sm ghost" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">View</button>`
+        }</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function updateOrderCards(orders){
+    const ordersPanel = document.querySelector('#section-orders .dash-card');
+    if(!ordersPanel) return;
+
+    // Update header count
+    const hdrH2 = ordersPanel.querySelector('.card-hdr h2');
+    if(hdrH2) hdrH2.innerHTML = `My Orders <span style="color:var(--muted);font-size:.85rem;font-weight:400;">(${orders.length} order${orders.length!==1?'s':''})</span>`;
+
+    // Remove existing order cards
+    ordersPanel.querySelectorAll('.order-card').forEach(c => c.remove());
+
+    if(orders.length === 0){
+      const emptyEl = document.createElement('div');
+      emptyEl.style.cssText = 'text-align:center;padding:40px;color:var(--muted);font-size:.9rem;';
+      emptyEl.innerHTML = '📦 No orders yet. <a href="shop.html" style="color:var(--gold);">Start shopping!</a>';
+      ordersPanel.appendChild(emptyEl);
+      return;
+    }
+
+    orders.forEach(order => {
+      const card = document.createElement('div');
+      card.className = 'order-card';
+
+      const orderNum = order.orderNumber || order.id.slice(0,12);
+      const date = new Date(order.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) + ' · ' + new Date(order.createdAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const total = '₹' + Number(order.total||0).toFixed(0);
+
+      // Build item chips
+      let itemsHtml = '';
+      const items = order.items || [];
+      items.slice(0, 4).forEach(item => {
+        const name = item.productName || item.name || 'Item';
+        const qty = item.quantity || item.qty || 1;
+        const img = item.imageUrl;
+        const emoji = img ? `<img src="${img}" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;" alt="">` : '📦';
+        itemsHtml += `<span class="oc-item-chip">${emoji} ${name} ×${qty}</span>`;
+      });
+      if(items.length > 4) itemsHtml += `<span class="oc-item-chip" style="opacity:.6;">+${items.length - 4} more</span>`;
+
+      card.innerHTML = `
+        <div class="oc-top">
+          <div>
+            <div class="oc-id">#${orderNum}</div>
+            <div class="oc-date" style="margin-top:2px;">${date}</div>
+          </div>
+          ${getStatusBadge(order.status)}
+        </div>
+        <div class="oc-items">${itemsHtml}</div>
+        <div class="oc-bottom">
+          <div class="oc-total">${total}</div>
+          <div class="oc-actions">${getActionBtn(order)}</div>
+        </div>`;
+
+      ordersPanel.appendChild(card);
+    });
+  }
+
+  /* ── Fallback to localStorage data ── */
+  function fallbackToLocal(){
+    let lastOrder = null;
+    try{ lastOrder = JSON.parse(localStorage.getItem('im_last_order')||'null'); } catch(e){}
+    if(!lastOrder){ try{ lastOrder = JSON.parse(localStorage.getItem('im_checkout_cart')||'null'); } catch(e){} }
+
+    if(lastOrder && lastOrder.orderId){
+      const tbody = document.querySelector('#section-overview .mini-table tbody');
+      if(tbody){
+        const itemCount = (lastOrder.items||[]).reduce((s,i)=>s+(i.qty||1),0);
+        const total     = lastOrder.total || lastOrder.grandTotal || lastOrder.subtotal || 0;
+        const date      = lastOrder.placedAt ? new Date(lastOrder.placedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
+        const trackUrl  = `track.html?orderId=${encodeURIComponent(lastOrder.orderId)}`;
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+          <td><a href="${trackUrl}">${lastOrder.orderId}</a></td>
+          <td>${itemCount} item${itemCount!==1?'s':''}</td>
+          <td>${date}</td>
+          <td style="color:var(--gold);font-weight:700;">₹${Number(total).toFixed(0)}</td>
+          <td><span class="order-status os-pending">Confirmed</span></td>
+          <td><button class="btn-sm" onclick="location.href='${trackUrl}'" style="padding:5px 12px;">Track</button></td>`;
+        tbody.prepend(newRow);
+      }
+    }
+  }
+
+  /* ── Kick off order loading ── */
+  loadOrders();
 
   /* 4. Logout */
   document.getElementById('logoutBtn')?.addEventListener('click',()=>{
@@ -889,7 +1056,7 @@ document.getElementById('saveProfileBtn')?.addEventListener('click',function(){
     location.href = 'auth.html';
   });
 
-  /* 5. Cart badge in nav (if a cart icon ever added) */
+  /* 5. Cart badge in nav */
   Cart.updateBadge();
 
 })();

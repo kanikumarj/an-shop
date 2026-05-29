@@ -5,6 +5,7 @@
 const { prisma } = require('../../config/database');
 const { cache } = require('../../config/redis');
 const { ApiResponse } = require('../../utils/ApiResponse');
+const AppError = require('../../utils/AppError');
 
 exports.getSettings = async (req, res) => {
   const settings = await prisma.setting.findMany({ orderBy: { group: 'asc' } });
@@ -27,4 +28,12 @@ exports.updateSettings = async (req, res) => {
   }
   await cache.del('settings:global');
   ApiResponse.success(res, null, 'Settings updated.');
+};
+
+exports.uploadQrCode = async (req, res) => {
+  if (!req.file) throw AppError.badRequest('No QR code image uploaded.');
+  ApiResponse.success(res, {
+    url: req.file.path || req.file.secure_url,
+    publicId: req.file.filename,
+  }, 'QR code uploaded successfully.');
 };

@@ -56,6 +56,7 @@ const ADMIN_ORDER_INCLUDE = {
   address: true,
   payments: {
     orderBy: { createdAt: 'desc' },
+    include: { screenshots: { orderBy: { createdAt: 'desc' } } },
   },
   statusHistory: { orderBy: { createdAt: 'asc' } },
   tracking: true,
@@ -249,14 +250,14 @@ exports.verifyPayment = async (req, res) => {
 
   if (!order) throw AppError.notFound('Order');
 
-  if (order.status !== 'SCREENSHOT_UPLOADED') {
+  if (!['PENDING', 'SCREENSHOT_UPLOADED', 'PAYMENT_PENDING'].includes(order.status)) {
     throw AppError.badRequest(
-      `Payment verification only applies to orders with status SCREENSHOT_UPLOADED. Current: ${order.status}.`
+      `Payment verification applies to orders awaiting payment. Current status: ${order.status}.`
     );
   }
 
   const isApproved = action === 'APPROVE';
-  const newStatus  = isApproved ? 'PAYMENT_VERIFIED' : 'PAYMENT_REJECTED';
+  const newStatus  = isApproved ? 'PROCESSING' : 'PAYMENT_REJECTED'; // APPROVE → jump straight to Preparing
   const newPaymentStatus = isApproved ? 'VERIFIED' : 'REJECTED';
 
   await prisma.order.update({
@@ -266,14 +267,29 @@ exports.verifyPayment = async (req, res) => {
       paymentStatus: newPaymentStatus,
       paidAt:        isApproved ? new Date() : null,
       statusHistory: {
-        create: {
-          fromStatus: order.status,
-          toStatus:   newStatus,
-          note:       isApproved
-            ? (note || 'Payment verified by admin')
-            : (rejectionReason || 'Payment screenshot rejected'),
-          changedBy: req.user.id,
-        },
+        create: isApproved
+          ? [
+              {
+                fromStatus: order.status,
+                toStatus:   'PAYMENT_VERIFIED',
+                note:       note || 'Payment verified by admin',
+                changedBy:  req.user.id,
+              },
+              {
+                fromStatus: 'PAYMENT_VERIFIED',
+                toStatus:   'PROCESSING',
+                note:       'Order automatically moved to Preparing after payment verification',
+                changedBy:  req.user.id,
+              },
+            ]
+          : [
+              {
+                fromStatus: order.status,
+                toStatus:   'PAYMENT_REJECTED',
+                note:       rejectionReason || 'Payment screenshot rejected',
+                changedBy:  req.user.id,
+              },
+            ],
       },
     },
   });

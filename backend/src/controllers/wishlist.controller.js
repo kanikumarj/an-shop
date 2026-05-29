@@ -62,13 +62,24 @@ exports.moveToCart = async (req, res) => {
   if (!item) throw AppError.notFound('Wishlist item');
   if (item.product.stock < 1) throw AppError.badRequest('Product is out of stock.');
 
-  await prisma.cartItem.upsert({
+  const existingWishItem = await prisma.cartItem.findFirst({
     where: {
-      userId_productId_variantId: { userId: req.user.id, productId: req.params.productId, variantId: null },
+      userId: req.user.id,
+      productId: req.params.productId,
+      variantId: null,
     },
-    update: { quantity: { increment: 1 } },
-    create: { userId: req.user.id, productId: req.params.productId, variantId: null, quantity: 1 },
   });
+
+  if (existingWishItem) {
+    await prisma.cartItem.update({
+      where: { id: existingWishItem.id },
+      data: { quantity: { increment: 1 } },
+    });
+  } else {
+    await prisma.cartItem.create({
+      data: { userId: req.user.id, productId: req.params.productId, variantId: null, quantity: 1, priceAtAdd: item.product.basePrice },
+    });
+  }
 
   await prisma.wishlistItem.deleteMany({
     where: { userId: req.user.id, productId: req.params.productId },

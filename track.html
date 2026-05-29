@@ -544,18 +544,6 @@ window.addEventListener('scroll',()=>{
 const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('up');io.unobserve(e.target);}}),{threshold:.1});
 document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
 
-/* Truck animation entrance */
-setTimeout(()=>{
-  const tw=document.getElementById('truckWrap');
-  if(tw){tw.style.transition='left 2.5s cubic-bezier(0.4,0,0.2,1)';tw.style.left='80%';}
-},400);
-
-/* Copy tracking */
-document.getElementById('copyTrack')?.addEventListener('click',function(){
-  navigator.clipboard.writeText('EX123456789IN');
-  this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000);
-});
-
 /* Rating stars */
 let rated=0;
 document.querySelectorAll('.fs').forEach(star=>{
@@ -576,126 +564,464 @@ document.getElementById('submitRating')?.addEventListener('click',function(){
   this.textContent='⭐ Thank you!';this.style.color='var(--green)';this.style.borderColor='rgba(93,232,141,.3)';this.disabled=true;
 });
 
-/* Live update simulation */
-let updateCount=0;
-setInterval(()=>{
-  if(updateCount>=3)return;
-  updateCount++;
-  const msgs=[
-    'Your parcel is moving towards Bangalore Junction. ETA unchanged.',
-    '🚂 Parcel departed Chennai. Next stop: Pune Junction.',
-    '📡 GPS update: Parcel is 580km from Mumbai.'
-  ];
-  const waBody=document.getElementById('waBody');
-  if(waBody&&updateCount<=msgs.length){
-    const newMsg=document.createElement('div');
-    newMsg.className='wa-msg';
-    newMsg.style.opacity='0';newMsg.style.transform='translateY(10px)';
-    newMsg.innerHTML=`<div class="wa-msg-text">${msgs[updateCount-1]}</div><div class="wa-msg-time">Now · just now</div>`;
-    waBody.prepend(newMsg);
-    requestAnimationFrame(()=>{newMsg.style.transition='all .4s';newMsg.style.opacity='1';newMsg.style.transform='none';});
-  }
-},18000);
-
-/* ══ STORE.JS INTEGRATION ══ */
+/* ══════════════════════════════════════════════════════════════════
+   LIVE API INTEGRATION — replaces static demo data
+   ══════════════════════════════════════════════════════════════════ */
 (function(){
-  /* 1. Navbar auth state */
+  /* ── Auth state ── */
   const user = Auth.getUser();
   const loginBtn = document.getElementById('navLoginBtn');
   const accountLink = document.getElementById('navAccountLink');
   if(user){
-    // Show account link, change login button to sign out
     if(loginBtn){ loginBtn.textContent = 'My Account'; loginBtn.href = 'dashboard.html'; }
   } else {
     if(accountLink) accountLink.style.display = 'none';
   }
 
-  /* 2. Try to load a real order from localStorage or URL param */
+  /* ── Status display mapping ── */
+  const STATUS_MAP = {
+    PENDING:               { text: '⏳ Awaiting Payment', css: 'pending',  color:'var(--muted)' },
+    SCREENSHOT_UPLOADED:   { text: '💳 Payment Under Review', css: 'review', color:'#ffaa55' },
+    PAYMENT_VERIFIED:      { text: '👩‍🍳 Preparing Your Order', css: 'preparing', color:'var(--blue)' },
+    PROCESSING:            { text: '👩‍🍳 Preparing Your Order', css: 'preparing', color:'var(--blue)' },
+    CONFIRMED:             { text: '✅ Confirmed', css: 'confirmed', color:'var(--green)' },
+    PACKED:                { text: '📦 Packed & Ready', css: 'packed', color:'var(--blue)' },
+    SHIPPED:               { text: '🚚 In Transit', css: 'transit', color:'var(--blue)' },
+    IN_TRANSIT:            { text: '🚚 In Transit', css: 'transit', color:'var(--blue)' },
+    OUT_FOR_DELIVERY:      { text: '🏍️ Out for Delivery', css: 'transit', color:'var(--gold)' },
+    DELIVERED:             { text: '🏠 Delivered!', css: 'delivered', color:'var(--green)' },
+    CANCELLED:             { text: '❌ Cancelled', css: 'cancelled', color:'var(--red)' },
+    REFUNDED:              { text: '💸 Refunded', css: 'refunded', color:'var(--red)' },
+  };
+
+  /* ── Progress step definitions ── */
+  const PROGRESS_STEPS = [
+    { key:'CONFIRMED',        emoji:'✓',  label:'Order Confirmed' },
+    { key:'PROCESSING',       emoji:'🍛', label:'Preparing' },
+    { key:'PACKED',           emoji:'📦', label:'Packed' },
+    { key:'SHIPPED',          emoji:'✈️', label:'Shipped' },
+    { key:'IN_TRANSIT',       emoji:'🚚', label:'In Transit' },
+    { key:'DELIVERED',        emoji:'🏠', label:'Delivered' },
+  ];
+
+  /* ── Resolve orderId from URL or localStorage ── */
   const urlParams = new URLSearchParams(location.search);
-  const orderIdParam = urlParams.get('order');
+  const orderIdParam  = urlParams.get('orderId') || urlParams.get('order');
+  const trackingParam = urlParams.get('tracking');
 
-  let order = null;
-  try{ order = JSON.parse(localStorage.getItem('im_last_order')||'null'); } catch(e){}
-  if(!order){ try{ order = JSON.parse(localStorage.getItem('im_checkout_cart')||'null'); } catch(e){} }
+  let localOrder = null;
+  try{ localOrder = JSON.parse(localStorage.getItem('im_last_order')||'null'); } catch(e){}
+  if(!localOrder){ try{ localOrder = JSON.parse(localStorage.getItem('im_checkout_cart')||'null'); } catch(e){} }
 
-  // If URL specifies an order ID different from our stored one, keep static data
-  if(orderIdParam && order && order.orderId !== orderIdParam) order = null;
+  const orderId       = orderIdParam || (localOrder && localOrder.orderId) || null;
+  const trackingNo    = trackingParam || (localOrder && localOrder.trackingNo) || null;
 
-  if(!order || !order.orderId) return; // No real order — keep static demo
-
-  /* 3. Update page title & order ID chip */
-  document.title = `Track Order ${order.orderId} — Indianmade`;
-  const chipEl = document.querySelector('.order-id-chip');
-  if(chipEl){
-    const svgClone = chipEl.querySelector('svg')?.outerHTML || '';
-    chipEl.innerHTML = svgClone + ' ' + order.orderId;
-  }
-
-  /* 4. Update Order Items panel on the right */
-  const itemsContainer = document.querySelector('.glass-card .order-detail-item')?.parentElement;
-  if(itemsContainer && order.items && order.items.length > 0){
-    // Build BG colours per item
-    const bgs = ['rgba(200,100,0,.14)','rgba(180,30,0,.13)','rgba(255,200,0,.1)','rgba(60,100,0,.1)','rgba(120,70,0,.1)'];
-    const rows = order.items.map((item, i) => {
-      const prod = PRODUCTS ? PRODUCTS.find(p => p.id == item.id) : null;
-      const emoji = prod ? prod.emoji : '📦';
-      const name  = prod ? prod.name  : (item.name || 'Item');
-      const price = Math.round((item.price||0) * (item.qty||1));
-      const bg    = bgs[i % bgs.length];
-      return `
-        <div class="order-detail-item">
-          <div class="od-emoji" style="background:${bg}">${emoji}</div>
-          <div><div class="od-name">${name}</div><div class="od-meta">${item.weight||''} · Qty: ${item.qty||1}</div></div>
-          <div class="od-price">₹${price}</div>
-        </div>`;
-    }).join('');
-    // Total row
-    const total = Math.round(order.total || order.grandTotal || 0);
-    rows && (itemsContainer.innerHTML = rows + `
-      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:.875rem;">
-        <span style="color:var(--muted);">Total Paid</span>
-        <span style="font-family:var(--fd);font-size:1.1rem;font-weight:800;color:var(--gold);">₹${total}</span>
-      </div>`);
-  }
-
-  /* 5. Update delivery address */
-  const buyer = order.buyer || {};
-  const addrEl = document.querySelector('.glass-card .card-title + div, .glass-card:has([stroke]) + div');
-  // Find the "Delivering To" card by searching for its content
-  document.querySelectorAll('.glass-card').forEach(card => {
-    const titleEl = card.querySelector('.card-title');
-    if(titleEl && titleEl.textContent.includes('Delivering To')){
-      const nameEl = card.querySelector('div[style*="font-weight:600"]');
-      const addrTextEl = card.querySelector('div[style*="color:var(--muted)"]');
-      if(nameEl  && buyer.name)    nameEl.textContent    = buyer.name;
-      if(addrTextEl && buyer.address){ addrTextEl.innerHTML = buyer.address.replace(/\n/g,'<br>') + (buyer.phone ? `<br>📞 ${buyer.phone}` : ''); }
-    }
-  });
-
-  /* 6. Copy tracking number — update with real tracking if available */
-  if(order.trackingNo){
-    const trackBadge = document.querySelector('.tl-badge.ip');
-    if(trackBadge) trackBadge.textContent = order.trackingNo;
+  if(!orderId && !trackingNo){
+    // No real order available — keep static demo data, add truck animation
+    setTimeout(()=>{
+      const tw=document.getElementById('truckWrap');
+      if(tw){tw.style.transition='left 2.5s cubic-bezier(0.4,0,0.2,1)';tw.style.left='80%';}
+    },400);
+    // Hook copy button for demo
     document.getElementById('copyTrack')?.addEventListener('click',function(){
-      navigator.clipboard.writeText(order.trackingNo);
+      navigator.clipboard.writeText('EX123456789IN');
       this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000);
-    }, {once: true});
-    // Also update courier row
-    document.querySelectorAll('.courier-row').forEach(row => {
-      const lbl = row.querySelector('.cr-label');
-      if(lbl && lbl.textContent.includes('Tracking')){
-        const valEl = row.querySelector('.cr-val');
-        if(valEl){
-          const btn = valEl.querySelector('.btn-copy')?.outerHTML || '';
-          valEl.innerHTML = `<span style="font-family:var(--mono);color:var(--gold);font-size:.78rem;">${order.trackingNo}</span>${btn}`;
+    });
+    return;
+  }
+
+  /* ── Fetch tracking data and render ── */
+  let autoRefreshTimer = null;
+
+  async function fetchAndRender(){
+    try {
+      let data;
+      if(orderId && user){
+        // Authenticated tracking by orderId
+        data = await API.get(`/tracking/order/${orderId}`);
+      } else if(trackingNo){
+        // Public tracking by tracking number
+        data = await API.get(`/tracking/${trackingNo}`);
+      } else if(orderId){
+        // Try order track endpoint
+        data = await API.get(`/orders/${orderId}/track`);
+      }
+
+      const tracking = data?.data || data;
+      if(!tracking) throw new Error('No tracking data');
+
+      renderTracking(tracking);
+    } catch(err){
+      console.warn('Tracking API unavailable, using local order data:', err.message);
+      // Fallback: render from localStorage order data
+      if(localOrder) renderFromLocalOrder(localOrder);
+    }
+  }
+
+  /* ── Render full tracking from API response ── */
+  function renderTracking(t){
+    // 1. Page title & order chip
+    const orderNum = t.order?.orderNumber || orderId || '';
+    document.title = `Track ${orderNum} — Indianmade`;
+    const chipEl = document.querySelector('.order-id-chip');
+    if(chipEl){
+      const svgClone = chipEl.querySelector('svg')?.outerHTML || '';
+      chipEl.innerHTML = svgClone + ' ' + orderNum;
+    }
+
+    // 2. Status pill in hero
+    const statusInfo = STATUS_MAP[t.status] || STATUS_MAP[t.order?.status] || STATUS_MAP.PENDING;
+    const statusPill = document.querySelector('.status-pill');
+    if(statusPill){
+      statusPill.className = 'status-pill ' + statusInfo.css;
+      statusPill.style.background = `${statusInfo.color}15`;
+      statusPill.style.borderColor = `${statusInfo.color}40`;
+      statusPill.style.color = statusInfo.color;
+      const courierSuffix = t.courierName ? ` — ${t.courierName}` : '';
+      statusPill.innerHTML = `<span class="live-dot" style="background:${statusInfo.color}"></span> ${statusInfo.text}${courierSuffix}`;
+    }
+
+    // 3. ETA card
+    if(t.estimatedDelivery){
+      const eta = new Date(t.estimatedDelivery);
+      const etaDate = document.querySelector('.eta-date');
+      const etaSub = document.querySelector('.eta-sub');
+      if(etaDate) etaDate.textContent = eta.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+      if(etaSub){
+        const dayName = eta.toLocaleDateString('en-IN',{weekday:'long'});
+        const isLate = t.isLate ? ' · ⚠️ Delayed' : '';
+        etaSub.textContent = `${dayName}${isLate}`;
+      }
+    }
+
+    // 4. Progress steps
+    renderProgressSteps(t);
+
+    // 5. Detailed timeline (checkpoints)
+    if(t.checkpoints && t.checkpoints.length > 0) renderTimeline(t.checkpoints);
+
+    // 6. Courier details
+    renderCourierInfo(t);
+
+    // 7. Order items
+    if(t.order?.items && t.order.items.length > 0) renderOrderItems(t.order.items, t.order.total);
+
+    // 8. Delivery address
+    if(t.order?.recipientName || t.order?.deliveryAddress){
+      renderDeliveryAddress(t.order.recipientName, t.order.deliveryAddress);
+    }
+
+    // 9. WhatsApp link
+    const waSupport = document.querySelector('.btn-wa-support');
+    if(waSupport) waSupport.href = `https://wa.me/919876543210?text=Hi! I need help with ${orderNum}`;
+
+    // 10. Copy tracking
+    if(t.trackingNumber){
+      document.getElementById('copyTrack')?.addEventListener('click',function(){
+        navigator.clipboard.writeText(t.trackingNumber);
+        this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000);
+      });
+    }
+
+    // 11. Update WhatsApp notification panel
+    renderWhatsAppPanel(t);
+
+    // 12. Map visual – update route fill
+    const routeFill = document.querySelector('.route-fill');
+    const mapPercent = document.querySelector('.map-vis div[style*="position:absolute;bottom"]');
+    if(routeFill) routeFill.style.width = (t.progress || 0) + '%';
+    if(mapPercent) mapPercent.textContent = `~${t.progress || 0}% of route completed`;
+  }
+
+  /* ── Render progress bar steps ── */
+  function renderProgressSteps(t){
+    const stepsRow = document.getElementById('stepsRow');
+    const trackFill = document.getElementById('trackFill');
+    const truckWrap = document.getElementById('truckWrap');
+    if(!stepsRow) return;
+
+    // Map API statusSummary to our UI steps
+    const summary = t.statusSummary || [];
+    const currentStatus = t.status || 'BOOKED';
+
+    // Determine which progress step is active
+    const ORDER_FLOW = ['CONFIRMED','PROCESSING','PACKED','SHIPPED','IN_TRANSIT','OUT_FOR_DELIVERY','DELIVERED'];
+    // Map shipment statuses to order flow
+    const statusToFlow = {
+      'BOOKED':           'CONFIRMED',
+      'PICKED_UP':        'SHIPPED',
+      'IN_TRANSIT':       'IN_TRANSIT',
+      'REACHED_HUB':      'IN_TRANSIT',
+      'DISPATCHED':       'IN_TRANSIT',
+      'OUT_FOR_DELIVERY':  'OUT_FOR_DELIVERY',
+      'DELIVERED':        'DELIVERED',
+    };
+
+    const mappedStatus = statusToFlow[currentStatus] || currentStatus;
+    const activeIdx = ORDER_FLOW.indexOf(mappedStatus);
+
+    // Build steps HTML
+    let stepsHtml = '';
+    PROGRESS_STEPS.forEach((step, i) => {
+      const flowIdx = ORDER_FLOW.indexOf(step.key);
+      let cls = 'pending';
+      let circleContent = step.emoji;
+
+      if(flowIdx < activeIdx){ cls = 'done'; circleContent = '✓'; }
+      else if(flowIdx === activeIdx){ cls = 'active'; }
+
+      // Time label
+      let timeLabel = '';
+      if(cls === 'done' || cls === 'active'){
+        const cp = (t.checkpoints || []).find(c => {
+          const mapped = statusToFlow[c.status] || c.status;
+          return mapped === step.key || c.status === step.key;
+        });
+        if(cp && cp.timestamp){
+          const d = new Date(cp.timestamp);
+          timeLabel = d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' · ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        } else if(cls === 'active'){
+          timeLabel = 'Live';
         }
+      } else if(step.key === 'DELIVERED' && t.estimatedDelivery){
+        const eta = new Date(t.estimatedDelivery);
+        timeLabel = eta.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' (est.)';
+      }
+
+      stepsHtml += `<div class="step-item ${cls}">
+        <div class="step-circle">${circleContent}</div>
+        <div class="step-label">${step.label}</div>
+        <div class="step-time">${timeLabel}</div>
+      </div>`;
+    });
+    stepsRow.innerHTML = stepsHtml;
+
+    // Progress fill & truck position
+    const fillPct = Math.max(0, Math.min(100, t.progress || (activeIdx / (PROGRESS_STEPS.length - 1)) * 100));
+    if(trackFill) trackFill.style.setProperty('--fill', fillPct + '%');
+    if(truckWrap){
+      setTimeout(()=>{
+        truckWrap.style.transition = 'left 2.5s cubic-bezier(0.4,0,0.2,1)';
+        truckWrap.style.left = fillPct + '%';
+      }, 400);
+    }
+  }
+
+  /* ── Render timeline ── */
+  function renderTimeline(checkpoints){
+    const timelineEl = document.querySelector('.timeline');
+    if(!timelineEl) return;
+
+    timelineEl.innerHTML = checkpoints.map((cp, i) => {
+      const dotClass = i === 0 ? 'active' : 'done';
+      const ts = new Date(cp.timestamp);
+      const timeStr = ts.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) + ' · ' + ts.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const emoji = cp.emoji || '📍';
+      const desc = cp.description || cp.status.replace(/_/g,' ');
+      const loc = cp.location ? ` — ${cp.location}` : '';
+
+      return `<div class="tl-item">
+        <div class="tl-dot ${dotClass}"></div>
+        <div class="tl-time">${timeStr}</div>
+        <div class="tl-title">${emoji} ${desc}${loc}</div>
+        ${cp.location ? `<div class="tl-desc">Location: ${cp.location}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Render courier info ── */
+  function renderCourierInfo(t){
+    // Find the Courier Details card
+    let courierCard = null;
+    document.querySelectorAll('.glass-card').forEach(card => {
+      const title = card.querySelector('.card-title');
+      if(title && title.textContent.includes('Courier')) courierCard = card;
+    });
+    if(!courierCard) return;
+
+    const rows = courierCard.querySelectorAll('.courier-row');
+    // Update existing rows
+    rows.forEach(row => {
+      const label = row.querySelector('.cr-label')?.textContent?.trim();
+      const valEl = row.querySelector('.cr-val');
+      if(!valEl) return;
+
+      if(label === 'Carrier' && t.courierName) valEl.textContent = t.courierName;
+      if(label?.includes('Tracking') && t.trackingNumber){
+        const btn = `<button class="btn-copy" id="copyTrack">Copy</button>`;
+        valEl.innerHTML = `${t.trackingNumber} ${btn}`;
+        valEl.classList.add('mono');
+      }
+      if(label === 'Status'){
+        const si = STATUS_MAP[t.status] || STATUS_MAP.PENDING;
+        valEl.innerHTML = si.text;
+        valEl.style.color = si.color;
+      }
+    });
+
+    // Add "Track on courier website" button if URL available
+    if(t.courierUrl){
+      const existingLink = courierCard.querySelector('.btn-courier-track');
+      if(!existingLink){
+        const trackBtn = document.createElement('a');
+        trackBtn.href = t.courierUrl;
+        trackBtn.target = '_blank';
+        trackBtn.rel = 'noopener';
+        trackBtn.className = 'btn-courier-track';
+        trackBtn.style.cssText = 'display:block;text-align:center;padding:12px;margin-top:12px;background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:12px;color:var(--gold);font-size:.85rem;font-weight:600;transition:all .3s;';
+        trackBtn.textContent = `🔗 Track on ${t.courierName || 'Courier'} Website`;
+        const mapVis = courierCard.querySelector('.map-vis');
+        if(mapVis) courierCard.insertBefore(trackBtn, mapVis);
+        else courierCard.appendChild(trackBtn);
+      }
+    }
+  }
+
+  /* ── Render order items ── */
+  function renderOrderItems(items, total){
+    let itemsContainer = null;
+    document.querySelectorAll('.glass-card').forEach(card => {
+      const title = card.querySelector('.card-title');
+      if(title && title.textContent.includes('Order Items')) itemsContainer = card;
+    });
+    if(!itemsContainer) return;
+
+    const bgs = ['rgba(200,100,0,.14)','rgba(180,30,0,.13)','rgba(255,200,0,.1)','rgba(60,100,0,.1)','rgba(120,70,0,.1)'];
+    const title = itemsContainer.querySelector('.card-title')?.outerHTML || '';
+    let html = title;
+
+    items.forEach((item, i) => {
+      const name = item.productName || item.name || 'Item';
+      const qty  = item.quantity || item.qty || 1;
+      const img  = item.imageUrl;
+      const bg   = bgs[i % bgs.length];
+      const emoji = img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" alt="${name}">` : '📦';
+
+      html += `<div class="order-detail-item">
+        <div class="od-emoji" style="background:${bg}">${emoji}</div>
+        <div><div class="od-name">${name}</div><div class="od-meta">Qty: ${qty}</div></div>
+      </div>`;
+    });
+
+    if(total){
+      html += `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:.875rem;">
+        <span style="color:var(--muted);">Total Paid</span>
+        <span style="font-family:var(--fd);font-size:1.1rem;font-weight:800;color:var(--gold);">₹${Number(total).toFixed(0)}</span>
+      </div>`;
+    }
+
+    itemsContainer.innerHTML = html;
+  }
+
+  /* ── Render delivery address ── */
+  function renderDeliveryAddress(name, address){
+    document.querySelectorAll('.glass-card').forEach(card => {
+      const titleEl = card.querySelector('.card-title');
+      if(titleEl && titleEl.textContent.includes('Delivering To')){
+        const nameEl = card.querySelector('div[style*="font-weight:600"]');
+        const addrTextEl = card.querySelector('div[style*="color:var(--muted)"]');
+        if(nameEl && name) nameEl.textContent = name;
+        if(addrTextEl && address) addrTextEl.innerHTML = address.replace(/,\s*/g, '<br>');
       }
     });
   }
 
-  /* 7. Update WhatsApp support link with real order ID */
-  const waSupport = document.querySelector('.btn-wa-support');
-  if(waSupport) waSupport.href = `https://wa.me/919876543210?text=Hi! I need help with Order %23${order.orderId}`;
+  /* ── Render WhatsApp notification panel ── */
+  function renderWhatsAppPanel(t){
+    const waBody = document.getElementById('waBody');
+    if(!waBody || !t.checkpoints || t.checkpoints.length === 0) return;
+
+    const orderNum = t.order?.orderNumber || orderId || 'your order';
+    waBody.innerHTML = t.checkpoints.slice(0, 5).map(cp => {
+      const ts = new Date(cp.timestamp);
+      const timeStr = ts.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const emoji = cp.emoji || '📍';
+      const desc = cp.description || cp.status.replace(/_/g,' ');
+      const loc = cp.location ? `<br>📍 ${cp.location}` : '';
+      return `<div class="wa-msg">
+        <div class="wa-msg-text">${emoji} <strong>${desc}</strong> — ${orderNum}${loc}</div>
+        <div class="wa-msg-time">${timeStr} ✓✓</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Fallback: render from localStorage order data ── */
+  function renderFromLocalOrder(order){
+    // Update page title & chip
+    document.title = `Track Order ${order.orderId} — Indianmade`;
+    const chipEl = document.querySelector('.order-id-chip');
+    if(chipEl){
+      const svgClone = chipEl.querySelector('svg')?.outerHTML || '';
+      chipEl.innerHTML = svgClone + ' ' + order.orderId;
+    }
+
+    // Update order items
+    const itemsContainer = document.querySelector('.glass-card .order-detail-item')?.parentElement;
+    if(itemsContainer && order.items && order.items.length > 0){
+      const bgs = ['rgba(200,100,0,.14)','rgba(180,30,0,.13)','rgba(255,200,0,.1)','rgba(60,100,0,.1)'];
+      const rows = order.items.map((item, i) => {
+        const prod = typeof PRODUCTS !== 'undefined' ? PRODUCTS.find(p => p.id == item.id) : null;
+        const emoji = prod ? prod.emoji : '📦';
+        const name  = prod ? prod.name  : (item.name || 'Item');
+        const price = Math.round((item.price||0) * (item.qty||1));
+        return `<div class="order-detail-item">
+          <div class="od-emoji" style="background:${bgs[i%bgs.length]}">${emoji}</div>
+          <div><div class="od-name">${name}</div><div class="od-meta">${item.weight||''} · Qty: ${item.qty||1}</div></div>
+          <div class="od-price">₹${price}</div>
+        </div>`;
+      }).join('');
+      const total = Math.round(order.total || order.grandTotal || 0);
+      itemsContainer.innerHTML = rows + `
+        <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;font-size:.875rem;">
+          <span style="color:var(--muted);">Total Paid</span>
+          <span style="font-family:var(--fd);font-size:1.1rem;font-weight:800;color:var(--gold);">₹${total}</span>
+        </div>`;
+    }
+
+    // Delivery address
+    const buyer = order.buyer || {};
+    document.querySelectorAll('.glass-card').forEach(card => {
+      const titleEl = card.querySelector('.card-title');
+      if(titleEl && titleEl.textContent.includes('Delivering To')){
+        const nameEl = card.querySelector('div[style*="font-weight:600"]');
+        const addrTextEl = card.querySelector('div[style*="color:var(--muted)"]');
+        if(nameEl && buyer.name) nameEl.textContent = buyer.name;
+        if(addrTextEl && buyer.address) addrTextEl.innerHTML = buyer.address.replace(/\n/g,'<br>') + (buyer.phone ? `<br>📞 ${buyer.phone}` : '');
+      }
+    });
+
+    // WhatsApp link
+    const waSupport = document.querySelector('.btn-wa-support');
+    if(waSupport) waSupport.href = `https://wa.me/919876543210?text=Hi! I need help with Order %23${order.orderId}`;
+
+    // Copy tracking fallback
+    if(order.trackingNo){
+      document.getElementById('copyTrack')?.addEventListener('click',function(){
+        navigator.clipboard.writeText(order.trackingNo);
+        this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000);
+      });
+    }
+
+    // Truck animation
+    setTimeout(()=>{
+      const tw=document.getElementById('truckWrap');
+      if(tw){tw.style.transition='left 2.5s cubic-bezier(0.4,0,0.2,1)';tw.style.left='80%';}
+    },400);
+  }
+
+  /* ── Initial fetch ── */
+  fetchAndRender();
+
+  /* ── Auto-refresh every 3 minutes ── */
+  autoRefreshTimer = setInterval(()=>{
+    console.log('🔄 Auto-refreshing tracking data…');
+    fetchAndRender();
+  }, 180000); // 180,000ms = 3 minutes
+
+  /* Cleanup on page unload */
+  window.addEventListener('beforeunload', ()=>{
+    if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+  });
 
 })();
 </script>

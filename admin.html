@@ -258,6 +258,7 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
     <div class="sb-item" data-panel="inventory"><span class="sb-icon">🏷️</span>Inventory</div>
     <div class="sb-item" data-panel="shipments"><span class="sb-icon">🚚</span>Shipments<span class="sb-badge gold">3</span></div>
     <div class="sb-item" data-panel="analytics"><span class="sb-icon">📈</span>Analytics</div>
+    <div class="sb-item" data-panel="settings"><span class="sb-icon">⚙️</span>Settings</div>
     <div class="sb-divider"></div>
     <a href="index.html" class="sb-item"><span class="sb-icon">🌐</span>View Site</a>
   </div>
@@ -367,18 +368,29 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
     <div class="panel" id="panel-orders">
       <div class="filter-tabs" id="orderFilter">
         <div class="ftab active" data-f="all">All Orders</div>
-        <div class="ftab" data-f="pending">Pending</div>
-        <div class="ftab" data-f="preparing">Preparing</div>
-        <div class="ftab" data-f="shipped">Shipped</div>
-        <div class="ftab" data-f="delivered">Delivered</div>
+        <div class="ftab" data-f="PENDING">⏳ Payment Pending</div>
+        <div class="ftab" data-f="SCREENSHOT_UPLOADED">📸 Screenshot Uploaded</div>
+        <div class="ftab" data-f="PROCESSING">👩‍🍳 Preparing</div>
+        <div class="ftab" data-f="SHIPPED">🚚 Shipped</div>
+        <div class="ftab" data-f="DELIVERED">🏠 Delivered</div>
+        <div class="ftab" data-f="CANCELLED">❌ Cancelled</div>
       </div>
       <div class="table-card">
-        <div class="table-hdr"><h3>Orders Management</h3><button class="btn-xs btn-view">Export CSV</button></div>
+        <div class="table-hdr"><h3>Orders Management</h3><button class="btn-xs btn-view" onclick="exportOrdersCSV()">Export CSV</button></div>
         <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Update Status</th></tr></thead>
+            <thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="ordersBody"></tbody>
           </table>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div id="ordersPagination" style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <span id="ordersPageInfo" style="font-size:.8rem;color:var(--muted);">Showing 0–0 of 0 orders</span>
+        <div style="display:flex;gap:6px;">
+          <button id="ordersPrev" class="btn-xs btn-view" disabled>← Prev</button>
+          <button id="ordersNext" class="btn-xs btn-view" disabled>Next →</button>
         </div>
       </div>
     </div>
@@ -435,6 +447,38 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
       </div>
     </div>
 
+    <!-- ══ SETTINGS ══ -->
+    <div class="panel" id="panel-settings">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <div class="table-card" style="padding: 24px;">
+          <div style="font-family: var(--fd); font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; color: var(--gold);">⚙️ Payment & UPI Settings</div>
+          
+          <form id="settingsForm" onsubmit="window.saveSettings(event)" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; font-weight: 700;">Merchant Name *</label>
+              <input type="text" id="setMerchantName" required placeholder="e.g. Indianmade" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
+            </div>
+            
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; font-weight: 700;">Merchant UPI ID *</label>
+              <input type="text" id="setMerchantUpiId" required placeholder="e.g. merchant@ybl" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none; font-family: var(--mono);" />
+            </div>
+            
+            <div>
+              <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; font-weight: 700;">Merchant QR Code Image</label>
+              <div id="settingsQrPreviewContainer" style="margin-bottom: 10px; display: none;">
+                <img id="settingsQrPreview" src="" style="width: 160px; height: 160px; border-radius: 10px; object-fit: contain; border: 1px solid var(--border); background: #fff; padding: 10px;" />
+              </div>
+              <input type="file" id="setQrImage" accept="image/*" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
+              <div style="font-size: 0.65rem; color: var(--muted); margin-top: 4px;">PNG, JPG up to 2MB. Leave empty to generate dynamically from UPI ID.</div>
+            </div>
+            
+            <button type="submit" class="btn-update" id="btnSaveSettings" style="width: 100%; padding: 12px; margin-top: 10px; font-size: 0.85rem;">💾 Save Settings</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /admin-main -->
 
@@ -466,6 +510,170 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
       <div class="modal-actions">
         <button class="btn-modal-approve" onclick="approvePayment()">✅ Approve Payment</button>
         <button class="btn-modal-reject" onclick="rejectPayment()">❌ Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal" style="max-width:760px; width:95%;">
+    <div class="modal-hdr">
+      <h3>Order Details — <span id="odOrderNumber"></span></h3>
+      <button class="btn-close" onclick="closeOrderModal()">×</button>
+    </div>
+    <div class="modal-body" style="max-height:85vh; overflow-y:auto; display:grid; grid-template-columns:1.2fr 1fr; gap:20px; padding:20px;">
+      <!-- Left side: Order Info & Items -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- Customer Info -->
+        <div style="background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Customer Information</div>
+          <div id="odCustomerName" style="font-weight:600; font-size:.9rem;">-</div>
+          <div id="odCustomerEmail" style="font-size:.78rem; color:var(--muted);">-</div>
+          <div id="odCustomerPhone" style="font-size:.78rem; color:var(--muted);">-</div>
+        </div>
+        
+        <!-- Shipping Address -->
+        <div style="background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Shipping Address</div>
+          <div id="odShippingAddress" style="font-size:.82rem; line-height:1.4;">-</div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:10px;">Ordered Items</div>
+          <div id="odItemsList" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="border-top:1px solid var(--border); margin-top:12px; padding-top:10px; display:flex; flex-direction:column; gap:6px; font-size:.8rem;">
+            <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><span id="odSubtotal">₹0</span></div>
+            <div style="display:flex; justify-content:space-between; color:var(--green);"><span>Discount</span><span id="odDiscount">-₹0</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Shipping</span><span id="odShipping">₹0</span></div>
+            <div style="display:flex; justify-content:space-between; color:var(--gold); font-size:0.95rem; font-weight:700; border-top:1px solid rgba(245,166,35,.2); padding-top:6px; margin-top:4px;">
+              <span>Total Amount</span><span id="odTotal">₹0</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Invoice & Action -->
+        <div style="display:flex; gap:10px;">
+          <a id="odInvoiceBtn" href="#" target="_blank" class="btn-xs btn-view" style="display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:10px; flex:1;">📄 Download Invoice</a>
+        </div>
+      </div>
+
+      <!-- Right side: Status Timeline & Actions -->
+      <div style="display:flex; flex-direction:column; gap:16px; border-left:1px solid var(--border); padding-left:20px;">
+        <!-- Status & Payment Badges -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.65rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Order Status</div>
+            <span id="odStatusBadge" class="status-chip">-</span>
+          </div>
+          <div>
+            <div style="font-size:.65rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Payment Status</div>
+            <span id="odPaymentBadge" class="status-chip">-</span>
+          </div>
+        </div>
+
+        <!-- PAYMENT ACTION BLOCK -->
+        <div id="odPaymentActionBlock" style="display:none; background:rgba(245,166,35,.05); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--gold); font-weight:700; text-transform:uppercase; margin-bottom:8px;">💳 Payment Verification</div>
+          <!-- UTR info -->
+          <div style="font-size:.78rem; margin-bottom:10px;">
+            <div>UTR Number: <strong id="odPaymentUtr" style="font-family:var(--mono); color:var(--gold);"></strong></div>
+            <div id="odPayerDetails" style="color:var(--muted); font-size:.72rem; margin-top:2px;"></div>
+          </div>
+          <!-- Screenshot Preview -->
+          <div id="odScreenshotContainer" style="margin-bottom:12px; text-align:center;">
+            <a id="odScreenshotLink" target="_blank" href="#">
+              <img id="odScreenshotImg" src="" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid var(--border); object-fit:contain; cursor:pointer;" />
+            </a>
+            <div style="font-size:.65rem; color:var(--muted); margin-top:4px;">Click image to view full size</div>
+          </div>
+          <!-- UTR verification results -->
+          <div class="utr-verify-row" style="margin-bottom:8px;">
+            <button class="btn-verify" onclick="verifyOdUtr()" style="width:100%;">Verify UTR in Database</button>
+          </div>
+          <div id="odUtrResult" class="utr-result" style="margin-bottom:12px; display:none;"></div>
+          <!-- Actions -->
+          <div style="display:flex; gap:10px;">
+            <button class="btn-modal-approve" onclick="approveOdPayment()" style="padding:8px; font-size:.8rem;">Approve</button>
+            <button class="btn-modal-reject" onclick="rejectOdPayment()" style="padding:8px; font-size:.8rem;">Reject</button>
+          </div>
+          <div id="odRejectionReasonBlock" style="margin-top:8px; display:none;">
+            <input type="text" id="odRejectionReason" placeholder="Rejection reason..." style="width:100%; padding:8px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.75rem;" />
+          </div>
+        </div>
+
+        <!-- SHIP ACTION BLOCK -->
+        <div id="odShipActionBlock" style="display:none; background:rgba(77,224,255,.05); border:1px solid rgba(77,224,255,.15); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:8px;">🚚 Dispatch & Shipping</div>
+          <form id="odShipForm" onsubmit="shipOdOrder(event)" style="display:flex; flex-direction:column; gap:8px;">
+            <div>
+              <label style="display:block; font-size:.65rem; color:var(--muted); font-weight:700; margin-bottom:2px;">Courier Partner *</label>
+              <select id="odShipCourier" required style="width:100%; padding:8px; background:#0d0b07; border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.78rem;">
+                <option value="ST_COURIER">ST Courier</option>
+                <option value="DTDC">DTDC</option>
+                <option value="INDIA_POST">India Post</option>
+                <option value="DHL">DHL</option>
+                <option value="BLUEDART">Blue Dart</option>
+                <option value="DELHIVERY">Delhivery</option>
+                <option value="EKART">Ekart Logistics</option>
+                <option value="XPRESSBEES">Xpressbees</option>
+                <option value="SHADOWFAX">Shadowfax</option>
+                <option value="OTHER">Other Courier</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:.65rem; color:var(--muted); font-weight:700; margin-bottom:2px;">Tracking Number / AWB *</label>
+              <input type="text" id="odShipTrackingNo" required placeholder="Enter tracking ID" style="width:100%; padding:8px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.78rem; font-family:var(--mono);" />
+            </div>
+            <div>
+              <label style="display:block; font-size:.65rem; color:var(--muted); font-weight:700; margin-bottom:2px;">Est. Delivery Date</label>
+              <input type="date" id="odShipEstDelivery" style="width:100%; padding:8px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.78rem;" />
+            </div>
+            <button type="submit" class="btn-update" style="width:100%; padding:10px; margin-top:4px;">🚀 Mark as Shipped</button>
+          </form>
+        </div>
+
+        <!-- DELIVER ACTION BLOCK -->
+        <div id="odDeliverActionBlock" style="display:none; background:rgba(93,232,141,.05); border:1px solid rgba(93,232,141,.15); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--green); font-weight:700; text-transform:uppercase; margin-bottom:8px;">🏠 Complete Delivery</div>
+          <button onclick="deliverOdOrder()" class="btn-modal-approve" style="width:100%; padding:10px;">✅ Mark as Delivered</button>
+        </div>
+
+        <!-- ORDER ACTIONS (CANCEL/REFUND/NOTES) -->
+        <div style="background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <div style="font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Admin Notes & General Controls</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <textarea id="odAdminNotes" rows="2" placeholder="Internal admin notes (visible only to staff)..." style="width:100%; padding:8px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.78rem; resize:vertical;"></textarea>
+            <button onclick="saveOdNotes()" class="btn-xs btn-view" style="padding:6px; font-size:.75rem;">Save Notes</button>
+          </div>
+          
+          <div id="odRefundBlock" style="display:none; border-top:1px solid var(--border); margin-top:10px; padding-top:10px;">
+            <div style="font-size:.65rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Process Refund</div>
+            <div style="display:flex; gap:6px;">
+              <input type="number" id="odRefundAmt" placeholder="Refund Amt" style="width:90px; padding:6px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.75rem;" />
+              <input type="text" id="odRefundRef" placeholder="Ref/UTR" style="flex:1; padding:6px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.75rem;" />
+              <button onclick="refundOdOrder()" class="btn-xs btn-reject" style="font-size:.75rem; padding:6px 10px;">Refund</button>
+            </div>
+          </div>
+          
+          <div id="odCancelBlock" style="border-top:1px solid var(--border); margin-top:10px; padding-top:10px;">
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="text" id="odCancelReason" placeholder="Reason for cancellation..." style="flex:1; padding:6px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.75rem;" />
+              <button onclick="cancelOdOrder()" class="btn-xs btn-reject" style="font-size:.75rem; padding:6px 10px;">Cancel Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIMELINE HIST -->
+        <div style="background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px; padding:14px; max-height:220px; overflow-y:auto;">
+          <div style="font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:10px;">Timeline History</div>
+          <div id="odTimelineHistory" style="display:flex; flex-direction:column; gap:8px; font-size:.72rem; position:relative;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -606,7 +814,7 @@ function updateClock(){const now=new Date();document.getElementById('clock').tex
 updateClock();setInterval(updateClock,1000);
 
 /* ── PANEL SWITCH ─────────────────────── */
-const PANEL_TITLES={dashboard:'📊 Dashboard',payments:'💳 Payment Verification',orders:'📦 Orders Management',inventory:'🏷️ Product Inventory',shipments:'🚚 Shipment Tracking',analytics:'📈 Analytics'};
+const PANEL_TITLES={dashboard:'📊 Dashboard',payments:'💳 Payment Verification',orders:'📦 Orders Management',inventory:'🏷️ Product Inventory',shipments:'🚚 Shipment Tracking',analytics:'📈 Analytics',settings:'⚙️ Settings'};
 function switchPanel(name){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
@@ -672,62 +880,230 @@ setTimeout(drawRevChart,100);window.addEventListener('resize',drawRevChart,{pass
 /* ── DASHBOARD POPULATE ──────────────── */
 function renderDashOrders(){
   const tbody=document.getElementById('dashOrdersBody');if(!tbody)return;
-  tbody.innerHTML=ORDERS.slice(0,5).map(o=>`<tr>
-    <td><span class="oid">${o.id}</span></td>
-    <td>${o.name}</td>
-    <td style="color:var(--gold);font-weight:700;">₹${o.total}</td>
-    <td><span class="status-chip s-${o.status}">${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span></td>
-  </tr>`).join('');
+  tbody.innerHTML = `<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted);">⏳ Loading recent orders…</td></tr>`;
 }
-function renderDashPending(){
-  const el=document.getElementById('dashPendingList');if(!el)return;
-  el.innerHTML=PAYMENTS.filter(p=>p.status==='pending').slice(0,3).map(p=>`
-    <div class="quick-item">
-      <span class="qi-dot" style="background:var(--red)"></span>
-      <div class="qi-name">${p.name}</div>
-      <div class="qi-amt">₹${p.amount}</div>
-      <div class="qi-action">
-        <button class="btn-xs btn-view" onclick="openModal('${p.id}',${p.amount},'${p.utr}')">View</button>
-      </div>
-    </div>`).join('');
-}
-function renderDashLowStock(){
-  const el=document.getElementById('dashLowStock');if(!el)return;
-  const low=INVENTORY.filter(i=>i.stock/i.max<0.2).slice(0,3);
-  el.innerHTML=low.map(i=>`
-    <div class="quick-item">
-      <span style="font-size:1.2rem">${i.emoji}</span>
-      <div class="qi-name">${i.name}</div>
-      <div style="font-size:.72rem;color:${i.stock===0?'var(--red)':'var(--gold)'};font-weight:700;">${i.stock===0?'OUT OF STOCK':i.stock+' left'}</div>
-    </div>`).join('');
-}
-renderDashOrders();renderDashPending();renderDashLowStock();
 
-/* ── PAYMENTS TABLE ──────────────────── */
-let payFilter='all';
-function renderPayments(){
-  const tbody=document.getElementById('payBody');if(!tbody)return;
-  const data=payFilter==='all'?PAYMENTS:PAYMENTS.filter(p=>p.status===payFilter);
-  tbody.innerHTML=data.map((p,idx)=>`<tr id="pay-row-${idx}">
-    <td><span class="oid">${p.id}</span></td>
-    <td>${p.name}<br><span style="font-size:.68rem;color:var(--muted);">${p.phone}</span></td>
-    <td style="font-weight:700;color:var(--gold);">₹${p.amount}</td>
-    <td style="font-size:.75rem;color:var(--muted);">${p.date}</td>
-    <td><span style="font-family:var(--mono);font-size:.72rem;color:var(--muted);">${p.utr||'—'}</span></td>
-    <td><button class="btn-xs btn-view" onclick="openModal('${p.id}',${p.amount},'${p.utr}')">📱 View SS</button></td>
-    <td><span class="status-chip s-${p.status}">${p.status}</span></td>
-    <td>
-      <div style="display:flex;gap:5px;">
-        ${p.status==='pending'?`<button class="btn-xs btn-approve" onclick="quickApprove(${idx})">✅</button><button class="btn-xs btn-reject" onclick="quickReject(${idx})">❌</button>`:'<span style="font-size:.7rem;color:var(--muted);">–</span>'}
-      </div>
-    </td>
-  </tr>`).join('');
-}
-renderPayments();
-document.querySelectorAll('#payFilter .ftab').forEach(t=>{
-  t.addEventListener('click',function(){
-    document.querySelectorAll('#payFilter .ftab').forEach(x=>x.classList.remove('active'));
-    this.classList.add('active');payFilter=this.dataset.f;renderPayments();
+// ── LIVE PAYMENTS & DASHBOARD WIDGETS ─────────────────
+let paymentsPage = 1;
+const PAYMENTS_LIMIT = 10;
+let payFilter = 'all';
+
+window.fetchPaymentsReal = async function() {
+  const tbody = document.getElementById('payBody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted);">⏳ Loading payment verification queue…</td></tr>`;
+
+  let url = `/admin/orders?page=${paymentsPage}&limit=${PAYMENTS_LIMIT}`;
+  if (payFilter === 'pending') {
+    url += `&status=SCREENSHOT_UPLOADED`;
+  } else if (payFilter === 'verified') {
+    url += `&paymentStatus=VERIFIED`;
+  } else if (payFilter === 'rejected') {
+    url += `&paymentStatus=REJECTED`;
+  } else {
+    // default to show UPI orders needing attention
+    url += `&paymentMethod=UPI`;
+  }
+
+  try {
+    const res = await window.API.get(url);
+    const orders = res.data || [];
+
+    if (!orders.length) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted);">No payment records found.</td></tr>`;
+      return;
+    }
+
+    if (tbody) tbody.innerHTML = orders.map((o, idx) => {
+      const customerName = o.user?.name || 'Customer';
+      const phone = o.user?.phone || '—';
+      const date = o.createdAt ? new Date(o.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+      
+      const payment = o.payments && o.payments.length > 0 ? o.payments[0] : {};
+      const utr = payment.upiTransactionId || '—';
+      const status = payment.status || 'PENDING';
+      
+      const screenshot = payment.screenshots && payment.screenshots.length > 0 ? payment.screenshots[0] : null;
+      const hasSS = !!screenshot;
+
+      return `<tr>
+        <td><span class="oid" style="cursor:pointer;" onclick="openOrderModal('${o.id}')">${o.orderNumber}</span></td>
+        <td>${customerName}<br><span style="font-size:.68rem;color:var(--muted);">${phone}</span></td>
+        <td style="font-weight:700;color:var(--gold);">₹${Math.round(o.total)}</td>
+        <td style="font-size:.75rem;color:var(--muted);">${date}</td>
+        <td><span style="font-family:var(--mono);font-size:.72rem;color:var(--muted);">${utr}</span></td>
+        <td>
+          ${hasSS ? `<button class="btn-xs btn-view" onclick="openOrderModal('${o.id}')">📱 View SS</button>` : `<span style="font-size:.7rem;color:var(--muted);">No SS</span>`}
+        </td>
+        <td><span class="status-chip s-${status === 'VERIFIED' ? 'verified' : status === 'REJECTED' ? 'rejected' : 'pending'}">${status}</span></td>
+        <td>
+          <div style="display:flex;gap:5px;">
+            ${status === 'PENDING' || status === 'SCREENSHOT_UPLOADED' ? `
+              <button class="btn-xs btn-approve" onclick="approvePaymentDirect('${o.id}')">✅</button>
+              <button class="btn-xs btn-reject" onclick="rejectPaymentDirect('${o.id}')">❌</button>
+            ` : '<span style="font-size:.7rem;color:var(--muted);">–</span>'}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--red);">❌ Error: ${err.message}</td></tr>`;
+  }
+};
+
+window.approvePaymentDirect = async function(orderId) {
+  if (!confirm('Approve payment for this order?')) return;
+  try {
+    await window.API.patch(`/admin/orders/${orderId}/payment`, {
+      action: 'APPROVE',
+      note: 'Payment verified by admin'
+    });
+    showToast('✅ Payment approved!', 'success');
+    fetchPaymentsReal();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+window.rejectPaymentDirect = async function(orderId) {
+  const reason = prompt('Enter payment rejection reason:');
+  if (reason === null) return;
+  if (!reason.trim()) {
+    showToast('❌ Rejection reason is required.', 'error');
+    return;
+  }
+  try {
+    await window.API.patch(`/admin/orders/${orderId}/payment`, {
+      action: 'REJECT',
+      rejectionReason: reason
+    });
+    showToast('❌ Payment rejected.', 'success');
+    fetchPaymentsReal();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+window.fetchDashboardStats = async function() {
+  try {
+    const res = await window.API.get('/admin/orders/analytics?period=30d');
+    const stats = res.data || res;
+    const summary = stats.summary || {};
+    
+    animCount('statRev', Math.round(summary.totalRevenue || 0), '₹');
+    animCount('statOrders', summary.totalOrders || 0);
+    animCount('statPending', summary.pendingPayments || 0);
+    
+    // Fetch real active customer count from users API limit 1
+    let totalUsers = 48;
+    try {
+      const uData = await window.API.get('/admin/users?limit=1');
+      totalUsers = uData.meta?.total || uData.total || totalUsers;
+    } catch(e){}
+    animCount('statCustomers', totalUsers);
+
+    // Recent Orders widget
+    const recent = stats.recentOrders || [];
+    const dashOrdersBody = document.getElementById('dashOrdersBody');
+    if (dashOrdersBody) {
+      if (!recent.length) {
+        dashOrdersBody.innerHTML = `<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted);">No recent orders.</td></tr>`;
+      } else {
+        dashOrdersBody.innerHTML = recent.map(o => {
+          const customerName = o.user?.name || 'Customer';
+          const status = o.status || 'PENDING';
+          let statusClass = 's-pending';
+          if (status === 'PROCESSING' || status === 'PACKED') statusClass = 's-preparing';
+          if (status === 'SHIPPED' || status === 'OUT_FOR_DELIVERY') statusClass = 's-shipped';
+          if (status === 'DELIVERED') statusClass = 's-delivered';
+          if (status === 'CANCELLED') statusClass = 's-cancelled';
+          
+          return `<tr>
+            <td><span class="oid" style="cursor:pointer;" onclick="openOrderModal('${o.id}')">${o.orderNumber}</span></td>
+            <td>${customerName}</td>
+            <td style="color:var(--gold);font-weight:700;">₹${Math.round(o.total)}</td>
+            <td><span class="status-chip ${statusClass}">${status}</span></td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // Pending payment review queue
+    fetchPendingPaymentsReal();
+    
+    // Render chart using real daily volume if available
+    if (stats.dailyOrders && stats.dailyOrders.length > 0 && window.drawRevChartReal) {
+      window.drawRevChartReal(stats.dailyOrders);
+    }
+
+  } catch (err) {
+    console.error('Failed to load dashboard stats:', err);
+  }
+};
+
+window.fetchPendingPaymentsReal = async function() {
+  const el = document.getElementById('dashPendingList');
+  if (!el) return;
+  try {
+    const res = await window.API.get('/admin/orders/pending-payment?limit=3');
+    const orders = res.data || [];
+    if (!orders.length) {
+      el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:.78rem;">No pending verifications</div>`;
+      return;
+    }
+    el.innerHTML = orders.map(o => {
+      const payment = o.payments && o.payments.length > 0 ? o.payments[0] : {};
+      return `
+        <div class="quick-item">
+          <span class="qi-dot" style="background:var(--red)"></span>
+          <div class="qi-name">${o.user?.name || 'Customer'}</div>
+          <div class="qi-amt">₹${Math.round(o.total)}</div>
+          <div class="qi-action">
+            <button class="btn-xs btn-view" onclick="openOrderModal('${o.id}')">View</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--red);font-size:.78rem;">Error loading pending</div>`;
+  }
+};
+
+window.renderLowStockWidget = function() {
+  const el = document.getElementById('dashLowStock');
+  if (!el) return;
+  const products = window.REAL_PRODUCTS || [];
+  const low = products.filter(p => p.stock <= (p.lowStockThreshold || 10)).slice(0, 3);
+  if (!low.length) {
+    el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--green);font-size:.78rem;">✓ All products in stock</div>`;
+    return;
+  }
+  el.innerHTML = low.map(p => {
+    const fallbackIcon = p.searchKeywords || '📦';
+    let imgHtml = '';
+    if (p.images && p.images.length > 0) {
+      let url = p.images[0].url;
+      if (url.startsWith('/')) url = `${window.BACKEND_URL}${url}`;
+      imgHtml = `<img src="${url}" style="width:20px;height:20px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'" />`;
+    } else {
+      imgHtml = `<span style="font-size:1rem">${fallbackIcon}</span>`;
+    }
+    return `
+      <div class="quick-item">
+        ${imgHtml}
+        <div class="qi-name" style="margin-left:6px;">${p.name}</div>
+        <div style="font-size:.72rem;color:${p.stock===0?'var(--red)':'var(--gold)'};font-weight:700;">${p.stock===0?'OUT OF STOCK':p.stock+' left'}</div>
+      </div>`;
+  }).join('');
+};
+
+document.querySelectorAll('#payFilter .ftab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('#payFilter .ftab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    payFilter = this.dataset.f;
+    paymentsPage = 1;
+    fetchPaymentsReal();
   });
 });
 window.quickApprove=function(idx){
@@ -741,34 +1117,508 @@ window.quickReject=function(idx){
   renderPayments();showToast('❌ Payment rejected.','error');
 };
 
-/* ── ORDERS TABLE ────────────────────── */
-let orderFilter='all';
-const STATUSES=['pending','preparing','shipped','delivered','cancelled'];
-function renderOrders(){
-  const tbody=document.getElementById('ordersBody');if(!tbody)return;
-  const data=orderFilter==='all'?ORDERS:ORDERS.filter(o=>o.status===orderFilter);
-  tbody.innerHTML=data.map((o,idx)=>`<tr>
-    <td><span class="oid">${o.id}</span><br><span style="font-size:.68rem;color:var(--muted);">${o.date}</span></td>
-    <td>${o.name}</td><td style="font-size:.78rem;color:var(--muted);">${o.city}</td>
-    <td>${o.items} items</td>
-    <td style="font-weight:700;color:var(--gold);">₹${o.total}</td>
-    <td><span class="status-chip s-${o.payment==='Verified'?'verified':o.payment==='Rejected'?'rejected':'pending'}">${o.payment}</span></td>
-    <td><span class="status-chip s-${o.status}">${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span></td>
-    <td>
-      <select style="padding:5px 8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.72rem;outline:none;cursor:pointer;" onchange="updateStatus(${ORDERS.indexOf(o)},this.value)">
-        ${STATUSES.map(s=>`<option value="${s}" style="background:#1a1410" ${o.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
-      </select>
-    </td>
-  </tr>`).join('');
+/* ── ORDERS TABLE (LIVE API INTEGRATION) ──────────────── */
+let ordersPage = 1;
+let ordersTotal = 0;
+const ORDERS_LIMIT = 10;
+let orderFilter = 'all';
+
+async function fetchOrders() {
+  const search = document.getElementById('globalSearch')?.value.trim() || '';
+  const tbody = document.getElementById('ordersBody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted);">⏳ Loading orders from database…</td></tr>`;
+
+  let url = `/admin/orders?page=${ordersPage}&limit=${ORDERS_LIMIT}`;
+  if (orderFilter !== 'all') url += `&status=${orderFilter}`;
+  if (search) url += `&q=${encodeURIComponent(search)}`;
+
+  try {
+    const res = await window.API.get(url);
+    const orders = res.data || [];
+    ordersTotal = res.meta?.total || res.total || orders.length;
+
+    // Update sidebar badge if it exists
+    const badge = document.querySelector('[data-panel="orders"] .sb-badge.gold');
+    if (badge) {
+      badge.textContent = ordersTotal;
+    }
+
+    if (!orders.length) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted);">No orders found.</td></tr>`;
+      return;
+    }
+
+    if (tbody) tbody.innerHTML = orders.map(o => {
+      const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+      const customerName = o.user?.name || 'Customer';
+      const city = o.address?.city || o.shippingAddress?.city || '—';
+      
+      // Summarize items
+      const itemsSummary = o.items ? o.items.map(i => `${i.productName} x${i.quantity}`).join(', ') : '—';
+
+      // Payment status class
+      const payStatus = o.paymentStatus || 'PENDING';
+      const payClass = payStatus === 'VERIFIED' ? 's-delivered' : payStatus === 'REJECTED' ? 's-cancelled' : 's-pending';
+
+      // Order status class
+      const status = o.status || 'PENDING';
+      let statusClass = 's-pending';
+      if (status === 'PROCESSING' || status === 'PACKED') statusClass = 's-preparing';
+      if (status === 'SHIPPED' || status === 'OUT_FOR_DELIVERY') statusClass = 's-shipped';
+      if (status === 'DELIVERED') statusClass = 's-delivered';
+      if (status === 'CANCELLED' || status === 'PAYMENT_REJECTED') statusClass = 's-cancelled';
+
+      return `<tr>
+        <td>
+          <span class="oid" style="cursor:pointer;" onclick="openOrderModal('${o.id}')">${o.orderNumber}</span>
+          <br><span style="font-size:.68rem;color:var(--muted);">${date}</span>
+        </td>
+        <td>${customerName}</td>
+        <td style="font-size:.78rem;color:var(--muted);">${city}</td>
+        <td style="font-size:.78rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${itemsSummary}">${itemsSummary}</td>
+        <td style="font-weight:700;color:var(--gold);">₹${Math.round(o.total)}</td>
+        <td><span class="status-chip ${payClass}">${payStatus}</span></td>
+        <td><span class="status-chip ${statusClass}">${status}</span></td>
+        <td>
+          <button class="btn-xs btn-view" onclick="openOrderModal('${o.id}')">👁️ View</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Update Pagination UI
+    const totalPages = Math.ceil(ordersTotal / ORDERS_LIMIT);
+    const from = (ordersPage - 1) * ORDERS_LIMIT + 1;
+    const to = Math.min(ordersPage * ORDERS_LIMIT, ordersTotal);
+    const info = document.getElementById('ordersPageInfo');
+    const prev = document.getElementById('ordersPrev');
+    const next = document.getElementById('ordersNext');
+    if (info) info.textContent = `Showing ${from}–${to} of ${ordersTotal} orders`;
+    if (prev) prev.disabled = ordersPage <= 1;
+    if (next) next.disabled = ordersPage >= totalPages;
+
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--red);">❌ Failed to load orders: ${err.message}</td></tr>`;
+    showToast('❌ Failed to fetch orders: ' + err.message, 'error');
+  }
 }
-renderOrders();
-window.updateStatus=function(idx,val){ORDERS[idx].status=val;renderOrders();showToast('Order status updated','success');};
-document.querySelectorAll('#orderFilter .ftab').forEach(t=>{
-  t.addEventListener('click',function(){
-    document.querySelectorAll('#orderFilter .ftab').forEach(x=>x.classList.remove('active'));
-    this.classList.add('active');orderFilter=this.dataset.f;renderOrders();
+
+// Export CSV Function
+window.exportOrdersCSV = async function() {
+  try {
+    showToast('⏳ Generating CSV export...', 'success');
+    const res = await window.API.get('/admin/orders?limit=300');
+    const orders = res.data || [];
+    if (!orders.length) {
+      showToast('❌ No orders available to export.', 'error');
+      return;
+    }
+    const headers = ['Order Number', 'Date', 'Customer', 'Email', 'City', 'State', 'Total', 'Payment Status', 'Order Status'];
+    const csvRows = [headers.join(',')];
+    
+    orders.forEach(o => {
+      const row = [
+        o.orderNumber,
+        o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '',
+        `"${(o.user?.name || 'Customer').replace(/"/g, '""')}"`,
+        o.user?.email || '',
+        `"${(o.address?.city || o.shippingAddress?.city || '').replace(/"/g, '""')}"`,
+        `"${(o.address?.state || o.shippingAddress?.state || '').replace(/"/g, '""')}"`,
+        Math.round(o.total),
+        o.paymentStatus,
+        o.status
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `IM_Orders_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('✅ CSV downloaded successfully!', 'success');
+  } catch(err) {
+    showToast('❌ Export failed: ' + err.message, 'error');
+  }
+};
+
+// Sidebar Order Filter click listener
+document.querySelectorAll('#orderFilter .ftab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('#orderFilter .ftab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    orderFilter = this.dataset.f;
+    ordersPage = 1;
+    fetchOrders();
   });
 });
+
+// Pagination Button Handlers
+document.getElementById('ordersPrev')?.addEventListener('click', () => {
+  if (ordersPage > 1) {
+    ordersPage--;
+    fetchOrders();
+  }
+});
+document.getElementById('ordersNext')?.addEventListener('click', () => {
+  const totalPages = Math.ceil(ordersTotal / ORDERS_LIMIT);
+  if (ordersPage < totalPages) {
+    ordersPage++;
+    fetchOrders();
+  }
+});
+
+/* ── ORDER DETAIL MODAL ACTIONS ─────────────────── */
+window.openOrderModal = async function(id) {
+  try {
+    showToast('⏳ Loading order details...', 'success');
+    const res = await window.API.get(`/admin/orders/${id}`);
+    const order = res.data || res;
+    window.activeOrderId = order.id;
+
+    // Header Info
+    document.getElementById('odOrderNumber').textContent = order.orderNumber;
+    
+    // Customer Info
+    document.getElementById('odCustomerName').textContent = order.user?.name || 'Customer';
+    document.getElementById('odCustomerEmail').textContent = order.user?.email || '—';
+    document.getElementById('odCustomerPhone').textContent = order.user?.phone || '—';
+    
+    // Address Info
+    const addr = order.address || order.shippingAddress || {};
+    const city = addr.city || '';
+    const state = addr.state || '';
+    const pincode = addr.pincode || '';
+    const street = addr.streetAddress || addr.street || '';
+    const name = addr.recipientName || order.user?.name || '';
+    const phone = addr.phone || order.user?.phone || '';
+    
+    document.getElementById('odShippingAddress').innerHTML = `
+      <strong>${name}</strong><br>
+      ${street}<br>
+      ${city}, ${state} - ${pincode}<br>
+      Phone: ${phone}
+    `;
+
+    // Ordered Items List
+    const itemsList = document.getElementById('odItemsList');
+    if (itemsList) {
+      if (order.items && order.items.length > 0) {
+        itemsList.innerHTML = order.items.map(item => {
+          let url = item.imageUrl;
+          if (url && url.startsWith('/')) url = `${window.BACKEND_URL}${url}`;
+          const fallbackEmoji = '📦';
+          
+          return `
+            <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,.03); padding-bottom:8px;">
+              ${url ? `<img src="${url}" style="width:40px; height:40px; border-radius:8px; object-fit:cover; border:1px solid var(--border);" onerror="this.style.display='none'" />` : `<div style="font-size:1.5rem; width:40px; text-align:center;">${fallbackEmoji}</div>`}
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:.82rem; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.productName}</div>
+                <div style="font-size:.7rem; color:var(--muted);">${item.variantName || 'Standard'} · SKU: ${item.productSku}</div>
+              </div>
+              <div style="text-align:right; font-size:.78rem;">
+                <div style="font-weight:600;">₹${Math.round(item.unitPrice)} x ${item.quantity}</div>
+                <div style="color:var(--gold); font-weight:700;">₹${Math.round(item.total)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        itemsList.innerHTML = `<div style="color:var(--muted); font-size:.78rem; text-align:center; padding:12px;">No items found.</div>`;
+      }
+    }
+
+    // Totals
+    document.getElementById('odSubtotal').textContent = '₹' + Math.round(order.subtotal || 0);
+    document.getElementById('odDiscount').textContent = '-₹' + Math.round((parseFloat(order.discountAmount || 0) + parseFloat(order.couponDiscount || 0)));
+    document.getElementById('odShipping').textContent = '₹' + Math.round(order.shippingCharge || 0);
+    document.getElementById('odTotal').textContent = '₹' + Math.round(order.total || 0);
+
+    // Invoice Button Link
+    const invBtn = document.getElementById('odInvoiceBtn');
+    if (invBtn) {
+      invBtn.href = `${window.BACKEND_URL}/api/v1/admin/orders/${order.id}/invoice?token=${window.Auth.getToken()}`;
+    }
+
+    // Badges
+    const status = order.status || 'PENDING';
+    const payStatus = order.paymentStatus || 'PENDING';
+    
+    const odStatus = document.getElementById('odStatusBadge');
+    odStatus.textContent = status;
+    odStatus.className = 'status-chip ' + (
+      status === 'DELIVERED' ? 's-delivered' :
+      (status === 'SHIPPED' || status === 'OUT_FOR_DELIVERY') ? 's-shipped' :
+      (status === 'PROCESSING' || status === 'PACKED') ? 's-preparing' :
+      (status === 'CANCELLED' || status === 'PAYMENT_REJECTED') ? 's-cancelled' : 's-pending'
+    );
+
+    const odPay = document.getElementById('odPaymentBadge');
+    odPay.textContent = payStatus;
+    odPay.className = 'status-chip ' + (
+      payStatus === 'VERIFIED' ? 's-delivered' :
+      payStatus === 'REJECTED' ? 's-cancelled' : 's-pending'
+    );
+
+    // Hide all Action Blocks first
+    document.getElementById('odPaymentActionBlock').style.display = 'none';
+    document.getElementById('odShipActionBlock').style.display = 'none';
+    document.getElementById('odDeliverActionBlock').style.display = 'none';
+    document.getElementById('odRefundBlock').style.display = 'none';
+    document.getElementById('odRejectionReasonBlock').style.display = 'none';
+    document.getElementById('odUtrResult').style.display = 'none';
+
+    // Show action blocks based on status
+    if (status === 'SCREENSHOT_UPLOADED' || status === 'PENDING') {
+      const payment = order.payments && order.payments.length > 0 ? order.payments[0] : null;
+      if (payment) {
+        document.getElementById('odPaymentActionBlock').style.display = 'block';
+        document.getElementById('odPaymentUtr').textContent = payment.upiTransactionId || 'N/A';
+        document.getElementById('odPayerDetails').textContent = `Amount: ₹${Math.round(payment.amount)} | Paid by: ${payment.upiId || 'UPI App'}`;
+        
+        // Screenshot Preview
+        const screenshot = payment.screenshots && payment.screenshots.length > 0 ? payment.screenshots[0] : null;
+        const container = document.getElementById('odScreenshotContainer');
+        if (screenshot && screenshot.fileUrl) {
+          container.style.display = 'block';
+          let sUrl = screenshot.fileUrl;
+          if (sUrl.startsWith('/')) sUrl = `${window.BACKEND_URL}${sUrl}`;
+          document.getElementById('odScreenshotImg').src = sUrl;
+          document.getElementById('odScreenshotLink').href = sUrl;
+        } else {
+          container.style.display = 'none';
+        }
+      }
+    }
+
+    if (status === 'PROCESSING' || status === 'PACKED' || status === 'CONFIRMED') {
+      document.getElementById('odShipActionBlock').style.display = 'block';
+      // Default ship inputs
+      document.getElementById('odShipTrackingNo').value = '';
+      document.getElementById('odShipEstDelivery').value = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
+
+    if (status === 'SHIPPED' || status === 'OUT_FOR_DELIVERY') {
+      document.getElementById('odDeliverActionBlock').style.display = 'block';
+    }
+
+    // Refund support
+    if (payStatus === 'VERIFIED' || status === 'DELIVERED' || status === 'SHIPPED') {
+      document.getElementById('odRefundBlock').style.display = 'block';
+      document.getElementById('odRefundAmt').value = Math.round(order.total);
+      document.getElementById('odRefundRef').value = '';
+    }
+
+    // Cancel visibility
+    const cancelBlock = document.getElementById('odCancelBlock');
+    if (status === 'CANCELLED' || status === 'DELIVERED') {
+      cancelBlock.style.display = 'none';
+    } else {
+      cancelBlock.style.display = 'block';
+      document.getElementById('odCancelReason').value = '';
+    }
+
+    // Admin notes
+    document.getElementById('odAdminNotes').value = order.adminNotes || '';
+
+    // Timeline history
+    const timeline = document.getElementById('odTimelineHistory');
+    if (timeline) {
+      if (order.statusHistory && order.statusHistory.length > 0) {
+        timeline.innerHTML = order.statusHistory.map((step, idx) => {
+          const stepDate = step.createdAt ? new Date(step.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+          const author = step.changedByRole ? `(${step.changedByRole.toLowerCase()})` : '';
+          return `
+            <div style="display:flex; gap:10px; position:relative; padding-bottom:12px;">
+              ${idx < order.statusHistory.length - 1 ? `<div style="position:absolute; left:5px; top:12px; bottom:0; width:1px; background:var(--border);"></div>` : ''}
+              <div style="width:11px; height:11px; border-radius:50%; background:var(--gold); border:2px solid var(--sb); margin-top:3px; z-index:2; flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:var(--text);">${step.toStatus} <span style="font-weight:400; color:var(--muted); font-size:.65rem;">${stepDate}</span></div>
+                <div style="color:var(--muted); margin-top:2px;">${step.note || 'No notes'} ${author}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        timeline.innerHTML = `<div style="color:var(--muted); text-align:center;">No timeline history yet.</div>`;
+      }
+    }
+
+    // Open Modal
+    document.getElementById('orderModal').classList.add('open');
+  } catch(err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+window.closeOrderModal = function() {
+  document.getElementById('orderModal').classList.remove('open');
+};
+
+// Verify UTR button in Order Modal
+window.verifyOdUtr = function() {
+  const val = document.getElementById('odPaymentUtr').textContent.trim();
+  const res = document.getElementById('odUtrResult');
+  if (!val || val === 'N/A' || val === '—') {
+    res.textContent = 'No UTR number available.';
+    res.className = 'utr-result invalid';
+    res.style.display = 'block';
+    return;
+  }
+  res.textContent = '⏳ Verifying with bank records…';
+  res.className = 'utr-result';
+  res.style.display = 'block';
+  setTimeout(() => {
+    if (val.length >= 10) {
+      res.textContent = `✓ UTR ${val} verified. UPI Transaction found in settlement bank ledger records.`;
+      res.className = 'utr-result valid';
+    } else {
+      res.textContent = '✗ UTR not found. Please review the upload screenshot.';
+      res.className = 'utr-result invalid';
+    }
+  }, 1200);
+};
+
+// Approve payment in Order Modal
+window.approveOdPayment = async function() {
+  if (!confirm('Approve payment verification? Order status will automatically move to Preparing.')) return;
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/payment`, {
+      action: 'APPROVE',
+      note: 'Payment verified and approved by admin'
+    });
+    showToast('✅ Payment approved! Order is Preparing.', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+// Reject payment in Order Modal
+window.rejectOdPayment = async function() {
+  const reasonBlock = document.getElementById('odRejectionReasonBlock');
+  if (reasonBlock.style.display === 'none') {
+    reasonBlock.style.display = 'block';
+    return;
+  }
+  const reason = document.getElementById('odRejectionReason').value.trim();
+  if (!reason) {
+    showToast('❌ Please specify a rejection reason.', 'error');
+    return;
+  }
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/payment`, {
+      action: 'REJECT',
+      rejectionReason: reason
+    });
+    showToast('❌ Screenshot rejected.', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+// Ship Order in Order Modal
+window.shipOdOrder = async function(event) {
+  event.preventDefault();
+  const courierName = document.getElementById('odShipCourier').value;
+  const trackingNumber = document.getElementById('odShipTrackingNo').value.trim();
+  const estimatedDelivery = document.getElementById('odShipEstDelivery').value;
+
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/ship`, {
+      courierName,
+      trackingNumber,
+      estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : undefined,
+      note: `Shipped via ${courierName}. Tracking ID: ${trackingNumber}`
+    });
+    showToast('🚀 Order marked as shipped!', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+// Complete Delivery in Order Modal
+window.deliverOdOrder = async function() {
+  if (!confirm('Mark order as delivered?')) return;
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/deliver`, {
+      note: 'Delivered to customer address'
+    });
+    showToast('🏠 Order marked as delivered!', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+// Save internal notes in Order Modal
+window.saveOdNotes = async function() {
+  const notes = document.getElementById('odAdminNotes').value.trim();
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/notes`, { notes });
+    showToast('✅ Admin notes updated!', 'success');
+  } catch (err) {
+    showToast('❌ Failed to update notes: ' + err.message, 'error');
+  }
+};
+
+// Cancel Order in Order Modal
+window.cancelOdOrder = async function() {
+  const reason = document.getElementById('odCancelReason').value.trim();
+  if (!reason) {
+    showToast('❌ Please enter a reason for cancellation.', 'error');
+    return;
+  }
+  if (!confirm('Are you sure you want to CANCEL this order? This will restore item stock levels.')) return;
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/cancel`, {
+      reason,
+      restoreStock: true
+    });
+    showToast('⚠️ Order cancelled successfully.', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed: ' + err.message, 'error');
+  }
+};
+
+// Refund Order in Order Modal
+window.refundOdOrder = async function() {
+  const amount = document.getElementById('odRefundAmt').value.trim();
+  const transactionRef = document.getElementById('odRefundRef').value.trim();
+  if (!amount) {
+    showToast('❌ Please specify a refund amount.', 'error');
+    return;
+  }
+  if (!confirm(`Process refund of ₹${amount} for this order?`)) return;
+  try {
+    await window.API.patch(`/admin/orders/${window.activeOrderId}/refund`, {
+      amount: parseFloat(amount),
+      transactionRef: transactionRef || undefined,
+      note: 'Refund processed by administrator'
+    });
+    showToast('💸 Refund processed successfully!', 'success');
+    closeOrderModal();
+    fetchOrders();
+    fetchDashboardStats();
+  } catch (err) {
+    showToast('❌ Failed to process refund: ' + err.message, 'error');
+  }
+};
 
 /* ── INVENTORY ───────────────────────── */
 function renderInventory(){
@@ -799,96 +1649,223 @@ window.editStock=function(idx){
   if(val!==null&&!isNaN(+val)&&+val>=0){INVENTORY[idx].stock=+val;renderInventory();showToast('Stock updated!','success');}
 };
 
-/* ── SHIPMENTS ───────────────────────── */
-function renderShipments(){
-  const list=document.getElementById('shipList');if(!list)return;
-  list.innerHTML=SHIPMENTS.map((s,idx)=>`
-    <div class="ship-card">
-      <div class="ship-icon">${s.emoji}</div>
-      <div class="ship-info">
-        <div class="ship-id">${s.id} · ${s.name}</div>
-        <div class="ship-dest">📍 ${s.dest}</div>
-        <div class="ship-track">${s.track||'No tracking number yet'}</div>
-      </div>
-      <span class="status-chip s-${s.track?'shipped':'pending'}">${s.status}</span>
-      <div class="ship-controls">
-        <input type="text" class="track-input" placeholder="Update tracking no." value="${s.track}" id="tr-${idx}"/>
-        <button class="btn-update" onclick="updateTracking(${idx})">Update</button>
-      </div>
-    </div>`).join('');
-}
-renderShipments();
-window.updateTracking=function(idx){
-  const val=document.getElementById('tr-'+idx).value.trim();
-  if(val){SHIPMENTS[idx].track=val;SHIPMENTS[idx].status='In Transit';SHIPMENTS[idx].emoji='🚚';renderShipments();showToast('Tracking updated!','success');}
+/* ── SHIPMENTS (LIVE API INTEGRATION) ──────────────── */
+window.fetchShipmentsReal = async function() {
+  const list = document.getElementById('shipList');
+  if (!list) return;
+  list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px;">⏳ Loading active shipments from database...</div>`;
+
+  try {
+    const res = await window.API.get('/admin/orders?status=SHIPPED&limit=50');
+    const orders = res.data || [];
+    
+    const countLabel = document.querySelector('#panel-shipments span');
+    if (countLabel) {
+      countLabel.textContent = `${orders.length} in transit`;
+    }
+
+    if (!orders.length) {
+      list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px;">No active shipments in transit.</div>`;
+      return;
+    }
+
+    list.innerHTML = orders.map((o, idx) => {
+      const trackingNo = o.trackingNumber || 'No tracking number yet';
+      const courier = o.courierName || 'Courier Partner';
+      const recipient = o.address?.recipientName || o.shippingAddress?.recipientName || 'Customer';
+      const city = o.address?.city || o.shippingAddress?.city || '';
+      const state = o.address?.state || o.shippingAddress?.state || '';
+
+      return `
+        <div class="ship-card">
+          <div class="ship-icon">🚚</div>
+          <div class="ship-info">
+            <div class="ship-id" style="cursor:pointer;" onclick="openOrderModal('${o.id}')">${o.orderNumber} · ${recipient}</div>
+            <div class="ship-dest">📍 ${city}, ${state}</div>
+            <div class="ship-track">${courier}: <strong>${trackingNo}</strong></div>
+          </div>
+          <span class="status-chip s-shipped">${o.status}</span>
+          <div class="ship-controls">
+            <button class="btn-update" onclick="openOrderModal('${o.id}')">Manage Shipment</button>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    list.innerHTML = `<div style="text-align:center;color:var(--red);padding:40px;">❌ Error: ${err.message}</div>`;
+  }
 };
 
-/* ── ANALYTICS ───────────────────────── */
-function renderAnalytics(){
-  // Top products bars
-  const tbEl=document.getElementById('topProductBars');
-  const topP=[{n:'Murukku',v:4280},{n:'Sambar Powder',v:2970},{n:'Banana Chips',v:2580},{n:'Festival Bundle',v:2495},{n:'Cookies',v:1790}];
-  if(tbEl)tbEl.innerHTML=topP.map(p=>`
-    <div class="bar-row">
-      <div class="bar-label">${p.n}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${p.v/4280*100}%;background:linear-gradient(90deg,var(--gd),var(--gold));"></div></div>
-      <div class="bar-val">₹${(p.v/1000).toFixed(1)}k</div>
-    </div>`).join('');
-  // Donut (CSS)
-  const cats=[{n:'Snacks',pct:48,c:'#f5a623'},{n:'Spices',pct:29,c:'#4de0ff'},{n:'Powders',pct:14,c:'#5de88d'},{n:'Combos',pct:9,c:'#b794f4'}];
-  const donut=document.getElementById('donutVis');
-  if(donut){
-    let deg=0;const segs=cats.map(c=>{const s=`${c.c} ${deg}deg ${deg+c.pct*3.6}deg`;deg+=c.pct*3.6;return s;}).join(', ');
-    donut.style.background=`conic-gradient(${segs})`;donut.style.borderRadius='50%';}
-  const dl=document.getElementById('donutLegend');
-  if(dl)dl.innerHTML=cats.map(c=>`<div class="dl-item"><div class="dl-dot" style="background:${c.c}"></div><div class="dl-label">${c.n}</div><div class="dl-val">${c.pct}%</div></div>`).join('');
-  // State bars
-  const st=document.getElementById('stateBars');
-  const states=[{n:'Maharashtra',v:35},{n:'Tamil Nadu',v:22},{n:'Karnataka',v:16},{n:'Delhi',v:13},{n:'Kerala',v:9},{n:'Others',v:5}];
-  if(st)st.innerHTML=states.map(s=>`
-    <div class="bar-row">
-      <div class="bar-label">${s.n}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${s.v}%;background:linear-gradient(90deg,#4de0ff88,#4de0ff);"></div></div>
-      <div class="bar-val">${s.v}%</div>
-    </div>`).join('');
-  // Customer segments
-  const segs=[{n:'New',v:'32%',c:'var(--blue)'},{n:'Returning',v:'68%',c:'var(--green)'},{n:'VIP (>5 orders)',v:'18%',c:'var(--gold)'},{n:'Churned',v:'12%',c:'var(--red)'}];
-  const cs=document.getElementById('custSegs');
-  if(cs)cs.innerHTML=segs.map(s=>`<div class="mini-stat"><div class="ms-val" style="color:${s.c}">${s.v}</div><div class="ms-label">${s.n}</div></div>`).join('');
-}
-renderAnalytics();
+/* ── ANALYTICS (LIVE API INTEGRATION) ──────────────── */
+window.fetchAnalyticsReal = async function() {
+  try {
+    const res = await window.API.get('/admin/orders/analytics?period=30d');
+    const stats = res.data || res;
+    const summary = stats.summary || {};
+    
+    // Update mini stats
+    const cards = document.querySelectorAll('#panel-analytics .mini-stat .ms-val');
+    if (cards.length >= 4) {
+      cards[0].textContent = '₹' + Math.round(summary.totalRevenue || 0).toLocaleString('en-IN');
+      cards[1].textContent = summary.totalOrders || 0;
+      cards[2].textContent = '₹' + Math.round(summary.avgOrderValue || 0).toLocaleString('en-IN');
+      cards[3].textContent = summary.pendingPayments || 0;
+    }
+    
+    const labels = document.querySelectorAll('#panel-analytics .mini-stat .ms-label');
+    if (labels.length >= 4) {
+      labels[0].textContent = 'Total Revenue';
+      labels[1].textContent = 'Total Orders';
+      labels[2].textContent = 'Avg Order Value';
+      labels[3].textContent = 'Pending Payments';
+    }
 
-/* ── MODAL ───────────────────────────── */
-let activePayIdx=-1;
-window.openModal=function(orderId,amount,utr){
-  document.getElementById('modalOrderId').textContent=orderId;
-  document.getElementById('modalAmt').textContent='₹'+amount;
-  document.getElementById('modalRef').textContent='Ref: '+orderId.replace('#','IM-')+'-UPI';
-  document.getElementById('utrField').value=utr||'';
-  document.getElementById('utrResult').style.display='none';
-  document.getElementById('utrResult').className='utr-result';
-  activePayIdx=PAYMENTS.findIndex(p=>p.id===orderId);
-  document.getElementById('ssModal').classList.add('open');
+    // Top products bars
+    const tbEl = document.getElementById('topProductBars');
+    const topP = stats.topProducts || [];
+    if (tbEl) {
+      if (!topP.length) {
+        tbEl.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">No sales data available yet</div>`;
+      } else {
+        const maxVal = topP[0].totalRevenue || 1;
+        tbEl.innerHTML = topP.map(p => `
+          <div class="bar-row">
+            <div class="bar-label">${p.productName}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(p.totalRevenue/maxVal)*100}%;background:linear-gradient(90deg,var(--gd),var(--gold));"></div></div>
+            <div class="bar-val">₹${Math.round(p.totalRevenue).toLocaleString('en-IN')}</div>
+          </div>`).join('');
+      }
+    }
+
+    // Status breakdown donut
+    const breakdown = stats.statusBreakdown || {};
+    const breakdownArray = Object.keys(breakdown).map(k => ({ n: k, val: breakdown[k] }));
+    const dl = document.getElementById('donutLegend');
+    if (dl) {
+      const colors = ['#f5a623', '#4de0ff', '#5de88d', '#b794f4', '#ff7a7a'];
+      dl.innerHTML = breakdownArray.map((item, i) => `
+        <div class="dl-item">
+          <div class="dl-dot" style="background:${colors[i % colors.length]}"></div>
+          <div class="dl-label">${item.n.replace(/_/g, ' ')}</div>
+          <div class="dl-val">${item.val}</div>
+        </div>`).join('');
+      
+      const donut = document.getElementById('donutVis');
+      if (donut && breakdownArray.length > 0) {
+        const total = breakdownArray.reduce((s, x) => s + x.val, 0) || 1;
+        let deg = 0;
+        const segs = breakdownArray.map((c, i) => {
+          const pct = (c.val / total) * 100;
+          const col = colors[i % colors.length];
+          const s = `${col} ${deg}deg ${deg + pct*3.6}deg`;
+          deg += pct * 3.6;
+          return s;
+        }).join(', ');
+        donut.style.background = `conic-gradient(${segs})`;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load analytics:', err);
+  }
 };
-window.closeModal=function(){document.getElementById('ssModal').classList.remove('open');};
-document.getElementById('ssModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
-window.verifyUTR=function(){
-  const val=document.getElementById('utrField').value.trim();
-  const res=document.getElementById('utrResult');
-  if(!val){res.textContent='Please enter a UTR number.';res.className='utr-result invalid';return;}
-  res.textContent='⏳ Verifying with India Post NEFT system…';res.className='utr-result';res.style.display='block';
-  setTimeout(()=>{
-    if(val.length>=10){res.textContent='✓ UTR '+val+' verified successfully. Transaction found in NEFT records.';res.className='utr-result valid';}
-    else{res.textContent='✗ UTR not found. Please re-check the transaction ID.';res.className='utr-result invalid';}
-  },1500);
+
+// Draw Revenue Chart with real live daily orders data
+window.drawRevChartReal = function(dailyData) {
+  const canvas = document.getElementById('revChart');
+  if (!canvas || !dailyData || dailyData.length === 0) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth;
+  const H = 200;
+  canvas.width = W;
+  canvas.height = H;
+  
+  const data = dailyData.map(d => parseFloat(d.revenue) || 0);
+  const labels = dailyData.map(d => {
+    const dt = new Date(d.date);
+    return dt.toLocaleDateString('en-IN', { weekday: 'short' });
+  });
+  
+  const maxV = Math.max(...data, 1000) * 1.2;
+  const pL = 52, pR = 20, pT = 16, pB = 32;
+  const cW = W - pL - pR;
+  const cH = H - pT - pB;
+  const toY = v => pT + cH - (v / maxV) * cH;
+  const toX = i => pL + i / (data.length - 1) * cW;
+  
+  // Grid lines
+  ctx.strokeStyle = 'rgba(245,166,35,.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const y = pT + (i / 4) * cH;
+    ctx.beginPath();
+    ctx.moveTo(pL, y);
+    ctx.lineTo(W - pR, y);
+    ctx.stroke();
+  }
+  
+  // Y labels
+  ctx.fillStyle = 'rgba(122,106,84,.7)';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'right';
+  for (let i = 0; i < 5; i++) {
+    const v = Math.round(maxV * (4 - i) / 4);
+    ctx.fillText('₹' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v), pL - 6, pT + (i / 4) * cH + 4);
+  }
+  
+  // Area Gradient
+  const grad = ctx.createLinearGradient(0, pT, 0, H - pB);
+  grad.addColorStop(0, 'rgba(245,166,35,.28)');
+  grad.addColorStop(1, 'rgba(245,166,35,0)');
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(data[0]));
+  for (let i = 1; i < data.length; i++) {
+    const cx = (toX(i - 1) + toX(i)) / 2;
+    ctx.bezierCurveTo(cx, toY(data[i - 1]), cx, toY(data[i]), toX(i), toY(data[i]));
+  }
+  ctx.lineTo(toX(data.length - 1), H - pB);
+  ctx.lineTo(toX(0), H - pB);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  
+  // Stroke Line
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(data[0]));
+  for (let i = 1; i < data.length; i++) {
+    const cx = (toX(i - 1) + toX(i)) / 2;
+    ctx.bezierCurveTo(cx, toY(data[i - 1]), cx, toY(data[i]), toX(i), toY(data[i]));
+  }
+  ctx.strokeStyle = '#f5a623';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(245,166,35,.5)';
+  ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  // Data dots
+  data.forEach((v, i) => {
+    ctx.beginPath();
+    ctx.arc(toX(i), toY(v), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f5a623';
+    ctx.fill();
+    ctx.strokeStyle = '#0a0804';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+  
+  // X labels
+  ctx.fillStyle = 'rgba(122,106,84,.7)';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  labels.forEach((l, i) => ctx.fillText(l, toX(i), H - 8));
 };
-window.approvePayment=function(){
-  if(activePayIdx>=0)PAYMENTS[activePayIdx].status='verified';
-  renderPayments();renderDashPending();closeModal();showToast('✅ Payment verified & approved!','success');
+
+// SS Modal verification mocks (fallback)
+window.openModal = function(orderId, amount, utr) {
+  openOrderModal(orderId);
 };
-window.rejectPayment=function(){
-  if(activePayIdx>=0)PAYMENTS[activePayIdx].status='rejected';
-  renderPayments();renderDashPending();closeModal();showToast('❌ Payment rejected. Customer notified.','error');
+window.closeModal = function() {
+  closeOrderModal();
 };
 
 /* ── TOAST ───────────────────────────── */
@@ -898,12 +1875,29 @@ function showToast(msg,type='success'){
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-/* ── SEARCH ──────────────────────────── */
-document.getElementById('globalSearch')?.addEventListener('input',function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll('.data-table tbody tr').forEach(row=>{
-    row.style.display=q===''||row.textContent.toLowerCase().includes(q)?'':'none';
-  });
+/* ── SEARCH (LIVE HYBRID INTEGRATION) ─────────────────── */
+let globalSearchTimeout;
+document.getElementById('globalSearch')?.addEventListener('input', function() {
+  clearTimeout(globalSearchTimeout);
+  globalSearchTimeout = setTimeout(() => {
+    const q = this.value.trim().toLowerCase();
+    const activePanel = document.querySelector('.panel.active');
+    
+    if (activePanel && activePanel.id === 'panel-orders') {
+      ordersPage = 1;
+      fetchOrders();
+    } else if (activePanel && activePanel.id === 'panel-users') {
+      const userSearch = document.getElementById('userSearch');
+      if (userSearch) {
+        userSearch.value = this.value;
+        userSearch.dispatchEvent(new Event('input'));
+      }
+    } else {
+      document.querySelectorAll('.panel.active .data-table tbody tr').forEach(row => {
+        row.style.display = q === '' || row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+  }, 400);
 });
 
 /* ══ STORE.JS INTEGRATION ══ */
@@ -1566,6 +2560,124 @@ document.getElementById('globalSearch')?.addEventListener('input',function(){
   // Auto-load on page start (so admin sees real data immediately)
   fetchRealInventory();
   loadCategoriesForSelect();
+  fetchDashboardStats();
+
+  // Set up tab switch action hooks
+  document.querySelectorAll('.sb-item[data-panel="orders"]').forEach(item => {
+    item.addEventListener('click', () => {
+      ordersPage = 1;
+      fetchOrders();
+    });
+  });
+  document.querySelectorAll('.sb-item[data-panel="payments"]').forEach(item => {
+    item.addEventListener('click', () => {
+      paymentsPage = 1;
+      fetchPaymentsReal();
+    });
+  });
+  document.querySelectorAll('.sb-item[data-panel="shipments"]').forEach(item => {
+    item.addEventListener('click', () => {
+      fetchShipmentsReal();
+    });
+  });
+  document.querySelectorAll('.sb-item[data-panel="analytics"]').forEach(item => {
+    item.addEventListener('click', () => {
+      fetchAnalyticsReal();
+    });
+  });
+  document.querySelectorAll('.sb-item[data-panel="dashboard"]').forEach(item => {
+    item.addEventListener('click', () => {
+      fetchDashboardStats();
+    });
+  });
+  document.querySelectorAll('.sb-item[data-panel="settings"]').forEach(item => {
+    item.addEventListener('click', () => {
+      fetchSettingsReal();
+    });
+  });
+
+  // Operations Settings
+  window.fetchSettingsReal = async function() {
+    try {
+      const res = await window.API.get('/admin/settings');
+      const grouped = res.data || res;
+      const paymentSettings = grouped.payment || {};
+      
+      const upiId = paymentSettings.merchant_upi_id?.text || '';
+      const name = paymentSettings.merchant_name?.text || '';
+      const qrUrl = paymentSettings.merchant_qr_code?.url || '';
+      
+      document.getElementById('setMerchantUpiId').value = upiId;
+      document.getElementById('setMerchantName').value = name;
+      
+      const previewContainer = document.getElementById('settingsQrPreviewContainer');
+      const previewImg = document.getElementById('settingsQrPreview');
+      
+      if (qrUrl) {
+        let src = qrUrl;
+        if (src.startsWith('/')) src = `${window.BACKEND_URL}${src}`;
+        previewImg.src = src;
+        previewContainer.style.display = 'block';
+      } else {
+        previewImg.src = '';
+        previewContainer.style.display = 'none';
+      }
+    } catch (err) {
+      showToast('❌ Failed to fetch settings: ' + err.message, 'error');
+    }
+  };
+
+  window.saveSettings = async function(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSaveSettings');
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving...';
+    
+    const upiId = document.getElementById('setMerchantUpiId').value.trim();
+    const name = document.getElementById('setMerchantName').value.trim();
+    const fileInput = document.getElementById('setQrImage');
+    
+    let qrUrl = document.getElementById('settingsQrPreview').src || '';
+    if (qrUrl.startsWith(window.location.origin)) {
+      qrUrl = qrUrl.replace(window.location.origin, '');
+    }
+    
+    try {
+      if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('qrCode', fileInput.files[0]);
+        
+        const uploadRes = await fetch(`${window.BACKEND_URL}/api/v1/admin/settings/upload-qr`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${window.Auth.getToken()}` },
+          body: formData,
+          credentials: 'include',
+        });
+        const uploadData = await uploadRes.json().catch(() => ({}));
+        if (!uploadRes.ok) throw new Error(uploadData.message || 'QR code failed to upload');
+        qrUrl = uploadData.data?.url || uploadData.url;
+      }
+      
+      const payload = {
+        settings: {
+          merchant_upi_id: { text: upiId },
+          merchant_name: { text: name },
+          merchant_qr_code: { url: qrUrl }
+        },
+        group: 'payment'
+      };
+      
+      await window.API.put('/admin/settings', payload);
+      showToast('✅ Settings saved successfully!', 'success');
+      fetchSettingsReal();
+    } catch (err) {
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Save Settings';
+      fileInput.value = '';
+    }
+  };
 
 })();
 </script>

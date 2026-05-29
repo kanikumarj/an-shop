@@ -150,39 +150,56 @@ exports.addToCart = async (req, res) => {
     await validateItemStock(productId, newTotal, variantId);
   }
 
-  const cartItem = await prisma.cartItem.upsert({
+  const existing = await prisma.cartItem.findFirst({
     where: {
-      userId_productId_variantId: {
+      userId,
+      productId,
+      variantId: variantId || null,
+    },
+  });
+
+  let cartItem;
+  if (existing) {
+    cartItem = await prisma.cartItem.update({
+      where: { id: existing.id },
+      data: {
+        quantity:   { increment: quantity },
+        priceAtAdd: effectivePrice,
+        isSavedForLater: false,
+        notes: notes ?? undefined,
+      },
+      include: {
+        product: {
+          select: {
+            id: true, name: true, slug: true, basePrice: true,
+            images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
+          },
+        },
+        variant: { select: { id: true, name: true, price: true, attributes: true } },
+      },
+    });
+  } else {
+    cartItem = await prisma.cartItem.create({
+      data: {
         userId,
         productId,
         variantId: variantId || null,
+        quantity,
+        priceAtAdd:  effectivePrice,
+        notes:       notes || null,
+        isSavedForLater: false,
       },
-    },
-    update: {
-      quantity:   { increment: quantity },
-      priceAtAdd: effectivePrice,  // Refresh price snapshot
-      isSavedForLater: false,       // If was saved, move back to active
-      notes: notes ?? undefined,
-    },
-    create: {
-      userId,
-      productId,
-      variantId:   variantId || null,
-      quantity,
-      priceAtAdd:  effectivePrice,
-      notes:       notes || null,
-      isSavedForLater: false,
-    },
-    include: {
-      product: {
-        select: {
-          id: true, name: true, slug: true, basePrice: true,
-          images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
+      include: {
+        product: {
+          select: {
+            id: true, name: true, slug: true, basePrice: true,
+            images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
+          },
         },
+        variant: { select: { id: true, name: true, price: true, attributes: true } },
       },
-      variant: { select: { id: true, name: true, price: true, attributes: true } },
-    },
-  });
+    });
+  }
 
   await invalidateCartCache(userId);
 
@@ -222,17 +239,24 @@ exports.batchAdd = async (req, res) => {
     try {
       const { effectivePrice } = await validateItemStock(productId, quantity, variantId);
 
-      await prisma.cartItem.upsert({
+      const existingBatchItem = await prisma.cartItem.findFirst({
         where: {
-          userId_productId_variantId: {
-            userId,
-            productId,
-            variantId: variantId || null,
-          },
+          userId,
+          productId,
+          variantId: variantId || null,
         },
-        update: { quantity: { increment: quantity }, priceAtAdd: effectivePrice },
-        create: { userId, productId, variantId: variantId || null, quantity, priceAtAdd: effectivePrice },
       });
+
+      if (existingBatchItem) {
+        await prisma.cartItem.update({
+          where: { id: existingBatchItem.id },
+          data: { quantity: { increment: quantity }, priceAtAdd: effectivePrice },
+        });
+      } else {
+        await prisma.cartItem.create({
+          data: { userId, productId, variantId: variantId || null, quantity, priceAtAdd: effectivePrice },
+        });
+      }
 
       results.added.push({ productId, variantId, quantity });
     } catch (err) {

@@ -96,7 +96,7 @@ exports.initiatePayment = async (req, res) => {
   });
 
   // Build UPI deep link data
-  const upiLinks = buildUpiDeepLink(order.total, payment.paymentReference, order.id);
+  const upiLinks = await buildUpiDeepLink(order.total, payment.paymentReference, order.id);
 
   // Check expiry
   const isExpired  = payment.expiresAt && new Date() > new Date(payment.expiresAt);
@@ -136,6 +136,7 @@ exports.initiatePayment = async (req, res) => {
       amount:         parseFloat(order.total),
       referenceCode:  payment.paymentReference,
       paymentNote:    upiLinks.displayNote,
+      qrCodeUrl:      upiLinks.qrCodeUrl,
       instructions: [
         `1. Open GPay, PhonePe, Paytm, or any UPI app`,
         `2. Pay ₹${parseFloat(order.total).toFixed(2)} to ${upiLinks.merchantUpiId}`,
@@ -497,7 +498,7 @@ exports.getPaymentInstructions = async (req, res) => {
 
   if (!payment) throw AppError.notFound('Payment record. Please initiate payment first.');
 
-  const upiLinks = buildUpiDeepLink(order.total, payment.paymentReference, order.id);
+  const upiLinks = await buildUpiDeepLink(order.total, payment.paymentReference, order.id);
 
   ApiResponse.success(res, {
     reference:     payment.paymentReference,
@@ -505,6 +506,7 @@ exports.getPaymentInstructions = async (req, res) => {
     merchantUpiId: upiLinks.merchantUpiId,
     merchantName:  upiLinks.merchantName,
     paymentNote:   upiLinks.displayNote,
+    qrCodeUrl:     upiLinks.qrCodeUrl,
     expiresAt:     payment.expiresAt,
     deepLinks: {
       upi:     upiLinks.upiUri,

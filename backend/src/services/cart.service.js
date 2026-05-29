@@ -495,27 +495,33 @@ const mergeGuestCart = async (userId, guestItems = []) => {
           }))?.price || product.basePrice)
         : parseFloat(product.basePrice);
 
-      await prisma.cartItem.upsert({
+      const existingMergeItem = await prisma.cartItem.findFirst({
         where: {
-          userId_productId_variantId: {
-            userId,
-            productId,
-            variantId: variantId || null,
-          },
-        },
-        // Existing item: keep whichever quantity is higher
-        update: {
-          quantity: { increment: quantity },
-          priceAtAdd: effectivePrice,
-        },
-        create: {
           userId,
           productId,
           variantId: variantId || null,
-          quantity,
-          priceAtAdd: effectivePrice,
         },
       });
+
+      if (existingMergeItem) {
+        await prisma.cartItem.update({
+          where: { id: existingMergeItem.id },
+          data: {
+            quantity: { increment: quantity },
+            priceAtAdd: effectivePrice,
+          },
+        });
+      } else {
+        await prisma.cartItem.create({
+          data: {
+            userId,
+            productId,
+            variantId: variantId || null,
+            quantity,
+            priceAtAdd: effectivePrice,
+          },
+        });
+      }
 
       merged++;
     } catch (err) {
