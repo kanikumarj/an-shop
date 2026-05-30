@@ -117,6 +117,10 @@ exports.listOrders = async (req, res) => {
           take: 2,
           select: { productName: true, quantity: true, unitPrice: true, imageUrl: true },
         },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          include: { screenshots: { orderBy: { createdAt: 'desc' } } },
+        },
         _count: { select: { items: true } },
       },
       orderBy,

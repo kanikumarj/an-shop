@@ -597,8 +597,8 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
           <div id="odUtrResult" class="utr-result" style="margin-bottom:12px; display:none;"></div>
           <!-- Actions -->
           <div style="display:flex; gap:10px;">
-            <button class="btn-modal-approve" onclick="approveOdPayment()" style="padding:8px; font-size:.8rem;">Approve</button>
-            <button class="btn-modal-reject" onclick="rejectOdPayment()" style="padding:8px; font-size:.8rem;">Reject</button>
+            <button id="btnModalApprove" class="btn-modal-approve" onclick="approveOdPayment()" style="padding:8px; font-size:.8rem;">Approve</button>
+            <button id="btnModalReject" class="btn-modal-reject" onclick="rejectOdPayment()" style="padding:8px; font-size:.8rem;">Reject</button>
           </div>
           <div id="odRejectionReasonBlock" style="margin-top:8px; display:none;">
             <input type="text" id="odRejectionReason" placeholder="Rejection reason..." style="width:100%; padding:8px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.75rem;" />
@@ -1484,6 +1484,12 @@ window.verifyOdUtr = function() {
 // Approve payment in Order Modal
 window.approveOdPayment = async function() {
   if (!confirm('Approve payment verification? Order status will automatically move to Preparing.')) return;
+  const btnApprove = document.getElementById('btnModalApprove');
+  const btnReject = document.getElementById('btnModalReject');
+  
+  if (btnApprove) btnApprove.disabled = true;
+  if (btnReject) btnReject.disabled = true;
+
   try {
     await window.API.patch(`/admin/orders/${window.activeOrderId}/payment`, {
       action: 'APPROVE',
@@ -1492,9 +1498,12 @@ window.approveOdPayment = async function() {
     showToast('✅ Payment approved! Order is Preparing.', 'success');
     closeOrderModal();
     fetchOrders();
+    if (window.fetchPaymentsReal) window.fetchPaymentsReal();
     fetchDashboardStats();
   } catch (err) {
     showToast('❌ Failed: ' + err.message, 'error');
+    if (btnApprove) btnApprove.disabled = false;
+    if (btnReject) btnReject.disabled = false;
   }
 };
 
@@ -1510,6 +1519,13 @@ window.rejectOdPayment = async function() {
     showToast('❌ Please specify a rejection reason.', 'error');
     return;
   }
+
+  const btnApprove = document.getElementById('btnModalApprove');
+  const btnReject = document.getElementById('btnModalReject');
+  
+  if (btnApprove) btnApprove.disabled = true;
+  if (btnReject) btnReject.disabled = true;
+
   try {
     await window.API.patch(`/admin/orders/${window.activeOrderId}/payment`, {
       action: 'REJECT',
@@ -1518,9 +1534,12 @@ window.rejectOdPayment = async function() {
     showToast('❌ Screenshot rejected.', 'success');
     closeOrderModal();
     fetchOrders();
+    if (window.fetchPaymentsReal) window.fetchPaymentsReal();
     fetchDashboardStats();
   } catch (err) {
     showToast('❌ Failed: ' + err.message, 'error');
+    if (btnApprove) btnApprove.disabled = false;
+    if (btnReject) btnReject.disabled = false;
   }
 };
 
