@@ -20,6 +20,14 @@ window.API = {
   },
 
   async request(path, options = {}) {
+    // Check if session has expired due to inactivity before making the request
+    if (window.Auth && typeof window.Auth.checkInactivity === 'function') {
+      const expired = window.Auth.checkInactivity();
+      if (expired) {
+        throw new Error('Session expired due to inactivity. Please log in again.');
+      }
+    }
+
     let token = window.Auth.getToken();
     const headers = { ...options.headers };
     if (!(options.body instanceof FormData)) {
@@ -298,6 +306,7 @@ window.Auth = {
     try {
       localStorage.setItem(this.USER_KEY, JSON.stringify({ joinedAt: new Date().toISOString(), ...userData }));
       if (token) localStorage.setItem(this.TOKEN_KEY, token);
+      localStorage.setItem('im_last_active', Date.now().toString()); // Set active on login
       window.dispatchEvent(new CustomEvent('authUpdated'));
     } catch (e) { console.error(e); }
   },
@@ -314,6 +323,7 @@ window.Auth = {
       }
       localStorage.removeItem(this.USER_KEY);
       localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem('im_last_active'); // Clean up on logout
       window.dispatchEvent(new CustomEvent('authUpdated'));
     } catch (e) { console.error(e); }
   },
@@ -326,6 +336,34 @@ window.Auth = {
   isSuperAdmin() {
     const u = this.getUser();
     return u && u.role === 'SUPERADMIN';
+  },
+
+  checkInactivity() {
+    const user = this.getUser();
+    if (!user) return false;
+
+    const lastActiveStr = localStorage.getItem('im_last_active');
+    if (lastActiveStr) {
+      const lastActive = parseInt(lastActiveStr, 10);
+      const TIMEOUT_LIMIT = 15 * 60 * 1000; // 15 minutes inactivity timeout
+      if (Date.now() - lastActive > TIMEOUT_LIMIT) {
+        console.warn('Session expired due to inactivity.');
+        this.logoutUser();
+        const isProtected = window.location.pathname.endsWith('admin.html') || 
+                            window.location.pathname.endsWith('dashboard.html') || 
+                            window.location.pathname.endsWith('checkout.html');
+        if (isProtected) {
+          alert('Your session has expired due to inactivity. Please log in again.');
+          window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.pathname);
+        } else if (!window.location.pathname.endsWith('auth.html')) {
+          window.location.reload();
+        }
+        return true;
+      }
+    }
+    // Update active time
+    localStorage.setItem('im_last_active', Date.now().toString());
+    return false;
   },
 
   login(userData, token) { this.loginUser(userData, token); },
@@ -375,6 +413,32 @@ window.CartUI = {
 document.addEventListener('DOMContentLoaded', () => {
   window.CartUI.updateNavBadge();
   window.CartUI.updateAuthNavBar();
+
+  // Set up inactivity tracking
+  if (typeof window.Auth.checkInactivity === 'function') {
+    // Check inactivity on page load
+    window.Auth.checkInactivity();
+    
+    // Periodically check inactivity in background
+    setInterval(() => window.Auth.checkInactivity(), 30000); // every 30 seconds
+    
+    // Bind interaction events to update activity time (throttled)
+    const ACTIVITY_EVENTS = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+    let lastSavedLocal = Date.now();
+    function updateActivity() {
+      const now = Date.now();
+      if (now - lastSavedLocal > 10000) { // Throttle: 10 seconds
+        lastSavedLocal = now;
+        const user = window.Auth.getUser();
+        if (user) {
+          localStorage.setItem('im_last_active', now.toString());
+        }
+      }
+    }
+    ACTIVITY_EVENTS.forEach(event => {
+      window.addEventListener(event, updateActivity, { passive: true });
+    });
+  }
 });
 window.addEventListener('cartUpdated', () => window.CartUI.updateNavBadge());
 window.addEventListener('authUpdated', () => window.CartUI.updateAuthNavBar());

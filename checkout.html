@@ -493,6 +493,8 @@ document.getElementById('btnStep1')?.addEventListener('click', async () => {
         quantity: item.qty
       };
     });
+    // Clear active database cart first to avoid additive quantity increment, then sync
+    await window.API.del('/cart').catch(err => console.error('Failed to clear cart:', err));
     await window.API.post('/cart/sync', { items: syncItems });
     
     // 3. Save shipping address
@@ -503,16 +505,42 @@ document.getElementById('btnStep1')?.addEventListener('click', async () => {
     const fstate  = document.getElementById('fstate').value.trim();
     const fpin    = document.getElementById('fpincode').value.trim();
     
-    const addressRes = await window.API.post('/users/addresses', {
-      fullName: fname,
-      phone: fmobile,
-      line1: faddr1,
-      city: fcity,
-      state: fstate,
-      pincode: fpin,
-      type: 'HOME',
-    });
-    const addressId = addressRes.data?.id || addressRes.id;
+    const existingAddressesRes = await window.API.get('/users/addresses').catch(() => ({ data: [] }));
+    const addresses = existingAddressesRes.data || existingAddressesRes || [];
+    
+    let addressId = null;
+    const cleanPhone = fmobile.replace(/\D/g, '');
+    const match = addresses.find(addr => 
+      addr.fullName.toLowerCase().trim() === fname.toLowerCase() &&
+      (addr.phone || '').replace(/\D/g, '') === cleanPhone &&
+      addr.line1.toLowerCase().trim() === faddr1.toLowerCase() &&
+      addr.city.toLowerCase().trim() === fcity.toLowerCase() &&
+      addr.state.toLowerCase().trim() === fstate.toLowerCase() &&
+      addr.pincode.trim() === fpin
+    );
+    
+    if (match) {
+      addressId = match.id;
+    } else {
+      if (addresses.length >= 5) {
+        // Sort by createdAt ascending to find and delete the oldest
+        const sorted = [...addresses].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const oldest = sorted[0];
+        if (oldest) {
+          await window.API.del(`/users/addresses/${oldest.id}`).catch(err => console.error('Failed to delete oldest address:', err));
+        }
+      }
+      const addressRes = await window.API.post('/users/addresses', {
+        fullName: fname,
+        phone: fmobile,
+        line1: faddr1,
+        city: fcity,
+        state: fstate,
+        pincode: fpin,
+        type: 'HOME',
+      });
+      addressId = addressRes.data?.id || addressRes.id;
+    }
     
     // 4. Create pending order
     const orderRes = await window.API.post('/orders', {
