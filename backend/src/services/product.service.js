@@ -388,7 +388,7 @@ const attachProductImages = async (productId, files, setFirstAsPrimary = true) =
       thumbnailUrl,
       alt: file.originalname?.split('.')[0] || `Product image ${index + 1}`,
       type: 'image',
-      fileSizeBytes: file.size || null,
+      sizeBytes: file.size || null,
       isPrimary: setFirstAsPrimary && hasPrimary && index === 0,
       sortOrder: existingCount + index,
     };
