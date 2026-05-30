@@ -86,6 +86,33 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
   transition:transform .5s var(--spring);position:relative;z-index:2;}
 .main-img:hover .main-emoji{transform:scale(1.08);}
 .main-img.rotating .main-emoji{animation:spin360 1.2s ease-in-out;}
+#mainProductImg {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 16px;
+  filter: drop-shadow(0 12px 30px rgba(0,0,0,0.6));
+  position: relative;
+  z-index: 2;
+  transition: transform .5s var(--spring), opacity .3s;
+}
+.main-img:hover #mainProductImg {
+  transform: scale(1.04);
+}
+.main-img.rotating #mainProductImg {
+  animation: spin360 1.2s ease-in-out;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  opacity: 0.8;
+  transition: opacity .25s;
+}
+.thumb:hover img, .thumb.active img {
+  opacity: 1;
+}
 @keyframes spin360{0%{transform:scale(1) rotate(0deg);}50%{transform:scale(1.15) rotate(180deg);}100%{transform:scale(1) rotate(360deg);}}
 .sweep-ring{position:absolute;width:300px;height:300px;border-radius:50%;border:2px solid rgba(245,166,35,0.3);opacity:0;pointer-events:none;}
 .main-img.rotating .sweep-ring{animation:sweepRing 1.2s ease-in-out;}
@@ -383,6 +410,7 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
       <div class="img-glow"></div>
       <div class="sweep-ring" id="sweepRing"></div>
       <span class="main-emoji" id="mainEmoji">🌀</span>
+      <img id="mainProductImg" src="" style="display:none;" />
       <div class="steam-wrap">
         <div class="stm"></div><div class="stm"></div><div class="stm"></div><div class="stm"></div>
       </div>
@@ -813,21 +841,55 @@ function switchTab(name){
 document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>switchTab(btn.dataset.tab));});
 window.switchTab=switchTab;
 
-/* ── Thumbnails ───────────────────────────────────── */
-document.querySelectorAll('.thumb').forEach(th=>{
-  th.addEventListener('click',function(){
-    document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
-    this.classList.add('active');
-    const emoji=this.dataset.emoji;
-    const mainEmoji=document.getElementById('mainEmoji');
-    mainEmoji.style.opacity='0';mainEmoji.style.transform='scale(0.8)';
-    setTimeout(()=>{
-      mainEmoji.textContent=emoji;
-      mainEmoji.style.opacity='1';mainEmoji.style.transform='scale(1)';
-      mainEmoji.style.transition='opacity .3s,transform .4s cubic-bezier(0.34,1.56,0.64,1)';
-    },250);
+/* ── Thumbnails Click Binder ─────────────────────────── */
+function bindThumbnails() {
+  document.querySelectorAll('.thumb').forEach(th => {
+    th.addEventListener('click', function() {
+      document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+
+      const src = this.dataset.src;
+      const emoji = this.dataset.emoji;
+
+      const mainEmoji = document.getElementById('mainEmoji');
+      const mainProductImg = document.getElementById('mainProductImg');
+
+      // Transition elements
+      const targetEl = src ? mainProductImg : mainEmoji;
+      const otherEl = src ? mainEmoji : mainProductImg;
+
+      if (otherEl) {
+        otherEl.style.opacity = '0';
+        otherEl.style.transform = 'scale(0.8)';
+      }
+      if (targetEl) {
+        targetEl.style.opacity = '0';
+        targetEl.style.transform = 'scale(0.8)';
+      }
+
+      setTimeout(() => {
+        if (otherEl) {
+          otherEl.style.display = 'none';
+        }
+        if (targetEl) {
+          targetEl.style.display = 'block';
+          if (src) {
+            targetEl.src = src;
+          } else if (emoji) {
+            targetEl.textContent = emoji;
+          }
+          
+          // Force reflow
+          void targetEl.offsetWidth;
+          
+          targetEl.style.opacity = '1';
+          targetEl.style.transform = 'scale(1)';
+          targetEl.style.transition = 'opacity .3s, transform .4s cubic-bezier(0.34,1.56,0.64,1)';
+        }
+      }, 250);
+    });
   });
-});
+}
 
 /* ── 360° Button ──────────────────────────────────── */
 document.getElementById('btn360')?.addEventListener('click',function(){
@@ -929,10 +991,23 @@ document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
 console.log('%c🍛 Indianmade Product Page','font-size:13px;font-weight:bold;color:#f5a623;');
 
 // Dynamic product lookup and rendering on load
-function initDynamicProduct() {
+async function initDynamicProduct() {
   const urlParams = new URLSearchParams(window.location.search);
   const prodId = parseInt(urlParams.get('id'), 10) || 1; // Default to Murukku if no ID
   currentProduct = window.PRODUCTS.find(p => p.id === prodId) || window.PRODUCTS[0];
+
+  if (currentProduct && currentProduct.dbId) {
+    try {
+      // Fetch full product details to retrieve all images from Detail Include
+      const res = await window.API.get('/products/' + currentProduct.dbId);
+      if (res && res.success && res.data) {
+        currentProduct.images = res.data.images || [];
+        currentProduct.description = res.data.description || currentProduct.description;
+      }
+    } catch (err) {
+      console.error('Failed to fetch full product details, using pre-loaded list data:', err);
+    }
+  }
 
   // Update categories and titles
   document.querySelectorAll('.prod-cat').forEach(el => el.textContent = currentProduct.cat === 'snacks' ? 'Authentic Snacks' : currentProduct.cat === 'spices' ? 'Spice Blends' : currentProduct.cat === 'powders' ? 'Cooking Powders' : 'Combo Pack');
@@ -958,14 +1033,62 @@ function initDynamicProduct() {
 
   // Emojis and Gallery
   const mainEmojiEl = document.getElementById('mainEmoji');
-  if (mainEmojiEl) mainEmojiEl.textContent = currentProduct.emoji;
-  document.querySelectorAll('.thumb').forEach((thumb, idx) => {
-    if (idx === 0 || idx === 1) {
-      thumb.dataset.emoji = currentProduct.emoji;
-      // Replace the emoji character in the text node
-      thumb.innerHTML = `${currentProduct.emoji}<span class="thumb-label">${idx === 0 ? 'Main' : 'Close-up'}</span>`;
+  const mainProductImg = document.getElementById('mainProductImg');
+
+  const resolvedImages = (currentProduct.images || []).map(img => {
+    let url = img.url;
+    if (url && url.startsWith('/')) {
+      url = `${window.BACKEND_URL}${url}`;
     }
+    return { ...img, url };
   });
+
+  const thumbsContainer = document.querySelector('.thumbs');
+  if (resolvedImages.length > 0) {
+    // Show image, hide emoji
+    if (mainEmojiEl) mainEmojiEl.style.display = 'none';
+    if (mainProductImg) {
+      mainProductImg.style.display = 'block';
+      const primaryImg = resolvedImages.find(img => img.isPrimary) || resolvedImages[0];
+      mainProductImg.src = primaryImg.url;
+      mainProductImg.style.opacity = '1';
+      mainProductImg.style.transform = 'scale(1)';
+    }
+
+    if (thumbsContainer) {
+      thumbsContainer.innerHTML = resolvedImages.map((img, idx) => {
+        const isActive = idx === 0 ? 'active' : '';
+        const label = idx === 0 ? 'Main' : `Angle ${idx + 1}`;
+        return `
+          <button class="thumb ${isActive}" data-src="${img.url}" id="th-${idx + 1}">
+            <img src="${img.url}" />
+            <span class="thumb-label">${label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+  } else {
+    // Fallback to emoji
+    if (mainProductImg) mainProductImg.style.display = 'none';
+    if (mainEmojiEl) {
+      mainEmojiEl.style.display = 'block';
+      mainEmojiEl.textContent = currentProduct.emoji;
+      mainEmojiEl.style.opacity = '1';
+      mainEmojiEl.style.transform = 'scale(1)';
+    }
+
+    if (thumbsContainer) {
+      thumbsContainer.innerHTML = `
+        <button class="thumb active" data-emoji="${currentProduct.emoji}" data-label="Main View" id="th-1">${currentProduct.emoji}<span class="thumb-label">Main</span></button>
+        <button class="thumb" data-emoji="${currentProduct.emoji}" data-label="Close-up" data-size="11rem" id="th-2" style="font-size:2.6rem;">${currentProduct.emoji}<span class="thumb-label">Close-up</span></button>
+        <button class="thumb" data-emoji="🫙🌿🌾" data-label="Ingredients" id="th-3" style="font-size:1.5rem;">🫙🌿<span class="thumb-label">Ingredients</span></button>
+        <button class="thumb" data-emoji="📦" data-label="Package" id="th-4">📦<span class="thumb-label">Packaged</span></button>
+      `;
+    }
+  }
+
+  // Bind click event listeners
+  bindThumbnails();
 
   // Description tab contents
   const descParagraphs = document.querySelectorAll('.desc-body p');
