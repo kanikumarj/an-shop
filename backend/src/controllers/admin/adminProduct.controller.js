@@ -730,12 +730,11 @@ exports.createCategory = async (req, res) => {
     data: { ...data, slug },
   });
 
-  // Attach image if uploaded
   if (req.file) {
     await prisma.category.update({
       where: { id: category.id },
       data: {
-        image: req.file.path,
+        image: req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`,
         imagePublicId: req.file.filename,
       },
     });
@@ -752,12 +751,11 @@ exports.updateCategory = async (req, res) => {
   const category = await prisma.category.findFirst({ where: { id, deletedAt: null } });
   if (!category) throw AppError.notFound('Category');
 
-  // Image replacement
   if (req.file) {
     if (category.imagePublicId) {
       await deleteFromCloudinary(category.imagePublicId).catch(() => {});
     }
-    data.image = req.file.path;
+    data.image = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
     data.imagePublicId = req.file.filename;
   }
 

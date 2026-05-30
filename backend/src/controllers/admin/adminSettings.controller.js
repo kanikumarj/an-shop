@@ -33,7 +33,7 @@ exports.updateSettings = async (req, res) => {
 exports.uploadQrCode = async (req, res) => {
   if (!req.file) throw AppError.badRequest('No QR code image uploaded.');
   ApiResponse.success(res, {
-    url: req.file.path || req.file.secure_url,
+    url: req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`,
     publicId: req.file.filename,
   }, 'QR code uploaded successfully.');
 };

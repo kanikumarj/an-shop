@@ -59,7 +59,10 @@ exports.updateAvatar = async (req, res) => {
 
   const updated = await prisma.user.update({
     where: { id: req.user.id },
-    data: { avatar: req.file.path, avatarPublicId: req.file.filename },
+    data: {
+      avatar: req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`,
+      avatarPublicId: req.file.filename
+    },
     select: { id: true, avatar: true },
   });
 

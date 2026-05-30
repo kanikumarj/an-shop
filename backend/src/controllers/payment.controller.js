@@ -269,8 +269,8 @@ exports.uploadScreenshot = async (req, res) => {
       data: {
         paymentId:    payment.id,
         uploadedBy:   userId,
-        fileUrl:      req.file.path,      // Cloudinary URL
-        publicId:     req.file.filename,  // Cloudinary public ID
+        fileUrl:      req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`,      // Cloudinary URL or relative local path
+        publicId:     req.file.filename,  // Cloudinary public ID or local filename
         thumbnailUrl: null,
         fileName:     req.file.originalname || 'screenshot',
         fileType:     req.file.mimetype,

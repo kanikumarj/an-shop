@@ -72,7 +72,7 @@ exports.createCategory = async (req, res) => {
       name,
       slug,
       description,
-      image: req.file?.path || null,
+      image: req.file ? (req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`) : null,
       imagePublicId: req.file?.filename || null,
       icon,
       parentId: parentId || null,
@@ -97,7 +97,10 @@ exports.updateCategory = async (req, res) => {
   const updates = {
     ...rest,
     ...(name && { name, slug: slugify(name) }),
-    ...(req.file && { image: req.file.path, imagePublicId: req.file.filename }),
+    ...(req.file && {
+      image: req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`,
+      imagePublicId: req.file.filename
+    }),
   };
 
   const category = await prisma.category.update({
