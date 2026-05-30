@@ -224,6 +224,13 @@ const calculateCartSummary = (activeItems, couponResult = null, addressPincode =
   const subtotal  = roundTo(orderableItems.reduce((s, i) => s + i.lineTotal, 0));
   const totalTax  = roundTo(orderableItems.reduce((s, i) => s + i.lineTaxAmount, 0));
 
+  // Extra tax for non-tax-inclusive products (needs to be added to total)
+  const extraTax = roundTo(orderableItems.reduce((s, i) => {
+    // If product is NOT tax-inclusive, lineTaxAmount must be added on top
+    const isTaxInclusive = i.product?.taxInclusive ?? true;
+    return s + (isTaxInclusive ? 0 : i.lineTaxAmount);
+  }, 0));
+
   // Coupon discount
   let couponDiscount = 0;
   if (couponResult?.valid && couponResult.discount) {
@@ -233,7 +240,7 @@ const calculateCartSummary = (activeItems, couponResult = null, addressPincode =
 
   const afterCoupon  = roundTo(subtotal - couponDiscount);
   const shipping     = calculateShipping(afterCoupon);
-  const total        = roundTo(afterCoupon + shipping);
+  const total        = roundTo(afterCoupon + shipping + extraTax);
 
   // Savings
   const mrpTotal     = roundTo(

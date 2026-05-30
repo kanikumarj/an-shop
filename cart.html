@@ -300,7 +300,7 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 
       <div class="summary-row"><span class="label">Subtotal</span><span class="val" id="subtotalVal">₹526</span></div>
       <div class="summary-row" id="deliveryRow"><span class="label">Delivery</span><span class="val green" id="deliveryVal">FREE ✓</span></div>
-      <div class="summary-row"><span class="label">GST (5%)</span><span class="val" id="taxVal">₹26.30</span></div>
+      <div class="summary-row"><span class="label">GST (incl.)</span><span class="val" id="taxVal">₹26.30</span></div>
       <div class="summary-row discount-row" id="discountRow" style="display:none;"><span class="label">Coupon Discount</span><span class="val" id="discountVal">−₹0</span></div>
 
       <div class="savings-badge" id="savingsBadge">
@@ -396,18 +396,26 @@ const COUPONS={'SAVE10':{type:'pct',val:10,label:'10% off'},'FLAT50':{type:'flat
 /* ── Calculations ──────────────────────── */
 function calcSubtotal(){return cart.reduce((s,i)=>s+i.price*i.qty,0);}
 function calcOrigTotal(){return cart.reduce((s,i)=>s+i.orig*i.qty,0);}
-function calcDelivery(sub){return sub>=499?0:60;}
-function calcTax(sub){return Math.round(sub*0.05*100)/100;}
+function calcDelivery(afterCoupon){return afterCoupon>=500?0:50;}
+function calcTax(sub){
+  // Tax is INCLUDED in product prices (tax-inclusive model)
+  // This computes the embedded tax for display only — NOT added to total
+  return Math.round(sub*0.05/1.05*100)/100;
+}
 function calcCoupon(sub,code){
   const c=COUPONS[code];if(!c)return 0;
   return c.type==='pct'?Math.round(sub*c.val/100):Math.min(c.val,sub);
 }
 function calcTotal(){
   const sub=calcSubtotal();
-  const del=calcDelivery(sub);
-  const tax=calcTax(sub);
   const disc=calcCoupon(sub,couponCode);
-  return {sub,del,tax,disc,total:sub+del+tax-disc};
+  const afterCoupon=sub-disc;
+  const del=calcDelivery(afterCoupon);
+  // Tax is already included in product prices — show for info only
+  const tax=calcTax(sub);
+  // Total = subtotal - coupon discount + shipping (matches backend)
+  const total=Math.round((afterCoupon+del)*100)/100;
+  return {sub,del,tax,disc,total};
 }
 
 /* ── Render ────────────────────────────── */

@@ -117,6 +117,7 @@ const validateStatusTransition = (from, to, isAdmin = false) => {
 const calculateOrderTotals = (cartItems, coupon = null) => {
   let subtotal = 0;
   let totalTax = 0;
+  let totalExtraTax = 0; // Tax that needs to be added on top (non-inclusive)
   const orderItems = [];
 
   for (const item of cartItems) {
@@ -127,9 +128,19 @@ const calculateOrderTotals = (cartItems, coupon = null) => {
     const taxPercent   = parseFloat(product.taxPercent) || 0;
 
     const lineSubtotal  = roundTo(unitPrice * quantity);
-    const lineTaxAmount = product.taxInclusive
-      ? roundTo(lineSubtotal - lineSubtotal / (1 + taxPercent / 100))
-      : roundTo(lineSubtotal * taxPercent / 100);
+    let lineTaxAmount;
+    let lineTotal;
+
+    if (product.taxInclusive) {
+      // Tax is embedded in the price — extract for display
+      lineTaxAmount = roundTo(lineSubtotal - lineSubtotal / (1 + taxPercent / 100));
+      lineTotal = lineSubtotal; // Price already includes tax
+    } else {
+      // Tax needs to be added on top of the price
+      lineTaxAmount = roundTo(lineSubtotal * taxPercent / 100);
+      lineTotal = roundTo(lineSubtotal + lineTaxAmount);
+      totalExtraTax += lineTaxAmount;
+    }
 
     subtotal += lineSubtotal;
     totalTax += lineTaxAmount;
@@ -147,7 +158,7 @@ const calculateOrderTotals = (cartItems, coupon = null) => {
       quantity,
       subtotal:     lineSubtotal,
       discountAmount: 0,
-      total:        lineSubtotal,
+      total:        lineTotal,
     });
   }
 
@@ -176,7 +187,8 @@ const calculateOrderTotals = (cartItems, coupon = null) => {
     // shipping already covered in couponDiscount
   }
 
-  const total = roundTo(afterCoupon + shippingCharge);
+  // Total = subtotal - coupon + shipping + any extra non-inclusive tax
+  const total = roundTo(afterCoupon + shippingCharge + totalExtraTax);
 
   return {
     subtotal,

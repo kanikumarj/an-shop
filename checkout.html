@@ -257,7 +257,7 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
       <div id="checkoutItemsContainer"></div>
       <div class="sum-row"><span style="color:var(--muted)">Subtotal</span><span id="summarySubtotal">₹0</span></div>
       <div class="sum-row"><span style="color:var(--muted)">Delivery</span><span id="summaryDelivery">₹0</span></div>
-      <div class="sum-row"><span style="color:var(--muted)">GST (5%)</span><span id="summaryTax">₹0</span></div>
+      <div class="sum-row"><span style="color:var(--muted)">GST (incl.)</span><span id="summaryTax">₹0</span></div>
       <div class="sum-row discount-row" id="summaryDiscountRow" style="display:none;"><span style="color:var(--muted)">Discount</span><span id="summaryDiscount">₹0</span></div>
       <div class="sum-total"><span>Total</span><span id="summaryTotal">₹0</span></div>
     </div>
@@ -551,6 +551,21 @@ document.getElementById('btnStep1')?.addEventListener('click', async () => {
     window.currentOrderId = order.id;
     window.currentOrderNumber = order.orderNumber;
     
+    // ─── CRITICAL: Sync checkoutData with backend's actual totals ───
+    // The backend is the source of truth for pricing. Update all amounts
+    // to prevent mismatch during payment screenshot upload.
+    if (checkoutData) {
+      checkoutData.subtotal = parseFloat(order.subtotal) || checkoutData.subtotal;
+      checkoutData.delivery = parseFloat(order.shippingCharge) || 0;
+      checkoutData.tax      = parseFloat(order.taxAmount) || 0;
+      checkoutData.discount = parseFloat(order.couponDiscount) || 0;
+      checkoutData.total    = parseFloat(order.total);
+      // Update localStorage so any page reload also uses correct values
+      localStorage.setItem('im_checkout_cart', JSON.stringify(checkoutData));
+    }
+    // Store the backend order total for payment screenshot
+    window.backendOrderTotal = parseFloat(order.total);
+    
     // 5. Initiate UPI payment to get deep links
     const payRes = await window.API.post(`/payments/initiate/${order.id}`);
     const payData = payRes.data || payRes;
@@ -561,9 +576,31 @@ document.getElementById('btnStep1')?.addEventListener('click', async () => {
     document.getElementById('confOrderId').textContent = order.orderNumber;
     document.getElementById('confName').textContent = fname.split(' ')[0];
     
+    // Update summary panel with backend values
+    const bkTotal    = parseFloat(order.total).toFixed(2);
+    const bkSubtotal = parseFloat(order.subtotal).toFixed(2);
+    const bkShipping = parseFloat(order.shippingCharge);
+    const bkTax      = parseFloat(order.taxAmount).toFixed(2);
+    const bkDiscount = parseFloat(order.couponDiscount || 0);
+    
+    document.getElementById('summarySubtotal').textContent = '₹' + bkSubtotal;
+    document.getElementById('summaryDelivery').textContent = bkShipping === 0 ? 'FREE ✓' : '₹' + bkShipping.toFixed(2);
+    document.getElementById('summaryDelivery').style.color = bkShipping === 0 ? 'var(--green)' : '';
+    document.getElementById('summaryTax').textContent = '₹' + bkTax;
+    const discRow = document.getElementById('summaryDiscountRow');
+    if (discRow) {
+      if (bkDiscount > 0) {
+        discRow.style.display = 'flex';
+        document.getElementById('summaryDiscount').textContent = '−₹' + bkDiscount.toFixed(2);
+      } else {
+        discRow.style.display = 'none';
+      }
+    }
+    document.getElementById('summaryTotal').textContent = '₹' + bkTotal;
+    
     // Update payment instructions and amount
-    document.querySelectorAll('.pay-amount').forEach(el => el.textContent = '₹' + parseFloat(order.total).toFixed(2));
-    document.querySelectorAll('.qr-label').forEach(el => el.textContent = `Scan to Pay ₹${parseFloat(order.total).toFixed(2)}`);
+    document.querySelectorAll('.pay-amount').forEach(el => el.textContent = '₹' + bkTotal);
+    document.querySelectorAll('.qr-label').forEach(el => el.textContent = `Scan to Pay ₹${bkTotal}`);
     
     // Update Merchant UPI ID display
     const upiDetails = payData.upiDetails || {};
@@ -675,7 +712,7 @@ window.confirmOrder=async function(){
     const formData = new FormData();
     formData.append('screenshot', fileInput.files[0]);
     formData.append('utrNumber', utr);
-    formData.append('paidAmount', checkoutData.total);
+    formData.append('paidAmount', window.backendOrderTotal || checkoutData.total);
 
     const res = await fetch(`${window.BACKEND_URL}/api/v1/payments/${window.currentOrderId}/upload`, {
       method: 'POST',
