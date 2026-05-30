@@ -147,6 +147,50 @@ const shipmentCacheKey  = (orderId)    => `tracking:order:${orderId}`;
 //   CREATE SHIPMENT
 // ═══════════════════════════════════════════════════════════
 
+// ─── Status Mapping Helpers ───────────────────────────────────────────────────
+const mapStatusToEventType = (status) => {
+  const mapping = {
+    PENDING: 'ORDER_CONFIRMED',
+    LABEL_CREATED: 'ORDER_CONFIRMED',
+    PICKED_UP: 'DISPATCHED',
+    IN_TRANSIT: 'IN_TRANSIT',
+    OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+    DELIVERED: 'DELIVERED',
+    FAILED_DELIVERY: 'DELIVERY_ATTEMPTED',
+    RETURNED: 'RETURNED',
+    BOOKED: 'ORDER_CONFIRMED',
+    REACHED_HUB: 'IN_TRANSIT',
+    DISPATCHED: 'DISPATCHED',
+    RETURNED_TO_HUB: 'IN_TRANSIT',
+  };
+  return mapping[status] || 'CUSTOM';
+};
+exports.mapStatusToEventType = mapStatusToEventType;
+
+const mapStatusToShipmentStatus = (status) => {
+  const mapping = {
+    PENDING: 'PENDING',
+    LABEL_CREATED: 'LABEL_CREATED',
+    PICKED_UP: 'PICKED_UP',
+    IN_TRANSIT: 'IN_TRANSIT',
+    OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+    DELIVERED: 'DELIVERED',
+    FAILED_DELIVERY: 'FAILED_DELIVERY',
+    RETURNED: 'RETURNED',
+    BOOKED: 'LABEL_CREATED',
+    REACHED_HUB: 'IN_TRANSIT',
+    DISPATCHED: 'IN_TRANSIT',
+    DELIVERY_FAILED: 'FAILED_DELIVERY',
+    RETURNED_TO_HUB: 'IN_TRANSIT',
+  };
+  return mapping[status] || 'IN_TRANSIT';
+};
+exports.mapStatusToShipmentStatus = mapStatusToShipmentStatus;
+
+// ═══════════════════════════════════════════════════════════
+//   CREATE SHIPMENT
+// ═══════════════════════════════════════════════════════════
+
 /**
  * Create or update a shipment record when an order is shipped.
  * Called from the admin ship-order flow.
@@ -165,25 +209,27 @@ exports.createOrUpdateShipment = async (tx, {
     update: {
       trackingNumber,
       courierName: courier.name || courierName,
-      courierUrl:  courierLink,
+      trackingUrl:  courierLink,
       status:      'IN_TRANSIT',
-      estimatedDelivery: eta,
+      expectedDelivery: eta,
       updatedAt:   new Date(),
     },
     create: {
       orderId,
       trackingNumber: trackingNumber || generateTrackingId(),
       courierName:    courier.name || courierName,
-      courierUrl:     courierLink,
+      trackingUrl:     courierLink,
       status:         'IN_TRANSIT',
-      estimatedDelivery: eta,
-      checkpoints: {
+      expectedDelivery: eta,
+      events: {
         create: {
-          status:      'IN_TRANSIT',
+          eventType:   'DISPATCHED',
+          title:       'Order Dispatched',
           description: `Shipped via ${courier.name || courierName}`,
           location:    'Origin Facility',
-          timestamp:   new Date(),
-          addedBy:     adminId,
+          occurredAt:  new Date(),
+          loggedBy:    adminId,
+          source:      'ADMIN',
         },
       },
     },
@@ -219,35 +265,41 @@ exports.addCheckpoint = async ({
 
   if (!shipment) throw AppError.notFound('Shipment');
 
-  // Create checkpoint
-  const checkpoint = await prisma.trackingCheckpoint.create({
+  const eventType = mapStatusToEventType(status);
+
+  // Create event
+  const event = await prisma.trackingEvent.create({
     data: {
       shipmentId: shipment.id,
-      status,
-      description: description || CHECKPOINT_EMOJIS[status] ? `${CHECKPOINT_EMOJIS[status]} ${status.replace(/_/g, ' ')}` : status,
+      eventType,
+      title:       status.replace(/_/g, ' '),
+      description: description || (CHECKPOINT_EMOJIS[status] ? `${CHECKPOINT_EMOJIS[status]} ${status.replace(/_/g, ' ')}` : status),
       location:    location || null,
-      timestamp:   timestamp ? new Date(timestamp) : new Date(),
-      addedBy:     addedBy  || null,
+      occurredAt:  timestamp ? new Date(timestamp) : new Date(),
+      loggedBy:    addedBy  || null,
+      source:      addedBy ? 'ADMIN' : 'SYSTEM',
     },
   });
+
+  const dbShipmentStatus = mapStatusToShipmentStatus(status);
 
   // Update shipment status
   await prisma.shipment.update({
     where: { id: shipment.id },
     data:  {
-      status,
-      ...(status === 'DELIVERED' ? { deliveredAt: new Date() } : {}),
+      status: dbShipmentStatus,
+      ...(dbShipmentStatus === 'DELIVERED' ? { deliveredAt: new Date() } : {}),
     },
   });
 
   // Update order status if delivery confirmed
-  if (autoUpdateOrder && status === 'DELIVERED') {
+  if (autoUpdateOrder && dbShipmentStatus === 'DELIVERED') {
     await prisma.order.update({
       where: { id: shipment.orderId },
       data:  { status: 'DELIVERED', deliveredAt: new Date() },
     });
   }
-  if (autoUpdateOrder && status === 'OUT_FOR_DELIVERY') {
+  if (autoUpdateOrder && dbShipmentStatus === 'OUT_FOR_DELIVERY') {
     await prisma.order.update({
       where: { id: shipment.orderId },
       data:  { status: 'OUT_FOR_DELIVERY' },
@@ -258,12 +310,35 @@ exports.addCheckpoint = async ({
   await cache.del(shipmentCacheKey(shipment.orderId));
 
   logger.info('📍 Tracking checkpoint added:', { shipmentId: shipment.id, status, location });
-  return checkpoint;
+  
+  return {
+    id:          event.id,
+    shipmentId:  event.shipmentId,
+    status:      status,
+    description: event.description,
+    location:    event.location,
+    timestamp:   event.occurredAt,
+    addedBy:     event.loggedBy,
+  };
 };
 
 // ═══════════════════════════════════════════════════════════
 //   GET TRACKING (customer-safe)
 // ═══════════════════════════════════════════════════════════
+
+const mapEventTypeToStatus = (eventType) => {
+  const mapping = {
+    ORDER_CONFIRMED: 'BOOKED',
+    DISPATCHED: 'PICKED_UP',
+    IN_TRANSIT: 'IN_TRANSIT',
+    OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+    DELIVERED: 'DELIVERED',
+    DELIVERY_ATTEMPTED: 'DELIVERY_FAILED',
+    RETURNED: 'RETURNED',
+  };
+  return mapping[eventType] || eventType;
+};
+exports.mapEventTypeToStatus = mapEventTypeToStatus;
 
 /**
  * Fetch full tracking info for a given tracking number or orderId.
@@ -282,7 +357,7 @@ exports.getTrackingInfo = async ({ trackingNumber, orderId, userId = null }) => 
   const shipment = await prisma.shipment.findFirst({
     where,
     include: {
-      checkpoints: { orderBy: { timestamp: 'desc' } },
+      events: { orderBy: { occurredAt: 'desc' } },
       order: {
         select: {
           id:           true,
@@ -293,9 +368,7 @@ exports.getTrackingInfo = async ({ trackingNumber, orderId, userId = null }) => 
           deliveredAt:  true,
           shippedAt:    true,
           userId:       true,
-          shippingAddress: {
-            select: { recipientName: true, city: true, state: true, pincode: true },
-          },
+          shippingAddress: true,
           items: {
             take: 3,
             select: { productName: true, quantity: true, imageUrl: true },
@@ -340,13 +413,16 @@ exports.getTrackingInfo = async ({ trackingNumber, orderId, userId = null }) => 
         : null,
       recipientName: shipment.order.shippingAddress?.recipientName || null,
     },
-    checkpoints: shipment.checkpoints.map((c) => ({
-      status:      c.status,
-      description: c.description,
-      location:    c.location,
-      timestamp:   c.timestamp,
-      emoji:       CHECKPOINT_EMOJIS[c.status] || '📍',
-    })),
+    checkpoints: (shipment.events || []).map((c) => {
+      const status = mapEventTypeToStatus(c.eventType);
+      return {
+        status,
+        description: c.description,
+        location:    c.location,
+        timestamp:   c.occurredAt,
+        emoji:       CHECKPOINT_EMOJIS[status] || '📍',
+      };
+    }),
     statusSummary: SHIPMENT_STATUS_ORDER.map((s, i) => ({
       step:      i + 1,
       status:    s,

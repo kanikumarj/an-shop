@@ -397,17 +397,17 @@ exports.shipOrder = async (req, res) => {
       update: {
         trackingNumber,
         courierName,
-        courierUrl:       courierUrl || null,
+        trackingUrl:       courierUrl || null,
         status:           'IN_TRANSIT',
-        estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
       },
       create: {
         orderId:          id,
         trackingNumber,
         courierName,
-        courierUrl:       courierUrl || null,
+        trackingUrl:       courierUrl || null,
         status:           'IN_TRANSIT',
-        estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
       },
     });
   });

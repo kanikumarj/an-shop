@@ -134,7 +134,7 @@ exports.adminListShipments = async (req, res) => {
       },
     }),
     ...(late === 'true' && {
-      estimatedDelivery: { lt: new Date() },
+      expectedDelivery: { lt: new Date() },
       status: { notIn: ['DELIVERED', 'RETURNED', 'DELIVERY_FAILED'] },
     }),
     ...(q && {
@@ -154,11 +154,11 @@ exports.adminListShipments = async (req, res) => {
           select: {
             id: true, orderNumber: true, status: true, total: true,
             user: { select: { name: true, phone: true } },
-            shippingAddress: { select: { city: true, state: true, pincode: true } },
+            shippingAddress: true,
           },
         },
-        checkpoints: { orderBy: { timestamp: 'desc' }, take: 1 },
-        _count: { select: { checkpoints: true } },
+        events: { orderBy: { occurredAt: 'desc' }, take: 1 },
+        _count: { select: { events: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -167,11 +167,30 @@ exports.adminListShipments = async (req, res) => {
     prisma.shipment.count({ where }),
   ]);
 
-  ApiResponse.paginated(res, shipments.map((s) => ({
-    ...s,
-    progress: getTrackingProgress(s.status),
-    isLate:   s.estimatedDelivery && new Date() > new Date(s.estimatedDelivery) && !['DELIVERED', 'RETURNED'].includes(s.status),
-  })), {
+  const { mapEventTypeToStatus } = require('../services/tracking.service');
+
+  const mappedShipments = shipments.map((s) => {
+    const checkpoints = (s.events || []).map((c) => ({
+      id:          c.id,
+      shipmentId:  c.shipmentId,
+      status:      mapEventTypeToStatus(c.eventType),
+      description: c.description,
+      location:    c.location,
+      timestamp:   c.occurredAt,
+      addedBy:     c.loggedBy,
+    }));
+    return {
+      ...s,
+      events:      undefined,
+      checkpoints,
+      _count:      { checkpoints: s._count.events },
+      estimatedDelivery: s.expectedDelivery,
+      progress: getTrackingProgress(s.status),
+      isLate:   s.expectedDelivery && new Date() > new Date(s.expectedDelivery) && !['DELIVERED', 'RETURNED'].includes(s.status),
+    };
+  });
+
+  ApiResponse.paginated(res, mappedShipments, {
     page, limit, total,
     totalPages: Math.ceil(total / limit),
     hasNext: page * limit < total,
@@ -188,7 +207,7 @@ exports.adminGetShipment = async (req, res) => {
   const shipment = await prisma.shipment.findUnique({
     where: { id: req.params.shipmentId },
     include: {
-      checkpoints: { orderBy: { timestamp: 'asc' } },
+      events: { orderBy: { occurredAt: 'asc' } },
       order: {
         include: {
           user:  { select: { id: true, name: true, email: true, phone: true } },
@@ -201,17 +220,32 @@ exports.adminGetShipment = async (req, res) => {
 
   if (!shipment) throw AppError.notFound('Shipment');
 
+  const { mapEventTypeToStatus } = require('../services/tracking.service');
+
+  const checkpoints = (shipment.events || []).map((c) => ({
+    id:          c.id,
+    shipmentId:  c.shipmentId,
+    status:      mapEventTypeToStatus(c.eventType),
+    description: c.description,
+    location:    c.location,
+    timestamp:   c.occurredAt,
+    addedBy:     c.loggedBy,
+  }));
+
   const courier = resolveCourier(shipment.courierName);
 
   ApiResponse.success(res, {
     ...shipment,
+    events:      undefined,
+    checkpoints,
+    estimatedDelivery: shipment.expectedDelivery,
     courierInfo: {
       name:       courier.name,
       sla:        courier.slaDay,
       trackingUrl: shipment.trackingNumber ? courier.trackingUrl(shipment.trackingNumber) : null,
     },
     progress:    getTrackingProgress(shipment.status),
-    isLate:      shipment.estimatedDelivery && new Date() > new Date(shipment.estimatedDelivery) && !['DELIVERED', 'RETURNED'].includes(shipment.status),
+    isLate:      shipment.expectedDelivery && new Date() > new Date(shipment.expectedDelivery) && !['DELIVERED', 'RETURNED'].includes(shipment.status),
   });
 };
 
@@ -350,7 +384,7 @@ exports.adminLateShipments = async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
 
   const where = {
-    estimatedDelivery: { lt: new Date() },
+    expectedDelivery: { lt: new Date() },
     status:            { notIn: ['DELIVERED', 'RETURNED', 'DELIVERY_FAILED'] },
   };
 
@@ -364,20 +398,36 @@ exports.adminLateShipments = async (req, res) => {
             user: { select: { name: true, phone: true } },
           },
         },
-        checkpoints: { orderBy: { timestamp: 'desc' }, take: 1 },
+        events: { orderBy: { occurredAt: 'desc' }, take: 1 },
       },
-      orderBy: { estimatedDelivery: 'asc' }, // Most overdue first
+      orderBy: { expectedDelivery: 'asc' }, // Most overdue first
       skip,
       take: limit,
     }),
     prisma.shipment.count({ where }),
   ]);
 
-  const enriched = shipments.map((s) => ({
-    ...s,
-    daysLate: Math.ceil((new Date() - new Date(s.estimatedDelivery)) / (1000 * 60 * 60 * 24)),
-    progress: getTrackingProgress(s.status),
-  }));
+  const { mapEventTypeToStatus } = require('../services/tracking.service');
+
+  const enriched = shipments.map((s) => {
+    const checkpoints = (s.events || []).map((c) => ({
+      id:          c.id,
+      shipmentId:  c.shipmentId,
+      status:      mapEventTypeToStatus(c.eventType),
+      description: c.description,
+      location:    c.location,
+      timestamp:   c.occurredAt,
+      addedBy:     c.loggedBy,
+    }));
+    return {
+      ...s,
+      events:      undefined,
+      checkpoints,
+      estimatedDelivery: s.expectedDelivery,
+      daysLate: Math.ceil((new Date() - new Date(s.expectedDelivery)) / (1000 * 60 * 60 * 24)),
+      progress: getTrackingProgress(s.status),
+    };
+  });
 
   ApiResponse.paginated(res, enriched, {
     page, limit, total,
@@ -439,21 +489,23 @@ exports.adminShipOrder = async (req, res) => {
     // Create shipment record
     prisma.shipment.upsert({
       where:  { orderId },
-      update: { trackingNumber: trackNum, courierName: courier.name || courierName, courierUrl: courierUrl || courier.trackingUrl(trackNum), status: 'IN_TRANSIT', estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null },
+      update: { trackingNumber: trackNum, courierName: courier.name || courierName, trackingUrl: courierUrl || courier.trackingUrl(trackNum), status: 'IN_TRANSIT', expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null },
       create: {
         orderId,
         trackingNumber:    trackNum,
         courierName:       courier.name || courierName,
-        courierUrl:        courierUrl || courier.trackingUrl(trackNum),
+        trackingUrl:        courierUrl || courier.trackingUrl(trackNum),
         status:            'IN_TRANSIT',
-        estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
-        checkpoints: addPickupCheckpoint ? {
+        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+        events: addPickupCheckpoint ? {
           create: {
-            status:      'IN_TRANSIT',
+            eventType:   'DISPATCHED',
+            title:       'Order Dispatched',
             description: `Order dispatched via ${courier.name || courierName}`,
             location:    'Origin Facility',
-            timestamp:   new Date(),
-            addedBy:     req.user.id,
+            occurredAt:  new Date(),
+            loggedBy:    req.user.id,
+            source:      'ADMIN',
           },
         } : undefined,
       },
@@ -468,7 +520,7 @@ exports.adminShipOrder = async (req, res) => {
       const user = await prisma.user.findUnique({ where: { id: order.userId }, select: { phone: true, name: true } });
 
       await Promise.all([
-        wa.notify.orderShipped(user, { ...order, trackingNumber: trackNum, courierName: courier.name, tracking: { courierUrl: shipment.courierUrl } }),
+        wa.notify.orderShipped(user, { ...order, trackingNumber: trackNum, courierName: courier.name, tracking: { courierUrl: shipment.trackingUrl } }),
         notifService.createNotification({
           userId:  order.userId,
           type:    'ORDER_SHIPPED',
@@ -490,7 +542,7 @@ exports.adminShipOrder = async (req, res) => {
   ApiResponse.success(res, {
     trackingNumber: trackNum,
     courierName:    courier.name,
-    courierUrl:     shipment.courierUrl,
+    courierUrl:     shipment.trackingUrl,
     estimatedDelivery,
     shipmentId:     shipment.id,
   }, `Order #${order.orderNumber} shipped! Tracking: ${trackNum}`);

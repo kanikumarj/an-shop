@@ -355,8 +355,8 @@ exports.trackOrder = async (req, res) => {
       tracking: {
         select: {
           id: true, trackingNumber: true, courierName: true,
-          courierUrl: true, status: true, estimatedDelivery: true,
-          events: { orderBy: { eventTime: 'desc' } },
+          trackingUrl: true, status: true, estimatedDelivery: true,
+          events: { orderBy: { occurredAt: 'desc' } },
         },
       },
     },
@@ -390,7 +390,17 @@ exports.trackOrder = async (req, res) => {
     };
   });
 
-  ApiResponse.success(res, { ...order, timeline }, 'Order tracking info.');
+  const tracking = order.tracking ? {
+    id: order.tracking.id,
+    trackingNumber: order.tracking.trackingNumber,
+    courierName: order.tracking.courierName,
+    courierUrl: order.tracking.trackingUrl, // map trackingUrl to courierUrl
+    status: order.tracking.status,
+    estimatedDelivery: order.tracking.estimatedDelivery,
+    events: order.tracking.events
+  } : null;
+
+  ApiResponse.success(res, { ...order, tracking, timeline }, 'Order tracking info.');
 };
 
 // ═══════════════════════════════════════════════════════════

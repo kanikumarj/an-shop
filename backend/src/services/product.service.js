@@ -379,13 +379,11 @@ const attachProductImages = async (productId, files, setFirstAsPrimary = true) =
   const imageData = files.map((file, index) => {
     const isLocal = file.path && !file.path.startsWith('http');
     const url = isLocal ? `/uploads/${file.filename}` : file.path;
-    const thumbnailUrl = isLocal ? `/uploads/${file.filename}` : (generateResponsiveUrls(file.filename)?.thumbnail || file.path);
 
     return {
       productId,
       url,
       publicId: file.filename,
-      thumbnailUrl,
       alt: file.originalname?.split('.')[0] || `Product image ${index + 1}`,
       type: 'image',
       sizeBytes: file.size || null,
