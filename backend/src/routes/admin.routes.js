@@ -131,7 +131,7 @@ router.patch('/orders/:id/status',
 );
 
 // Ship an order → creates shipment record + generates tracking
-router.post('/orders/:id/ship',
+router.patch('/orders/:id/ship',
   validate(z.object({
     trackingNumber:    z.string().max(100).optional(),
     courierName:       z.string({ required_error: 'courierName is required.' }).min(2).max(100),
