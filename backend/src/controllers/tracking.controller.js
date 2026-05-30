@@ -391,7 +391,7 @@ exports.adminLateShipments = async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 exports.adminShipOrder = async (req, res) => {
-  const { orderId } = req.params;
+  const orderId = req.params.orderId || req.params.id;
   const {
     trackingNumber, courierName, courierUrl, estimatedDelivery,
     note, addPickupCheckpoint = true,
