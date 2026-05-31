@@ -224,9 +224,169 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 .wa-fab{position:fixed;bottom:24px;right:24px;width:50px;height:50px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 20px rgba(37,211,102,.4);animation:fabF 3s ease-in-out infinite;}
 @keyframes fabF{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 
+/* Hamburger menu & mobile drawer style */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  z-index: 1010;
+}
+.hamburger span {
+  display: block;
+  width: 21px;
+  height: 2px;
+  background: var(--muted);
+  border-radius: 1px;
+  transition: all .3s;
+}
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--bg2);
+  z-index: 2000;
+  box-shadow: -4px 0 30px rgba(0,0,0,0.8);
+  transition: right .3s var(--ease);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-left: 1px solid var(--border);
+}
+.mobile-drawer.open {
+  right: 0;
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+.drawer-close-btn {
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  border: none;
+  cursor: pointer;
+}
+.drawer-close-btn:hover {
+  color: var(--gold);
+}
+.drawer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.drawer-links a {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background .2s;
+}
+.drawer-links a:hover {
+  background: rgba(245,166,35,0.08);
+  color: var(--gold);
+}
+.drawer-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.drawer-nav-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* User Bottom Nav */
+.user-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(10,8,4,0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+.user-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-decoration: none;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+}
+.user-bottom-nav a.active {
+  color: var(--gold);
+}
+.bottom-nav-icon {
+  font-size: 1.2rem;
+}
+
 /* Responsive */
 @media(max-width:1000px){:root{--sidebar:200px;}.stats-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:768px){.dash-wrap{grid-template-columns:1fr;}.sidebar{position:static;}.addr-grid{grid-template-columns:1fr;}.wish-grid{grid-template-columns:1fr;}.screens-grid{grid-template-columns:repeat(2,1fr);}.nav-links{display:none;}.stats-grid{grid-template-columns:repeat(2,1fr);}.profile-form-grid{grid-template-columns:1fr;}}
+@media(max-width:768px){
+  body { padding-bottom: 56px; }
+  .user-bottom-nav { display: flex; }
+  .hamburger { display: flex; }
+  .nav-links { display: none; }
+  .dash-wrap { grid-template-columns: 1fr; padding-top: calc(var(--nav) + 14px); }
+  
+  /* Top Horizontal Scrollable Tab menu */
+  .profile-mini { display: none; }
+  .side-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    background: transparent;
+    border: none;
+    gap: 8px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+  }
+  .side-nav-item {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .side-nav-item.active {
+    background: rgba(245,166,35,0.12);
+    border-color: var(--gold);
+    border-left: 1px solid var(--gold);
+  }
+  
+  .sidebar { position: static; }
+  .addr-grid { grid-template-columns: 1fr; }
+  .wish-grid { grid-template-columns: 1fr; }
+  .screens-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .profile-form-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -254,9 +414,29 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
         <span class="user-name-sm" id="navName"></span>
       </div>
       <button class="btn-logout" id="logoutBtn">Sign Out</button>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <span class="logo-txt">Indianmade</span>
+    <button class="drawer-close-btn" id="drawerClose">✕</button>
+  </div>
+  <ul class="drawer-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html">Shop</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="cart.html">My Cart</a></li>
+    <li><a href="dashboard.html" class="active">Account</a></li>
+  </ul>
+</div>
+<div class="drawer-nav-overlay" id="drawerNavOverlay"></div>
+
 
 <!-- DASHBOARD LAYOUT -->
 <div class="dash-wrap">
@@ -718,6 +898,25 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
   <svg viewBox="0 0 58 58" width="24" height="24"><path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/></svg>
 </a>
 
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="user-bottom-nav">
+  <a href="index.html">
+    <span class="bottom-nav-icon">🏠</span>Home
+  </a>
+  <a href="shop.html">
+    <span class="bottom-nav-icon">🛍️</span>Shop
+  </a>
+  <a href="cart.html">
+    <span class="bottom-nav-icon">🛒</span>Cart
+  </a>
+  <a href="dashboard.html" class="active">
+    <span class="bottom-nav-icon">👤</span>Account
+  </a>
+  <a href="track.html">
+    <span class="bottom-nav-icon">🚚</span>Track
+  </a>
+</nav>
+
 <script>
 "use strict";
 /* Particles */
@@ -806,6 +1005,27 @@ document.getElementById('saveProfileBtn')?.addEventListener('click',function(){
   this.textContent='✓ Saved!';this.style.background='linear-gradient(135deg,#2e7d32,#43a047)';
   setTimeout(()=>{this.textContent=orig;this.style.background='';},2500);
 });
+
+// Mobile navigation drawer toggle
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const mobileDrawer = document.getElementById('mobileDrawer');
+const drawerNavOverlay = document.getElementById('drawerNavOverlay');
+const drawerClose = document.getElementById('drawerClose');
+
+hamburgerBtn?.addEventListener('click', () => {
+  mobileDrawer?.classList.add('open');
+  drawerNavOverlay?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+
+const closeNavDrawer = () => {
+  mobileDrawer?.classList.remove('open');
+  drawerNavOverlay?.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+drawerClose?.addEventListener('click', closeNavDrawer);
+drawerNavOverlay?.addEventListener('click', closeNavDrawer);
 
 /* ══ LIVE API INTEGRATION ══ */
 (function(){

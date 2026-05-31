@@ -38,6 +38,14 @@ const rnd = (min, max) => Math.random() * (max - min) + min;
     });
   });
 
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) {
+      hamburger?.classList.remove('open');
+      navLinks?.classList.remove('open');
+    }
+  });
+
   // Active link based on scroll
   const sections = $$('section[id]');
   const observer = new IntersectionObserver((entries) => {

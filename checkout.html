@@ -172,7 +172,58 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 .wa-fab{position:fixed;bottom:24px;right:24px;width:50px;height:50px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 20px rgba(37,211,102,.4);animation:fabF 3s ease-in-out infinite;}
 @keyframes fabF{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 
-@media(max-width:600px){.form-grid{grid-template-columns:1fr;}.form-field.full{grid-column:1;}.upi-row{grid-template-columns:1fr;}.pay-apps{flex-direction:column;}.conf-actions{flex-direction:column;}}
+/* User Bottom Nav */
+.user-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(10,8,4,0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+.user-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-decoration: none;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+}
+.user-bottom-nav a.active {
+  color: var(--gold);
+}
+.bottom-nav-icon {
+  font-size: 1.2rem;
+}
+
+@media(max-width:600px){
+  body { padding-bottom: 56px; }
+  .user-bottom-nav { display: flex; }
+  .form-grid{grid-template-columns:1fr;}
+  .form-field.full{grid-column:1;}
+  .upi-row{grid-template-columns:1fr; gap:16px;}
+  .qr-box{max-width:200px; margin:0 auto;}
+  .pay-apps{flex-direction:column; gap:8px;}
+  .pay-app{padding:14px; font-size:0.9rem;}
+  .conf-actions{flex-direction:column; gap:10px;}
+  .f-input { height: 46px; padding: 0 14px; }
+  textarea.f-input { height: auto; padding: 12px 14px; }
+  .step-track { margin-bottom: 24px; }
+  .step-bubble { width: 32px; height: 32px; font-size: 0.9rem; }
+  .step-name { font-size: 0.6rem; }
+  .step-connector { margin-bottom: 16px; }
+  .co-card { padding: 20px; border-radius: 16px; }
+}
 </style>
 </head>
 <body>
@@ -419,6 +470,25 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 <a href="https://wa.me/919876543210" class="wa-fab" target="_blank" rel="noopener" aria-label="WhatsApp">
   <svg viewBox="0 0 58 58" width="24" height="24"><path d="M29 9C18 9 9 18 9 29c0 3.9 1.1 7.5 3 10.6L9 49l9.7-3a20 20 0 0 0 10.3 2.8c11 0 20-9 20-20S40 9 29 9zm9 20.1c-.5-.2-2.9-1.4-3.3-1.6-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.4-1 .1a12.6 12.6 0 0 1-3.7-2.3 13.8 13.8 0 0 1-2.6-3.2c-.3-.5 0-.7.2-1l.7-.8.4-.7.2-.5c0-.3-.1-.6-.2-.8l-1.5-3.5c-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6a5.3 5.3 0 0 0-1.7 3.9c0 2.3 1.7 4.5 1.9 4.8.3.3 3.3 5 8 7 1.1.5 2 .8 2.7 1 1.1.3 2.1.3 2.9.2 1-.2 2.9-1.2 3.3-2.3.4-1.1.4-2 .3-2.3-.1-.3-.4-.4-.9-.6z" fill="white"/></svg>
 </a>
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="user-bottom-nav">
+  <a href="index.html">
+    <span class="bottom-nav-icon">🏠</span>Home
+  </a>
+  <a href="shop.html">
+    <span class="bottom-nav-icon">🛍️</span>Shop
+  </a>
+  <a href="cart.html">
+    <span class="bottom-nav-icon">🛒</span>Cart
+  </a>
+  <a href="dashboard.html">
+    <span class="bottom-nav-icon">👤</span>Account
+  </a>
+  <a href="track.html">
+    <span class="bottom-nav-icon">🚚</span>Track
+  </a>
+</nav>
 
 <script src="store.js"></script>
 <script>

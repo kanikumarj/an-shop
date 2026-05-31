@@ -336,6 +336,138 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 [data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease),transform .6s var(--ease);}
 [data-reveal].revealed{opacity:1;transform:none;}
 
+/* Hamburger menu & mobile drawer style */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  z-index: 1010;
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--muted);
+  border-radius: 1px;
+  transition: all .3s;
+}
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--bg2);
+  z-index: 2000;
+  box-shadow: -4px 0 30px rgba(0,0,0,0.8);
+  transition: right .3s var(--ease);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-left: 1px solid var(--border);
+}
+.mobile-drawer.open {
+  right: 0;
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+.drawer-close-btn {
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  border: none;
+  cursor: pointer;
+}
+.drawer-close-btn:hover {
+  color: var(--gold);
+}
+.drawer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.drawer-links a {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background .2s;
+}
+.drawer-links a:hover {
+  background: rgba(245,166,35,0.08);
+  color: var(--gold);
+}
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Bottom Sticky Buy Bar */
+.mobile-buy-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: rgba(10,8,4,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 999;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+}
+.mobile-buy-bar-price {
+  font-family: var(--fd);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+.mobile-buy-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+.mobile-btn-cart {
+  padding: 10px 16px;
+  background: rgba(245,166,35,0.08);
+  border: 1px solid var(--border-gold);
+  border-radius: 999px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.mobile-btn-buy {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--gd), var(--gold));
+  color: #0a0804;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
 /* ─── RESPONSIVE ──────────────────────────────────── */
 @media(max-width:900px){
   .product-hero{grid-template-columns:1fr;}
@@ -345,11 +477,21 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 }
 @media(max-width:640px){
   .nav-links{display:none;}
-  .product-hero{padding:24px 1rem 40px;}
+  .hamburger{display:flex;}
+  .product-hero{padding:16px 1rem 32px;}
+  .main-img{height:300px;}
+  .main-emoji{font-size:7rem;}
+  #mainProductImg{max-height:85%; max-width:85%;}
+  .thumbs{overflow-x:auto; white-space:nowrap; padding-bottom:6px; -webkit-overflow-scrolling:touch; width:100%;}
+  .thumb{flex:0 0 64px; height:64px; font-size:1.5rem;}
+  .thumb-label{font-size:.5rem;}
   .tabs-section,.related-section,.recipes-section{padding-left:1rem;padding-right:1rem;}
+  .tab-btn{flex-shrink:0; padding:10px 16px; font-size:0.8rem;}
   .action-btns{grid-template-columns:1fr;}
   .love-list{grid-template-columns:1fr;}
   .macro-circles{grid-template-columns:repeat(4,1fr);}
+  .mobile-buy-bar{display:flex;}
+  body{padding-bottom:70px;}
 }
 </style>
 </head>
@@ -384,9 +526,29 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
         <span class="cart-badge" id="cartBadge">0</span>
       </a>
       <a href="auth.html" class="btn-nav-login">Log in</a>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <span class="logo-txt">Indianmade</span>
+    <button class="drawer-close-btn" id="drawerClose">✕</button>
+  </div>
+  <ul class="drawer-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html">Shop</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="cart.html">My Cart</a></li>
+    <li><a href="auth.html">Account</a></li>
+  </ul>
+</div>
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
 
 <!-- ── BREADCRUMB ── -->
 <div class="breadcrumb-bar">
@@ -801,8 +963,17 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 <button class="scroll-top" id="scrollTopBtn" aria-label="Scroll to top">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
 </button>
+<!-- Sticky Bottom Buy Bar -->
+<div class="mobile-buy-bar" id="mobileBuyBar">
+  <div class="mobile-buy-bar-price" id="mobileBuyPrice">₹149</div>
+  <div class="mobile-buy-bar-actions">
+    <button class="mobile-btn-cart" id="mobileAddCartBtn">Add to Cart</button>
+    <button class="mobile-btn-buy" id="mobileBuyNowBtn">Buy Now</button>
+  </div>
+</div>
 
 <script src="store.js"></script>
+
 <script>
 "use strict";
 const rnd=(a,b)=>Math.random()*(b-a)+a;
@@ -832,6 +1003,36 @@ window.addEventListener('scroll',()=>{
   document.getElementById('scrollTopBtn').classList.toggle('show',s>300);
 },{passive:true});
 document.getElementById('scrollTopBtn')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// Mobile Drawer Toggle
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const mobileDrawer = document.getElementById('mobileDrawer');
+const drawerOverlay = document.getElementById('drawerOverlay');
+const drawerClose = document.getElementById('drawerClose');
+
+hamburgerBtn?.addEventListener('click', () => {
+  mobileDrawer?.classList.add('open');
+  drawerOverlay?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+
+const closeDrawer = () => {
+  mobileDrawer?.classList.remove('open');
+  drawerOverlay?.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+drawerClose?.addEventListener('click', closeDrawer);
+drawerOverlay?.addEventListener('click', closeDrawer);
+
+// Mobile Buy Bar Actions
+document.getElementById('mobileAddCartBtn')?.addEventListener('click', () => {
+  document.getElementById('addCartBtn')?.click();
+});
+document.getElementById('mobileBuyNowBtn')?.addEventListener('click', () => {
+  document.getElementById('buyNowBtn')?.click();
+});
+
 
 /* ── Tabs ─────────────────────────────────────────── */
 function switchTab(name){
@@ -907,12 +1108,14 @@ function updatePriceDisplay(price, orig) {
   const priceMain = document.getElementById('priceMain');
   const priceOrig = document.getElementById('priceOrig');
   const priceOff = document.getElementById('priceOff');
+  const mobileBuyPrice = document.getElementById('mobileBuyPrice');
   if (priceMain) priceMain.textContent = '₹' + price;
   if (priceOrig) priceOrig.textContent = '₹' + orig;
   if (priceOff) {
     const off = Math.round((1 - price / orig) * 100);
     priceOff.textContent = off + '% OFF';
   }
+  if (mobileBuyPrice) mobileBuyPrice.textContent = '₹' + price;
 }
 
 document.getElementById('weightOpts')?.addEventListener('click',e=>{

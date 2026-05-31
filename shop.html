@@ -291,6 +291,127 @@ input[type=range].price-slider::-moz-range-thumb{width:20px;height:20px;border-r
 .scroll-top.show{opacity:1;pointer-events:all;}
 .scroll-top:hover{background:rgba(245,166,35,0.1);}
 
+/* Hamburger menu & mobile drawer style */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  z-index: 1010;
+}
+.hamburger span {
+  display: block;
+  width: 21px;
+  height: 2px;
+  background: var(--muted);
+  border-radius: 1px;
+  transition: all .3s;
+}
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--bg2);
+  z-index: 2000;
+  box-shadow: -4px 0 30px rgba(0,0,0,0.8);
+  transition: right .3s var(--ease);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-left: 1px solid var(--border);
+}
+.mobile-drawer.open {
+  right: 0;
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+.drawer-close-btn {
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  border: none;
+  cursor: pointer;
+}
+.drawer-close-btn:hover {
+  color: var(--gold);
+}
+.drawer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.drawer-links a {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background .2s;
+}
+.drawer-links a:hover {
+  background: rgba(245,166,35,0.08);
+  color: var(--gold);
+}
+.drawer-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.drawer-nav-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* User Bottom Nav */
+.user-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(10,8,4,0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+.user-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-decoration: none;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+}
+.user-bottom-nav a.active {
+  color: var(--gold);
+}
+.bottom-nav-icon {
+  font-size: 1.2rem;
+}
+
 /* ═══ RESPONSIVE ═════════════════════════════════════════════════ */
 @media(max-width:1100px){
   .shop-layout{grid-template-columns:1fr;}
@@ -299,10 +420,23 @@ input[type=range].price-slider::-moz-range-thumb{width:20px;height:20px;border-r
   #productGrid{grid-template-columns:repeat(2,1fr);}
 }
 @media(max-width:640px){
-  #productGrid{grid-template-columns:1fr;}
+  #productGrid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .p-img { height: 110px; }
+  .p-emoji { font-size: 2.8rem; }
+  .p-body { padding: 10px; }
+  .p-name { font-size: 0.85rem; }
+  .p-desc { display: none; }
+  .p-rating { gap: 2px; }
+  .p-stars { font-size: 0.65rem; }
+  .p-price-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .p-price { font-size: 1rem; }
+  .btn-cart { font-size: 0.72rem; padding: 8px; border-radius: 8px; }
   .nav-links{display:none;}
   .nav-search-wrap{max-width:180px;}
   #productGrid.list-view .p-card{grid-template-columns:1fr;}
+  .hamburger { display: flex; }
+  .user-bottom-nav { display: flex; }
+  body { padding-bottom: 56px; }
 }
 </style>
 </head>
@@ -341,9 +475,29 @@ input[type=range].price-slider::-moz-range-thumb{width:20px;height:20px;border-r
         <span class="cart-badge" id="cartBadge">0</span>
       </a>
       <a href="auth.html" class="btn-login-nav">Log in</a>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <span class="logo-txt">Indianmade</span>
+    <button class="drawer-close-btn" id="drawerClose">✕</button>
+  </div>
+  <ul class="drawer-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="shop.html" class="active">Shop</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="cart.html">My Cart</a></li>
+    <li><a href="auth.html">Account</a></li>
+  </ul>
+</div>
+<div class="drawer-nav-overlay" id="drawerNavOverlay"></div>
+
 
 <!-- ── SHOP HERO ── -->
 <div class="shop-hero">
@@ -503,6 +657,25 @@ input[type=range].price-slider::-moz-range-thumb{width:20px;height:20px;border-r
 <button class="scroll-top" id="scrollTopBtn" aria-label="Scroll to top">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
 </button>
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="user-bottom-nav">
+  <a href="index.html">
+    <span class="bottom-nav-icon">🏠</span>Home
+  </a>
+  <a href="shop.html" class="active">
+    <span class="bottom-nav-icon">🛍️</span>Shop
+  </a>
+  <a href="cart.html">
+    <span class="bottom-nav-icon">🛒</span>Cart
+  </a>
+  <a href="dashboard.html">
+    <span class="bottom-nav-icon">👤</span>Account
+  </a>
+  <a href="track.html">
+    <span class="bottom-nav-icon">🚚</span>Track
+  </a>
+</nav>
 
 <script src="store.js"></script>
 <script>
@@ -796,6 +969,27 @@ window.addEventListener('scroll',()=>{
   document.getElementById('scrollTopBtn').classList.toggle('show',s>400);
 },{passive:true});
 document.getElementById('scrollTopBtn')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// Mobile Hamburger menu drawer toggles
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const mobileDrawer = document.getElementById('mobileDrawer');
+const drawerNavOverlay = document.getElementById('drawerNavOverlay');
+const drawerClose = document.getElementById('drawerClose');
+
+hamburgerBtn?.addEventListener('click', () => {
+  mobileDrawer?.classList.add('open');
+  drawerNavOverlay?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+
+const closeNavDrawer = () => {
+  mobileDrawer?.classList.remove('open');
+  drawerNavOverlay?.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+drawerClose?.addEventListener('click', closeNavDrawer);
+drawerNavOverlay?.addEventListener('click', closeNavDrawer);
 
 // Init from URL parameter
 const urlParams = new URLSearchParams(window.location.search);

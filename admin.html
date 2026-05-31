@@ -236,12 +236,127 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 .toast.success{background:rgba(93,232,141,.12);border:1px solid rgba(93,232,141,.3);color:var(--green);}
 .toast.error{background:rgba(255,122,122,.12);border:1px solid rgba(255,122,122,.3);color:var(--red);}
 
+/* ── MOBILE HAMBURGER ──────────────────── */
+.mobile-menu-btn{display:none;width:38px;height:38px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--muted);align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.mobile-menu-btn:hover{color:var(--gold);border-color:rgba(245,166,35,.25);}
+.mobile-menu-btn svg{pointer-events:none;}
+
+/* ── SIDEBAR OVERLAY ──────────────────── */
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:199;opacity:0;pointer-events:none;transition:opacity .3s;}
+.sidebar-overlay.open{opacity:1;pointer-events:all;}
+
+/* ── MOBILE BOTTOM TAB BAR ────────────── */
+.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:rgba(13,11,7,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:4px 0 env(safe-area-inset-bottom,4px);}
+.mobile-bottom-nav .mbn-inner{display:flex;justify-content:space-around;align-items:center;}
+.mbn-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;background:none;color:var(--muted);font-size:.6rem;font-weight:600;min-width:52px;transition:color .2s;border-radius:8px;}
+.mbn-tab .mbn-icon{font-size:1.15rem;line-height:1;}
+.mbn-tab.active{color:var(--gold);}
+.mbn-tab:active{background:rgba(245,166,35,.08);}
+
+/* ── DRAG DROP IMAGE ZONE ─────────────── */
+.img-upload-zone{border:2px dashed rgba(245,166,35,.2);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .25s;background:rgba(245,166,35,.02);}
+.img-upload-zone:hover,.img-upload-zone.dragover{border-color:var(--gold);background:rgba(245,166,35,.06);}
+.img-upload-zone .upload-icon{font-size:2rem;margin-bottom:6px;}
+.img-upload-zone .upload-text{font-size:.78rem;color:var(--muted);}
+.img-upload-zone .upload-text strong{color:var(--gold);}
+.img-preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.img-preview-item{position:relative;width:72px;height:72px;border-radius:12px;overflow:hidden;border:2px solid var(--border);}
+.img-preview-item img{width:100%;height:100%;object-fit:cover;}
+.img-preview-item .img-remove{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:.65rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;}
+.img-preview-item:first-child{border-color:var(--gold);}
+.img-preview-item:first-child::after{content:'MAIN';position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(245,166,35,.85);color:#000;font-size:.5rem;font-weight:800;padding:1px 0;}
+
 /* RESPONSIVE */
 @media(max-width:1100px){.stats-row{grid-template-columns:repeat(2,1fr);}.inv-grid{grid-template-columns:repeat(2,1fr);}.analytics-grid{grid-template-columns:1fr;}.dash-grid{grid-template-columns:1fr;}}
-@media(max-width:768px){:root{--sw:0px;}.sidebar{transform:translateX(-220px);}.admin-main{margin-left:0;}}
+
+@media(max-width:768px){
+  :root{--sw:0px;}
+  .mobile-menu-btn{display:flex;}
+  .mobile-bottom-nav{display:block;}
+
+  /* Sidebar: slide-in drawer */
+  .sidebar{transform:translateX(-260px);width:260px;min-width:260px;transition:transform .3s var(--ease);z-index:250;}
+  .sidebar.open{transform:translateX(0);}
+  .admin-main{margin-left:0;padding-bottom:64px;}
+
+  /* Topbar compact */
+  .topbar{padding:0 12px;gap:8px;height:54px;}
+  .topbar-title{font-size:.9rem;}
+  .topbar-search{max-width:180px;margin-left:6px;}
+  .topbar-search input{padding:6px 10px;font-size:.76rem;}
+  .topbar-actions .sb-avatar{display:none;}
+
+  /* Content compact */
+  .content{padding:14px;}
+
+  /* Stats */
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .stat-card{padding:14px;border-radius:14px;}
+  .sc-val{font-size:1.4rem;}
+
+  /* Inventory grid */
+  .inv-grid{grid-template-columns:1fr;gap:10px;}
+
+  /* Data tables: horizontal scroll */
+  .table-card{border-radius:14px;}
+  .table-card .data-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .data-table th,.data-table td{white-space:nowrap;padding:10px 12px;font-size:.75rem;}
+
+  /* Modals: bottom sheet */
+  .modal-overlay{align-items:flex-end;}
+  .modal{width:100%!important;max-width:100%!important;border-radius:20px 20px 0 0;max-height:92vh;}
+  .modal-body{padding:16px;max-height:78vh!important;overflow-y:auto!important;}
+  .modal-hdr{padding:14px 16px;}
+  .modal-hdr h3{font-size:.9rem;}
+  .modal-actions{flex-direction:column;gap:8px;}
+
+  /* Order detail modal: single column */
+  #orderModal .modal-body{grid-template-columns:1fr!important;gap:14px!important;padding:14px!important;}
+  #orderModal .modal-body>div:last-child{border-left:none!important;padding-left:0!important;border-top:1px solid var(--border);padding-top:14px;}
+
+  /* Product modal form: single column */
+  #productModal .modal .modal-body div[style*="grid-template-columns"]{grid-template-columns:1fr!important;}
+
+  /* Ship form compact */
+  .ship-card{flex-direction:column;align-items:flex-start;gap:10px;}
+  .ship-controls{width:100%;}
+  .track-input{width:100%;}
+
+  /* Chart */
+  .chart-wrap{height:160px;}
+  #revChart{height:160px;}
+  .chart-hdr{flex-direction:column;align-items:flex-start;gap:8px;}
+
+  /* Analytics */
+  .analytics-grid{grid-template-columns:1fr;gap:12px;}
+  .mini-stat{padding:10px;}
+  .ms-val{font-size:1.2rem;}
+  #panel-analytics div[style*="grid-template-columns: repeat(4"]{grid-template-columns:repeat(2,1fr)!important;}
+
+  /* Dash grid */
+  .dash-grid{grid-template-columns:1fr;gap:14px;}
+
+  /* Toast: bottom center, above bottom nav */
+  .toast{left:12px;right:12px;bottom:72px;}
+
+  /* Filter tabs scroll */
+  .filter-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+  .ftab{flex-shrink:0;}
+}
+
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr;}
+  .topbar-search{display:none;}
+  .topbar-title{font-size:.82rem;}
+  .stat-card{padding:12px;}
+  .sc-val{font-size:1.2rem;}
+}
 </style>
 </head>
 <body>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar">
@@ -273,6 +388,9 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 <div class="admin-main">
   <!-- TOP BAR -->
   <div class="topbar">
+    <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Open menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
     <div class="topbar-search"><input type="text" placeholder="Search orders, customers…" id="globalSearch"/></div>
     <div class="topbar-actions">
@@ -742,10 +860,15 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
         </div>
 
         <div style="margin-bottom: 12px;">
-          <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Product Images</label>
+          <label style="display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Product Images (up to 5)</label>
           <div id="existingImagesContainer" style="margin-bottom: 8px;"></div>
-          <input type="file" id="prodImages" accept="image/*" multiple style="width: 100%; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none;" />
-          <div id="imagePreviewContainer" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
+          <input type="file" id="prodImages" accept="image/*" multiple style="display:none;" />
+          <div class="img-upload-zone" id="imgUploadZone">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text"><strong>Tap to add images</strong> or drag &amp; drop</div>
+            <div style="font-size:.65rem;color:var(--dim);margin-top:4px;">PNG, JPG up to 2MB each · First image = main display</div>
+          </div>
+          <div class="img-preview-grid" id="imagePreviewContainer"></div>
         </div>
 
         <div style="margin-bottom: 18px;">
@@ -764,6 +887,27 @@ a{text-decoration:none;color:inherit;}button{cursor:pointer;border:none;outline:
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <div class="mbn-inner">
+    <button class="mbn-tab active" data-panel="dashboard" onclick="switchPanelMobile('dashboard')">
+      <span class="mbn-icon">📊</span>Dashboard
+    </button>
+    <button class="mbn-tab" data-panel="orders" onclick="switchPanelMobile('orders')">
+      <span class="mbn-icon">📦</span>Orders
+    </button>
+    <button class="mbn-tab" data-panel="payments" onclick="switchPanelMobile('payments')">
+      <span class="mbn-icon">💳</span>Payments
+    </button>
+    <button class="mbn-tab" data-panel="inventory" onclick="switchPanelMobile('inventory')">
+      <span class="mbn-icon">🏷️</span>Inventory
+    </button>
+    <button class="mbn-tab" data-panel="settings" onclick="switchPanelMobile('settings')">
+      <span class="mbn-icon">⚙️</span>Settings
+    </button>
+  </div>
+</nav>
 
 <script>
 "use strict";
@@ -819,10 +963,12 @@ function switchPanel(name){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   const panel=document.getElementById('panel-'+name);
-  const navItem=document.querySelector(`[data-panel="${name}"]`);
+  const navItem=document.querySelector(`.sb-item[data-panel="${name}"]`);
   if(panel)panel.classList.add('active');
   if(navItem)navItem.classList.add('active');
   document.getElementById('topbarTitle').textContent=PANEL_TITLES[name]||name;
+  document.querySelectorAll('.mbn-tab').forEach(t=>t.classList.toggle('active',t.dataset.panel===name));
+  closeMobileSidebar();
 }
 window.switchPanel=switchPanel;
 document.querySelectorAll('.sb-item[data-panel]').forEach(item=>{
@@ -831,6 +977,20 @@ document.querySelectorAll('.sb-item[data-panel]').forEach(item=>{
 document.querySelectorAll('.ctab').forEach(t=>{
   t.addEventListener('click',function(){this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(x=>x.classList.remove('active'));this.classList.add('active');});
 });
+
+/* ── MOBILE SIDEBAR TOGGLE ───────────── */
+function openMobileSidebar(){document.querySelector('.sidebar').classList.add('open');document.getElementById('sidebarOverlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeMobileSidebar(){document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');document.body.style.overflow='';}
+window.openMobileSidebar=openMobileSidebar;window.closeMobileSidebar=closeMobileSidebar;
+document.getElementById('mobileMenuToggle')?.addEventListener('click',openMobileSidebar);
+document.getElementById('sidebarOverlay')?.addEventListener('click',closeMobileSidebar);
+
+/* ── MOBILE BOTTOM NAV ───────────────── */
+const PANEL_FETCH={dashboard:'fetchDashboardStats',orders:'fetchOrders',payments:'fetchPaymentsReal',inventory:'fetchRealInventory',settings:'fetchSettingsReal'};
+window.switchPanelMobile=function(name){switchPanel(name);const fn=PANEL_FETCH[name];if(fn&&typeof window[fn]==='function')window[fn]();};
+
+/* ── DRAG-DROP IMAGE UPLOAD ZONE ─────── */
+(function(){var zone=document.getElementById('imgUploadZone'),fi=document.getElementById('prodImages');if(!zone||!fi)return;zone.addEventListener('click',function(){fi.click();});zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('dragover');});zone.addEventListener('dragleave',function(){zone.classList.remove('dragover');});zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('dragover');if(e.dataTransfer.files.length){var dt=new DataTransfer();Array.from(fi.files).forEach(function(f){dt.items.add(f);});Array.from(e.dataTransfer.files).forEach(function(f){if(f.type.startsWith('image/'))dt.items.add(f);});fi.files=dt.files;fi.dispatchEvent(new Event('change'));}});})();
 
 /* ── STAT COUNTER ANIMATION ──────────── */
 function animCount(id,target,prefix='',suffix=''){
@@ -2444,23 +2604,56 @@ document.getElementById('globalSearch')?.addEventListener('input', function() {
     }
   };
 
-  // File input preview
+  // File input preview (enhanced with delete buttons using DataTransfer)
   document.getElementById('prodImages')?.addEventListener('change', function() {
     const container = document.getElementById('imagePreviewContainer');
+    const fileInput = this;
     if (!container) return;
     container.innerHTML = '';
-    Array.from(this.files).forEach(file => {
+    
+    const dt = new DataTransfer();
+    Array.from(fileInput.files).forEach(f => dt.items.add(f));
+
+    const filesList = Array.from(dt.files);
+    if (filesList.length === 0) return;
+
+    filesList.forEach((file, index) => {
       const reader = new FileReader();
       reader.onload = e => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position:relative;display:inline-block;margin-right:8px;margin-bottom:8px;';
+        
         const img = document.createElement('img');
         img.src = e.target.result;
         img.title = file.name;
         img.style.cssText = 'width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--border);';
-        container.appendChild(img);
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = '×';
+        btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:.65rem;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2;';
+        
+        btn.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          
+          const newDt = new DataTransfer();
+          Array.from(fileInput.files).forEach((f, idx) => {
+            if (idx !== index) newDt.items.add(f);
+          });
+          
+          fileInput.files = newDt.files;
+          fileInput.dispatchEvent(new Event('change'));
+        });
+        
+        div.appendChild(img);
+        div.appendChild(btn);
+        container.appendChild(div);
       };
       reader.readAsDataURL(file);
     });
   });
+
 
   // Form Save Handler
   window.saveProduct = async function(event) {
