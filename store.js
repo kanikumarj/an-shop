@@ -125,7 +125,7 @@ window.API = {
 };
 
 // ─── Google OAuth Configuration ───────────────────────────────────────────────
-window.GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+window.GOOGLE_CLIENT_ID = "627808989811-a2csj5ej1ibef8j3p5hl8n13rth070ot.apps.googleusercontent.com";
 
 const STATIC_PRODUCTS = [
   {id:1,name:'Homemade Murukku',cat:'snacks',price:149,orig:199,rating:4.9,count:128,emoji:'🌀',tags:['bestseller'],badge:'🔥 Hot',bt:'hot',desc:'Crispy spiral snack with sesame & cumin',color:'rgba(200,100,0,0.14)'},
