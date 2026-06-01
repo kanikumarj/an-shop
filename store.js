@@ -127,14 +127,13 @@ window.API = {
 // ─── Google OAuth Configuration ───────────────────────────────────────────────
 window.GOOGLE_CLIENT_ID = "627808989811-a2csj5ej1ibef8j3p5hl8n13rth070ot.apps.googleusercontent.com";
 
-// ─── Firebase Phone Auth Configuration ─────────────────────────────────────────
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_FIREBASE_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_FIREBASE_PROJECT_ID",
-  storageBucket: "YOUR_FIREBASE_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_FIREBASE_SENDER_ID",
-  appId: "YOUR_FIREBASE_APP_ID"
+  apiKey: "AdpetEYGgocFbHJ513yHtWLbnCpIGgpHPLt96xGAypCO-7Hj0lFkPRtBZk7g-bVHqlivpvpk0NNBagYCaFmvtzRlfdyDmBV16ETNJKCeq6kLV_foGSTfi0oYSX3WeQdw69_gkQP0Qz3-IC-YTWq0hKPA0g",
+  authDomain: "an-shop-627808989811.firebaseapp.com",
+  projectId: "an-shop-627808989811",
+  storageBucket: "an-shop-627808989811.appspot.com",
+  messagingSenderId: "627808989811",
+  appId: "1:627808989811:web:a1b2c3d4e5f6g7h8"
 };
 
 const STATIC_PRODUCTS = [
