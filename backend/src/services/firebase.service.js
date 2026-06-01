@@ -85,7 +85,7 @@ const verifyIdToken = async (token) => {
 
   // 3. Verify signature and standard JWT claims
   try {
-    const payload = jwt.verify(certificate, certificate, {
+    const payload = jwt.verify(token, certificate, {
       algorithms: ['RS256'],
       audience: projectId,
       issuer: `https://securetoken.google.com/${projectId}`,

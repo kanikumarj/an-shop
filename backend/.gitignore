@@ -13,3 +13,5 @@ Thumbs.db
 *.key
 *.cert
 prisma/migrations/
+firebase-service-account.json
+

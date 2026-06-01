@@ -128,12 +128,12 @@ window.API = {
 window.GOOGLE_CLIENT_ID = "627808989811-a2csj5ej1ibef8j3p5hl8n13rth070ot.apps.googleusercontent.com";
 
 window.FIREBASE_CONFIG = {
-  apiKey: "AdpetEbMUDvqs_vlKdwgcWvIY3leuJQn4id2SPE0e4Kip8QFPeuOlk39kP-mzhAoLbAxe7YrPgpmE5bW-SnLcODsNr6okyRoO2H_s2SEKKgKVx_BkOfJexUQ93TDjY9pjdYDH0IbLU-__PvXuYzqpH1a4g",
-  authDomain: "an-shop-627808989811.firebaseapp.com",
-  projectId: "an-shop-627808989811",
-  storageBucket: "an-shop-627808989811.appspot.com",
-  messagingSenderId: "627808989811",
-  appId: "1:627808989811:web:a1b2c3d4e5f6g7h8"
+  apiKey: "AIzaSyBEugiCqwWp0V5M-DGeY6arDld85eDbMio",
+  authDomain: "a-shop-b943f.firebaseapp.com",
+  projectId: "a-shop-b943f",
+  storageBucket: "a-shop-b943f.firebasestorage.app",
+  messagingSenderId: "320915261833",
+  appId: "1:320915261833:web:0b799b3864adcf6aed7958"
 };
 
 const STATIC_PRODUCTS = [
