@@ -128,7 +128,7 @@ window.API = {
 window.GOOGLE_CLIENT_ID = "627808989811-a2csj5ej1ibef8j3p5hl8n13rth070ot.apps.googleusercontent.com";
 
 window.FIREBASE_CONFIG = {
-  apiKey: "AdpetEYGgocFbHJ513yHtWLbnCpIGgpHPLt96xGAypCO-7Hj0lFkPRtBZk7g-bVHqlivpvpk0NNBagYCaFmvtzRlfdyDmBV16ETNJKCeq6kLV_foGSTfi0oYSX3WeQdw69_gkQP0Qz3-IC-YTWq0hKPA0g",
+  apiKey: "AdpetEbMUDvqs_vlKdwgcWvIY3leuJQn4id2SPE0e4Kip8QFPeuOlk39kP-mzhAoLbAxe7YrPgpmE5bW-SnLcODsNr6okyRoO2H_s2SEKKgKVx_BkOfJexUQ93TDjY9pjdYDH0IbLU-__PvXuYzqpH1a4g",
   authDomain: "an-shop-627808989811.firebaseapp.com",
   projectId: "an-shop-627808989811",
   storageBucket: "an-shop-627808989811.appspot.com",
