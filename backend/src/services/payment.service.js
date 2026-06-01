@@ -160,7 +160,7 @@ const validateUtrFormat = (utr) => {
  * Check if a UTR number has already been used in a verified/approved payment.
  * Prevents screenshot re-use fraud.
  */
-const checkDuplicateUtr = async (utr) => {
+const checkDuplicateUtr = async (utr, currentPaymentId) => {
   if (!utr) return { isDuplicate: false };
 
   const upper = utr.toUpperCase().trim();
@@ -171,19 +171,23 @@ const checkDuplicateUtr = async (utr) => {
     return { isDuplicate: true, source: 'cache' };
   }
 
-  // Check DB for approved screenshots with this UTR
+  // Check DB for screenshots with this UTR that are APPROVED or PENDING_REVIEW
+  // and belong to a different payment record.
   const existing = await prisma.paymentScreenshot.findFirst({
     where: {
       utrNumber: upper,
-      status: { in: ['APPROVED'] },
+      status: { in: ['APPROVED', 'PENDING_REVIEW'] },
+      paymentId: currentPaymentId ? { not: currentPaymentId } : undefined,
       deletedAt: null,
     },
-    select: { id: true, paymentId: true, uploadedAt: true },
+    select: { id: true, paymentId: true, status: true, uploadedAt: true },
   });
 
   if (existing) {
-    // Blacklist in cache for 30 days
-    await cache.set(utrBlacklistKey(upper), { usedAt: existing.uploadedAt }, 30 * 24 * 60 * 60);
+    if (existing.status === 'APPROVED') {
+      // Blacklist in cache for 30 days
+      await cache.set(utrBlacklistKey(upper), { usedAt: existing.uploadedAt }, 30 * 24 * 60 * 60);
+    }
     return { isDuplicate: true, source: 'db', screenshot: existing };
   }
 
