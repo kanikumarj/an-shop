@@ -749,6 +749,8 @@ body{
             </div>
 
             <button type="button" class="btn-primary" id="btn-send-otp">Send OTP</button>
+            <button type="button" class="btn-primary" id="btn-firebase-send-otp" style="margin-top:10px;background:#e58200;border-color:#e58200;">Send Firebase SMS OTP</button>
+            <div id="recaptcha-container"></div>
 
             <div class="or-divider"><span>or</span></div>
 
@@ -834,6 +836,9 @@ body{
 <!-- ════════════════════════════════════════════════════════════
      JAVASCRIPT
      ════════════════════════════════════════════════════════════ -->
+<!-- Firebase App and Auth SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="store.js"></script>
 <script>
 "use strict";
@@ -1156,7 +1161,13 @@ async function sendOtpBackend(val, btn) {
     $('otp-step1').style.display = 'none';
     $('otp-step2').style.display = 'block';
     const msg = $('otp-sent-msg');
-    if (msg) msg.textContent = `Code sent to +91 ${val.slice(0, 4)}XXXXXX`;
+    if (msg) {
+      if (res && res.data && (res.data.fallbackActive || res.data.channel === 'email')) {
+        msg.innerHTML = `⚠️ WhatsApp gateway busy.<br>Code sent to your <strong>registered email address</strong>.`;
+      } else {
+        msg.textContent = `Code sent to WhatsApp (+91 ${val.slice(0, 4)}XXXXXX)`;
+      }
+    }
     startOTPTimer(30);
     $('otp-d1')?.focus();
   } catch (err) {
@@ -1191,13 +1202,20 @@ $('btn-back-otp')?.addEventListener('click', () => {
   $('otp-step1').style.display = 'block';
   $('otp-step2').style.display = 'none';
   $$('.otp-digit').forEach(d => d.value = '');
+  sessionStorage.removeItem('im_auth_provider');
 });
 
 $('btn-resend')?.addEventListener('click', function(){
   const phoneVal = sessionStorage.getItem('im_auth_phone');
   if (!phoneVal) return;
   $$('.otp-digit').forEach(d => d.value = '');
-  sendOtpBackend(phoneVal, this);
+  
+  const isFirebase = sessionStorage.getItem('im_auth_provider') === 'firebase';
+  if (isFirebase) {
+    document.getElementById('btn-firebase-send-otp')?.click();
+  } else {
+    sendOtpBackend(phoneVal, this);
+  }
 });
 
 /* ════════════════════════════════════════════════════════════
@@ -1413,6 +1431,58 @@ $('otpForm')?.addEventListener('submit', async function(e){
   const phone = sessionStorage.getItem('im_auth_phone') || '';
   const restore=btnLoading($('btn-verify-otp'),'Verifying…');
   const BACKEND = window.BACKEND_URL || 'https://an-shop.onrender.com';
+  const isFirebase = sessionStorage.getItem('im_auth_provider') === 'firebase';
+
+  if (isFirebase) {
+    const confirmation = window.FIREBASE_CONFIRMATION_RESULT;
+    if (!confirmation) {
+      if (errEl) {
+        errEl.textContent = 'Firebase verification session expired. Please request a new OTP.';
+        errEl.style.display = 'block';
+      }
+      restore();
+      return;
+    }
+
+    try {
+      // 1. Verify OTP code with Firebase client-side
+      const result = await confirmation.confirm(otp);
+      
+      // 2. Retrieve the Firebase ID Token
+      const idToken = await result.user.getIdToken();
+      
+      // 3. Authenticate with our custom backend endpoint
+      const res = await fetch(`${BACKEND}/api/v1/auth/firebase/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const response = await res.json();
+      if (!res.ok) throw new Error(response.message || 'Firebase login verification failed on backend.');
+
+      restore();
+      if (response.success && response.data) {
+        const user = response.data.user;
+        const token = response.data.accessToken || response.data.token;
+        const role = (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? user.role : 'CUSTOMER';
+        window.Auth.loginUser(
+          { name: user.name, email: user.email, role, id: user.id, phone: user.phone },
+          token
+        );
+        handleAuthRedirect(role === 'CUSTOMER' ? 'user' : 'admin');
+      }
+    } catch (err) {
+      restore();
+      console.error('Firebase OTP Verification Error:', err);
+      if (errEl) {
+        errEl.textContent = err.message || 'Incorrect verification code. Please check and try again.';
+        errEl.style.display = 'block';
+      } else {
+        alert(err.message);
+      }
+    }
+    return;
+  }
 
   try {
     const res = await fetch(`${BACKEND}/api/v1/auth/otp/login`, {
@@ -1588,7 +1658,95 @@ $('forgotForm')?.addEventListener('submit', async function(e){
     });
   }
 
-  initGoogleSignIn();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   12b. FIREBASE PHONE AUTHENTICATION (SMS OTP Flow)
+   ════════════════════════════════════════════════════════════ */
+(function() {
+  let recaptchaVerifier = null;
+  let confirmationResult = null;
+
+  function initFirebasePhoneAuth() {
+    if (typeof firebase === 'undefined') return;
+    
+    const config = window.FIREBASE_CONFIG;
+    if (!config || !config.apiKey || config.apiKey.includes('YOUR_FIREBASE_API_KEY')) {
+      console.warn('⚠️ Firebase configuration is not set in store.js — Firebase Phone Auth disabled.');
+      const btn = document.getElementById('btn-firebase-send-otp');
+      if (btn) {
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Firebase Phone Auth not configured';
+      }
+      return;
+    }
+
+    try {
+      if (firebase.apps.length === 0) {
+        firebase.initializeApp(config);
+      }
+      
+      // Initialize invisible Recaptcha Verifier
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('btn-firebase-send-otp', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved, ready to proceed
+        }
+      });
+    } catch (err) {
+      console.error('Firebase initialization failed:', err);
+    }
+  }
+
+  document.getElementById('btn-firebase-send-otp')?.addEventListener('click', async function(e) {
+    e.preventDefault();
+    if (typeof firebase === 'undefined' || !recaptchaVerifier) {
+      alert('Firebase SDK is not loaded or configured. Verify setup in store.js.');
+      return;
+    }
+
+    const phoneInput = document.getElementById('otp-phone');
+    const err = document.getElementById('otp-phone-err');
+    const val = phoneInput?.value.trim() ?? '';
+    
+    if (!/^[6-9]\d{9}$/.test(val)) {
+      phoneInput?.classList.add('error');
+      if (err) {
+        err.textContent = 'Enter a valid 10-digit Indian mobile number starting with 6-9.';
+        err.style.display = 'block';
+      }
+      return;
+    }
+    phoneInput?.classList.remove('error');
+    if (err) err.style.display = 'none';
+
+    const restore = btnLoading(this, 'Sending SMS...');
+    const e164Phone = `+91${val}`;
+
+    try {
+      const confirmation = await firebase.auth().signInWithPhoneNumber(e164Phone, recaptchaVerifier);
+      window.FIREBASE_CONFIRMATION_RESULT = confirmation;
+      sessionStorage.setItem('im_auth_phone', val);
+      sessionStorage.setItem('im_auth_provider', 'firebase');
+
+      document.getElementById('otp-step1').style.display = 'none';
+      document.getElementById('otp-step2').style.display = 'block';
+      const msg = document.getElementById('otp-sent-msg');
+      if (msg) msg.textContent = `Firebase SMS code sent to +91 ${val.slice(0, 4)}XXXXXX`;
+      
+      startOTPTimer(30);
+      document.getElementById('otp-d1')?.focus();
+    } catch (err) {
+      console.error('Firebase Phone Send Error:', err);
+      alert(err.message || 'Failed to send Firebase SMS. Try standard OTP.');
+    } finally {
+      restore();
+    }
+  });
+
+  // Run initial setup
+  setTimeout(initFirebasePhoneAuth, 500);
 })();
 
 /* ════════════════════════════════════════════════════════════

@@ -259,10 +259,11 @@ exports.sendOTP = async (req, res) => {
   const { identifier, type = 'login', channel } = req.body;
 
   // Always return same response to prevent user enumeration
-  const safeResponse = () => ApiResponse.success(res, {
+  const safeResponse = (channelDelivered = channel, fallback = false) => ApiResponse.success(res, {
     masked: identifier.includes('@') ? maskEmail(identifier) : maskPhone(identifier),
     expiresIn: `${authService.OTP_CONFIG.EXPIRY_MINUTES} minutes`,
-    channel: channel || (identifier.includes('@') ? 'email' : 'whatsapp'),
+    channel: channelDelivered || (identifier.includes('@') ? 'email' : 'whatsapp'),
+    fallbackActive: fallback,
   }, 'If an account exists, an OTP has been sent.');
 
   const user = await authService.findUserByIdentifier(identifier);
@@ -293,25 +294,52 @@ exports.sendOTP = async (req, res) => {
     req,
   });
 
+  let deliveredChannel = deliveryChannel;
+  let fallbackActive = false;
+
   // Deliver OTP
   try {
     if (deliveryChannel === 'email' || isEmail) {
       await emailService.sendOTPEmail(target, code);
     } else {
-      await whatsappService.sendOTP(target, code);
+      const result = await whatsappService.sendOTP(target, code);
+      if (!result) {
+        // Fallback to email
+        logger.warn(`⚠️ WhatsApp OTP delivery failed for user ${user.id}. Falling back to email.`);
+        if (user.email) {
+          await emailService.sendOTPEmail(user.email, code);
+          deliveredChannel = 'email';
+          fallbackActive = true;
+        } else {
+          throw new Error('User does not have an email address configured for fallback.');
+        }
+      }
     }
   } catch (err) {
     logger.warn('OTP delivery failed', { error: err.message, userId: user.id });
+    if (deliveryChannel === 'whatsapp') {
+      try {
+        if (user.email) {
+          logger.info(`🔄 Exception during WhatsApp send. Trying email fallback...`);
+          await emailService.sendOTPEmail(user.email, code);
+          deliveredChannel = 'email';
+          fallbackActive = true;
+        }
+      } catch (emailErr) {
+        logger.error('❌ Last resort email fallback failed:', emailErr.message);
+      }
+    }
   }
 
   logger.apiEvent('OTP_SENT', {
     userId: user.id,
     type,
-    channel: deliveryChannel,
+    channel: deliveredChannel,
+    fallback: fallbackActive,
     ip: req.ip,
   });
 
-  return safeResponse();
+  return safeResponse(deliveredChannel, fallbackActive);
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -719,3 +747,106 @@ exports.adminLogin = async (req, res) => {
 
   return sendAuthResponse(res, user, 200, `Welcome back, ${user.name}. Admin login successful.`, req);
 };
+
+// ═══════════════════════════════════════════════════════════
+//   FIREBASE PHONE LOGIN
+// ═══════════════════════════════════════════════════════════
+exports.firebasePhoneLogin = async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    throw AppError.badRequest('Firebase ID token is required.', 'MISSING_ID_TOKEN');
+  }
+
+  const firebaseService = require('../services/firebase.service');
+  
+  // 1. Verify token
+  const payload = await firebaseService.verifyIdToken(idToken);
+  
+  const { phone_number: rawPhone, uid: firebaseUid, name } = payload;
+
+  if (!rawPhone) {
+    throw AppError.badRequest('Could not retrieve phone number from Firebase account.', 'NO_FIREBASE_PHONE');
+  }
+
+  const formattedPhone = formatPhoneNumber(rawPhone);
+
+  // 2. Find existing user by phone number
+  let user = await prisma.user.findUnique({
+    where: { phone: formattedPhone },
+  });
+
+  let isNewUser = false;
+
+  if (!user) {
+    // Generate placeholder email
+    const dummyEmail = `phone_${firebaseUid}@anshop.tmp`;
+    
+    // New user — auto-register with a random password
+    const randomPassword = await hashPassword(
+      `firebase_${firebaseUid}_${Date.now()}_${Math.random().toString(36)}`
+    );
+
+    user = await prisma.user.create({
+      data: {
+        name:            name || `User_${formattedPhone.slice(-4)}`,
+        email:           dummyEmail,
+        password:        randomPassword,
+        phone:           formattedPhone,
+        isPhoneVerified: true,
+        isActive:        true,
+        role:            'CUSTOMER',
+      },
+    });
+
+    isNewUser = true;
+    logger.apiEvent('FIREBASE_PHONE_REGISTER', {
+      userId: user.id,
+      phone:  formattedPhone,
+      ip:     req.ip,
+    });
+
+    // Welcome notification
+    notificationService.createNotification({
+      userId:  user.id,
+      type:    'WELCOME',
+      title:   '🎉 Welcome! You signed in with Phone.',
+      message: 'Explore our premium homemade snacks!',
+    }).catch(() => {});
+
+  } else {
+    // Existing user — check not banned/inactive
+    if (user.isBanned) {
+      throw AppError.forbidden('Your account has been banned. Please contact support.', 'ACCOUNT_BANNED');
+    }
+    if (!user.isActive) {
+      throw AppError.forbidden('Your account has been deactivated. Please contact support.', 'ACCOUNT_INACTIVE');
+    }
+
+    // Mark phone verified on login
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data:  { isPhoneVerified: true, lastLogin: new Date(), lastLoginIp: req.ip },
+    });
+
+    logger.apiEvent('FIREBASE_PHONE_LOGIN', {
+      userId: user.id,
+      phone:  formattedPhone,
+      ip:     req.ip,
+    });
+  }
+
+  // Attach flag for response
+  user._isNewUser = isNewUser;
+
+  return sendAuthResponse(
+    res,
+    user,
+    isNewUser ? 201 : 200,
+    isNewUser
+      ? 'Account created successfully with Phone! Welcome 🎉'
+      : 'Signed in with Phone successfully!',
+    req
+  );
+};
+

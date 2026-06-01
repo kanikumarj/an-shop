@@ -56,6 +56,12 @@ router.post('/google',
   googleController.googleLogin
 );
 
+// POST /auth/firebase/login — Firebase Phone Auth login/register
+router.post('/firebase/login',
+  googleLimiter,
+  authController.firebasePhoneLogin
+);
+
 // POST /auth/register
 router.post('/register',
   registerLimiter,

@@ -127,6 +127,16 @@ window.API = {
 // ─── Google OAuth Configuration ───────────────────────────────────────────────
 window.GOOGLE_CLIENT_ID = "627808989811-a2csj5ej1ibef8j3p5hl8n13rth070ot.apps.googleusercontent.com";
 
+// ─── Firebase Phone Auth Configuration ─────────────────────────────────────────
+window.FIREBASE_CONFIG = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_FIREBASE_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_FIREBASE_PROJECT_ID",
+  storageBucket: "YOUR_FIREBASE_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_FIREBASE_SENDER_ID",
+  appId: "YOUR_FIREBASE_APP_ID"
+};
+
 const STATIC_PRODUCTS = [
   {id:1,name:'Homemade Murukku',cat:'snacks',price:149,orig:199,rating:4.9,count:128,emoji:'🌀',tags:['bestseller'],badge:'🔥 Hot',bt:'hot',desc:'Crispy spiral snack with sesame & cumin',color:'rgba(200,100,0,0.14)'},
   {id:2,name:'Kerala Banana Chips',cat:'snacks',price:129,orig:169,rating:4.8,count:94,emoji:'🍌',tags:['bestseller'],badge:'⭐ Top',bt:'best',desc:'Thin-sliced coconut oil fried chips',color:'rgba(255,200,0,0.1)'},

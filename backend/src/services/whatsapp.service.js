@@ -67,6 +67,11 @@ const META_ENABLED  = !!(META_PHONE_ID && META_TOKEN);
 const DBUDDYZ_TOKEN = process.env.DBUDDYZ_WHATSAPP_TOKEN || '';
 const DBUDDYZ_ENABLED  = !!DBUDDYZ_TOKEN;
 
+// ─── Provider: Self-Hosted WhatsApp API Gateway ──────────────────────────────
+const SELF_HOSTED_URL   = process.env.WHATSAPP_SELF_HOSTED_URL || '';
+const SELF_HOSTED_TOKEN = process.env.WHATSAPP_SELF_HOSTED_TOKEN || '';
+const SELF_HOSTED_ENABLED = !!SELF_HOSTED_URL;
+
 // ─── Phone Normalizer ─────────────────────────────────────────────────────────
 /**
  * Normalize any Indian phone number to E.164 format (+91XXXXXXXXXX)
@@ -134,13 +139,53 @@ const sendMessage = async (phone, body, metaPayload = null, otpValue = null) => 
     return null;
   }
 
-  // ── Try DBuddyZ first if enabled (Free Gateway Alternative) ──────────────
-  if (DBUDDYZ_ENABLED) {
+  // ── Try Self-Hosted first if enabled ─────────────────────────────────────
+  const selfHostedUrl = process.env.WHATSAPP_SELF_HOSTED_URL || '';
+  const selfHostedToken = process.env.WHATSAPP_SELF_HOSTED_TOKEN || '';
+  if (selfHostedUrl) {
+    try {
+      const axios = require('axios');
+      const payload = {
+        phone: e164,
+        to: e164,
+        number: e164.replace('+', ''),
+        message: body,
+        body: body,
+        token: selfHostedToken,
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (selfHostedToken) {
+        headers['Authorization'] = `Bearer ${selfHostedToken}`;
+      }
+
+      const resp = await axios.post(selfHostedUrl, payload, {
+        headers,
+        timeout: 8000,
+      });
+
+      const isSuccess = resp.data && (resp.data.success || resp.data.status === 'success' || resp.data.status === 'sent');
+      if (isSuccess) {
+        logger.info('📱 WhatsApp sent (Self-Hosted Gateway):', { to: e164 });
+        return { provider: 'self-hosted', status: 'sent', data: resp.data };
+      } else {
+        logger.warn('⚠️ Self-Hosted Gateway rejected or returned failure, trying next provider:', { data: resp.data });
+      }
+    } catch (err) {
+      logger.warn('⚠️ Self-Hosted WhatsApp Gateway failed — trying next provider:', { error: err.message });
+    }
+  }
+
+  // ── Try DBuddyZ second if enabled (Free Gateway Alternative) ──────────────
+  const dbuddyzToken = process.env.DBUDDYZ_WHATSAPP_TOKEN || '';
+  if (dbuddyzToken) {
     try {
       const axios = require('axios');
       const FormData = require('form-data');
       const form = new FormData();
-      form.append('token', DBUDDYZ_TOKEN);
+      form.append('token', dbuddyzToken);
       form.append('tonumber', e164);
       if (otpValue) {
         form.append('otp', otpValue);
@@ -186,15 +231,17 @@ const sendMessage = async (phone, body, metaPayload = null, otpValue = null) => 
   }
 
   // ── Fallback: Meta Cloud API ─────────────────────────────
-  if (META_ENABLED && metaPayload) {
+  const metaPhoneId = process.env.META_WHATSAPP_PHONE_ID || '';
+  const metaToken = process.env.META_WHATSAPP_TOKEN || '';
+  if (metaPhoneId && metaToken && metaPayload) {
     try {
       const axios = require('axios');
       const resp  = await axios.post(
-        `${META_API_URL}/${META_PHONE_ID}/messages`,
+        `${META_API_URL}/${metaPhoneId}/messages`,
         metaPayload,
         {
           headers: {
-            'Authorization': `Bearer ${META_TOKEN}`,
+            'Authorization': `Bearer ${metaToken}`,
             'Content-Type':  'application/json',
           },
           timeout: 8000,
@@ -209,8 +256,8 @@ const sendMessage = async (phone, body, metaPayload = null, otpValue = null) => 
   }
 
   // ── All providers failed ─────────────────────────────────
-  if (!tc && !META_ENABLED && !DBUDDYZ_ENABLED) {
-    logger.warn('⚠️ WhatsApp: no provider configured (set DBUDDYZ, TWILIO, or META env vars)');
+  if (!tc && !metaPhoneId && !dbuddyzToken && !selfHostedUrl) {
+    logger.warn('⚠️ WhatsApp: no provider configured (set DBUDDYZ, SELF_HOSTED, TWILIO, or META env vars)');
   }
 
   return null;
