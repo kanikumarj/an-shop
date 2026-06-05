@@ -1565,7 +1565,7 @@ $('forgotForm')?.addEventListener('submit', async function(e){
 
   // ── Send ID Token to our backend ────────────────────────────
   async function handleGoogleCredential(credential) {
-    const activeBtn = document.querySelector('.form-panel.active .google-btn') ||
+    const activeBtn = document.querySelector('.form-panel.active .btn-google') ||
                       document.getElementById('btn-google-login');
     const restore = activeBtn ? btnLoading(activeBtn, 'Signing in with Google…') : () => {};
 
@@ -1628,36 +1628,49 @@ $('forgotForm')?.addEventListener('submit', async function(e){
       ux_mode:            'popup',
     });
 
-    // Render official Google buttons inside our custom button containers
+    // Render official Google buttons inside our custom button containers as overlays
     $$('#btn-google-login,#btn-google-register,#btn-google-otp').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        // Trigger the Google One Tap / prompt
-        google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Fallback: render a standard Google Sign-In button popup
-            const container = document.createElement('div');
-            container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;';
-            document.body.appendChild(container);
-            google.accounts.id.renderButton(container, {
-              type:  'standard',
-              theme: 'filled_black',
-              size:  'large',
-              text:  'signin_with',
-              shape: 'pill',
-              width: '300',
-            });
-            // Auto click it
-            setTimeout(() => {
-              container.querySelector('div[role="button"]')?.click();
-              setTimeout(() => document.body.removeChild(container), 2000);
-            }, 200);
-          }
-        });
+      btn.style.position = 'relative';
+
+      // Create overlay container for official Google button
+      const container = document.createElement('div');
+      container.className = 'gsi-button-overlay';
+      container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;z-index:99;cursor:pointer;overflow:hidden;';
+      btn.appendChild(container);
+
+      // Render the standard button inside container
+      google.accounts.id.renderButton(container, {
+        type:  'standard',
+        theme: 'filled_black',
+        size:  'large',
+        text:  'continue_with',
+        shape: 'rectangular',
+        width: 320,
       });
     });
+
+    // Inject iframe responsive styling for overlay
+    if (!document.getElementById('gsi-iframe-style')) {
+      const style = document.createElement('style');
+      style.id = 'gsi-iframe-style';
+      style.textContent = `
+        .gsi-button-overlay iframe {
+          width: 100% !important;
+          height: 100% !important;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Try showing Google One Tap automatically on page load
+    google.accounts.id.prompt();
   }
 
+  // Run initial setup
+  setTimeout(initGoogleSignIn, 500);
 })();
 
 /* ════════════════════════════════════════════════════════════
